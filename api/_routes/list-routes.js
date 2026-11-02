@@ -87,7 +87,7 @@ router.get("/:id", async (req, res) => {
             [listId]
         ),
         pool.query(
-            `SELECT u.id, u.name, u.username FROM list_recipients lr JOIN users u ON u.id = lr.user_id
+            `SELECT u.id, u.name, u.username, u.is_child AS "isChild" FROM list_recipients lr JOIN users u ON u.id = lr.user_id
              WHERE lr.list_id = $1 ORDER BY u.name`,
             [listId]
         ),
@@ -164,7 +164,11 @@ router.put("/:id", async (req, res) => {
             throw new HttpError(400, "En publik lista kan inte tas bort från en grupp, bara få fler grupper");
         }
 
-        await checkListPeople(db, req.user.id, body, currentGroupIds);
+        const { rows: currentRecipients } = await db.query(
+            "SELECT user_id FROM list_recipients WHERE list_id = $1",
+            [listId]
+        );
+        await checkListPeople(db, req.user.id, body, currentGroupIds, currentRecipients.map((r) => r.user_id));
 
         await db.query(
             "UPDATE lists SET title = $1, description = $2, end_date = $3 WHERE id = $4",

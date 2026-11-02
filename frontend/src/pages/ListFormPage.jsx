@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { api } from "../api.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useFetch } from "../hooks/useFetch.js";
@@ -38,6 +38,26 @@ export default function ListFormPage() {
             adminIds: admins.map((u) => u.id),
         });
     }, [existing.data, form]);
+
+    // /lists/new?for=12 (from Mina barn): start with the child as recipient, in the child's groups that I'm in
+    const [searchParams] = useSearchParams();
+    const forChildId = isEdit ? null : Number(searchParams.get("for")) || null;
+    const myChildren = useFetch(forChildId ? "/children" : null);
+    const prefilled = useRef(false);
+
+    useEffect(() => {
+        if (prefilled.current || !myChildren.data || !myGroups.data) return;
+        prefilled.current = true;
+        const child = myChildren.data.data.find((c) => c.id === forChildId);
+        if (!child) return;
+        const mine = myGroups.data.data.map((g) => g.id);
+        setForm((prev) => ({
+            ...prev,
+            title: prev.title || `Önskelista till ${child.name}`,
+            recipientIds: [child.id],
+            groupIds: child.groups.map((g) => g.id).filter((id) => mine.includes(id)),
+        }));
+    }, [myChildren.data, myGroups.data, forChildId]);
 
     // Everyone in the chosen groups – recipients and admins are picked among them
     const idsKey = form ? [...form.groupIds].sort((a, b) => a - b).join(",") : "";
@@ -82,6 +102,19 @@ export default function ListFormPage() {
     const peopleIds = people.map((p) => p.id);
     const onlyCandidates = (ids) => ids.filter((x) => peopleIds.includes(x));
 
+    // Children: only recipients, and only my own children can be picked (one already on the list may stay).
+    // A list to children is administered only by their parents.
+    const savedRecipientIds = isEdit ? existing.data.recipients.map((r) => r.id) : [];
+    const othersChildren = people
+        .filter((p) => p.isChild && !(p.parentIds ?? []).includes(user.id) && !savedRecipientIds.includes(p.id))
+        .map((p) => p.id);
+    const childRecipients = people.filter((p) => p.isChild && form.recipientIds.includes(p.id));
+    const parentsOfRecipients = new Set(childRecipients.flatMap((c) => c.parentIds ?? []));
+    const adminPeople = people.filter(
+        (p) => !p.isChild && (childRecipients.length === 0 || parentsOfRecipients.has(p.id))
+    );
+    const adminPeopleIds = adminPeople.map((p) => p.id);
+
     const update = (field) => (value) => setForm((prev) => ({ ...prev, [field]: value }));
 
     function toggleGroup(groupId) {
@@ -101,7 +134,8 @@ export default function ListFormPage() {
             endDate: form.endDate,
             groupIds: form.groupIds,
             recipientIds: onlyCandidates(form.recipientIds),
-            adminIds: onlyCandidates(form.adminIds),
+            // Only the people who may be admins right now (e.g. only parents, when the list is to a child)
+            adminIds: form.adminIds.filter((x) => adminPeopleIds.includes(x)),
         };
 
         try {
@@ -191,15 +225,26 @@ export default function ListFormPage() {
                     people={people}
                     selected={form.recipientIds}
                     onChange={update("recipientIds")}
+                    disabledIds={othersChildren}
+                    disabledHint="Bara barnets föräldrar kan göra listor till barnet"
                 />
 
                 <PeoplePicker
                     legend="Admins"
-                    hint="Admins kan lägga till önskningar, ändra och publicera listan."
-                    people={people}
+                    hint={
+                        childRecipients.length > 0
+                            ? "Listor till barn kan bara administreras av barnets föräldrar."
+                            : "Admins kan lägga till önskningar, ändra och publicera listan."
+                    }
+                    people={adminPeople}
                     selected={form.adminIds}
                     onChange={update("adminIds")}
                     lockedIds={isEdit ? [] : [user.id]}
+                    emptyText={
+                        childRecipients.length > 0
+                            ? "Ingen av barnets föräldrar är med i de valda grupperna."
+                            : "Välj en grupp först."
+                    }
                 />
 
                 <ErrorMessage message={error} />

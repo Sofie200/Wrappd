@@ -2,6 +2,8 @@ import { Router } from "express";
 import { z } from "zod";
 import { pool, TODAY, withTransaction } from "../_db/pool.js";
 import { HttpError, parse, parseId } from "../_lib/http.js";
+import { name, username } from "../_lib/userSchema.js";
+import { createUserLink } from "../_lib/userLinks.js";
 
 const router = Router();
 
@@ -86,7 +88,9 @@ router.get("/members", async (req, res) => {
     if (count !== ids.length) throw new HttpError(404, "En av grupperna finns inte");
 
     const { rows } = await pool.query(
-        `SELECT DISTINCT u.id, u.name, u.username
+        `SELECT DISTINCT u.id, u.name, u.username, u.password_hash IS NOT NULL AS "isActivated",
+                u.is_child AS "isChild",
+                (SELECT array_agg(parent_id ORDER BY parent_id) FROM child_parents WHERE child_id = u.id) AS "parentIds"
          FROM users u
          JOIN group_members gm ON gm.user_id = u.id
          WHERE gm.group_id = ANY($1::int[])
@@ -104,11 +108,15 @@ router.get("/:id", async (req, res) => {
     const { rows: [group] } = await pool.query("SELECT id, name FROM groups WHERE id = $1", [groupId]);
 
     const { rows: members } = await pool.query(
-        `SELECT u.id, u.name, u.username, gm.is_admin AS "isAdmin"
+        `SELECT u.id, u.name, u.username, gm.is_admin AS "isAdmin",
+                u.password_hash IS NOT NULL AS "isActivated",
+                u.is_child AS "isChild",
+                (SELECT string_agg(p.name, ', ' ORDER BY p.name) FROM child_parents cp
+                 JOIN users p ON p.id = cp.parent_id WHERE cp.child_id = u.id) AS parents
          FROM group_members gm
          JOIN users u ON u.id = gm.user_id
          WHERE gm.group_id = $1
-         ORDER BY gm.is_admin DESC, u.name`,
+         ORDER BY gm.is_admin DESC, u.is_child, u.name`,
         [groupId]
     );
 
@@ -149,14 +157,77 @@ router.post("/:id/members", async (req, res) => {
     await requireGroupAdmin(pool, groupId, req.user.id);
     const { userId } = parse(AddMember, req.body);
 
-    const { rows: [user] } = await pool.query("SELECT id FROM users WHERE id = $1", [userId]);
+    const { rows: [user] } = await pool.query("SELECT id, is_child FROM users WHERE id = $1", [userId]);
     if (!user) throw new HttpError(404, "Användaren finns inte");
+    if (user.is_child) throw new HttpError(403, "Barn läggs till i grupper av sina föräldrar, under Mina barn");
 
     await pool.query(
         "INSERT INTO group_members (group_id, user_id) VALUES ($1, $2) ON CONFLICT DO NOTHING",
         [groupId, userId]
     );
     res.status(201).json({ added: userId });
+});
+
+/* --- POST /api/groups/:id/users  { name, username } → { user, link } – create an account (admin) --- */
+// The new user is added to the group directly. They choose their own password via the link.
+const NewUser = z.object({ name, username });
+
+router.post("/:id/users", async (req, res) => {
+    const groupId = parseId(req.params.id);
+    const body = parse(NewUser, req.body);
+
+    const result = await withTransaction(async (db) => {
+        await requireGroupAdmin(db, groupId, req.user.id);
+
+        let user;
+        try {
+            ({ rows: [user] } = await db.query(
+                `INSERT INTO users (name, username, created_by) VALUES ($1, $2, $3)
+                 RETURNING id, name, username`,
+                [body.name, body.username, req.user.id]
+            ));
+        } catch (err) {
+            if (err.code === "23505") throw new HttpError(409, "Användarnamnet är redan upptaget");
+            throw err;
+        }
+
+        await db.query("INSERT INTO group_members (group_id, user_id) VALUES ($1, $2)", [groupId, user.id]);
+        const link = await createUserLink(db, { userId: user.id, purpose: "activate", createdBy: req.user.id });
+        return { user, link };
+    });
+
+    res.status(201).json(result);
+});
+
+/* --- POST /api/groups/:id/members/:userId/link → { user, link } – a new link (admin) --- */
+// Not activated yet: a new activation link (the old one stops working).
+// Activated: a link to choose a new password. The current password works until the link is used.
+router.post("/:id/members/:userId/link", async (req, res) => {
+    const groupId = parseId(req.params.id);
+    const userId = parseId(req.params.userId);
+    if (userId === req.user.id) throw new HttpError(400, "Du kan inte skapa en länk till dig själv");
+
+    const result = await withTransaction(async (db) => {
+        await requireGroupAdmin(db, groupId, req.user.id);
+
+        const { rows: [user] } = await db.query(
+            `SELECT u.id, u.name, u.username, u.is_child, u.password_hash IS NOT NULL AS "isActivated"
+             FROM group_members gm JOIN users u ON u.id = gm.user_id
+             WHERE gm.group_id = $1 AND gm.user_id = $2`,
+            [groupId, userId]
+        );
+        if (!user) throw new HttpError(404, "Användaren är inte med i gruppen");
+        if (user.is_child) throw new HttpError(400, "Barn kan inte logga in och får därför ingen länk");
+
+        const link = await createUserLink(db, {
+            userId,
+            purpose: user.isActivated ? "reset" : "activate",
+            createdBy: req.user.id,
+        });
+        return { user: { id: user.id, name: user.name, username: user.username }, link };
+    });
+
+    res.status(201).json(result);
 });
 
 /* --- PATCH /api/groups/:id/members/:userId  { isAdmin } – make or unmake admin (admin) --- */
@@ -173,10 +244,12 @@ router.patch("/:id/members/:userId", async (req, res) => {
         await requireGroupAdmin(db, groupId, req.user.id);
 
         const { rows: [target] } = await db.query(
-            "SELECT is_admin FROM group_members WHERE group_id = $1 AND user_id = $2",
+            `SELECT gm.is_admin, u.is_child FROM group_members gm JOIN users u ON u.id = gm.user_id
+             WHERE gm.group_id = $1 AND gm.user_id = $2`,
             [groupId, userId]
         );
         if (!target) throw new HttpError(404, "Användaren är inte med i gruppen");
+        if (target.is_child) throw new HttpError(400, "Barn kan inte vara admins");
 
         if (target.is_admin && !isAdmin) {
             const { rows: [{ count }] } = await db.query(
@@ -207,10 +280,13 @@ router.delete("/:id/members/:userId", async (req, res) => {
         if (!leaving && !me.is_admin) throw new HttpError(403, "Bara gruppens admins kan ta bort medlemmar");
 
         const { rows: [target] } = await db.query(
-            "SELECT is_admin FROM group_members WHERE group_id = $1 AND user_id = $2",
+            `SELECT gm.is_admin, u.is_child FROM group_members gm JOIN users u ON u.id = gm.user_id
+             WHERE gm.group_id = $1 AND gm.user_id = $2`,
             [groupId, userId]
         );
         if (!target) throw new HttpError(404, "Användaren är inte med i gruppen");
+        // Only parents decide which groups a child is in
+        if (target.is_child) throw new HttpError(403, "Barn hanteras av sina föräldrar, under Mina barn");
 
         if (target.is_admin) {
             const { rows: [{ count }] } = await db.query(

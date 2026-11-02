@@ -67,6 +67,9 @@ export default function LoginPage() {
             <p className="auth-switch">
                 Inget konto? <Link to="/register">Skapa ett</Link>
             </p>
+            <p className="muted small auth-hint">
+                Glömt lösenordet? Be en admin i någon av dina grupper om en länk där du kan välja ett nytt.
+            </p>
         </AuthLayout>
     );
 }

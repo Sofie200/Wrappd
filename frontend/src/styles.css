@@ -350,6 +350,37 @@ select {
     cursor: pointer;
 }
 
+.check-disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.parent-list {
+    list-style: none;
+    margin: 0.5rem 0 0.75rem;
+    padding: 0;
+}
+
+.parent-list li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.35rem 0;
+    border-bottom: 1px solid var(--line);
+}
+
+.card-wide {
+    grid-column: 1 / -1;
+}
+
+.card-actions {
+    display: flex;
+    gap: 0.35rem;
+    flex-wrap: wrap;
+    margin-top: 0.75rem;
+}
+
 .form-actions {
     display: flex;
     gap: 0.5rem;
@@ -545,6 +576,54 @@ select {
     margin: 1.5rem 0 0;
     text-align: center;
     color: var(--muted);
+}
+
+.auth-hint {
+    text-align: center;
+    margin: 0.75rem 0 0;
+}
+
+.link-username {
+    font-weight: 600;
+    font-size: 1.1rem;
+    margin: 0 0 1.25rem;
+}
+
+/* ---------- User links ---------- */
+.link-box {
+    background: var(--green-soft);
+    border: 1px solid #b9d8c6;
+    border-radius: var(--radius);
+    padding: 1rem 1.25rem;
+    margin-bottom: 1rem;
+}
+
+.link-box p {
+    margin: 0.5rem 0;
+}
+
+.link-box-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+}
+
+.link-box-row {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.link-box-row input {
+    flex: 1;
+    min-width: 0;
+    font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+    font-size: 0.85rem;
+}
+
+.subhead {
+    margin-top: 1.75rem;
+    font-size: 1rem;
 }
 
 /* ---------- Group ---------- */

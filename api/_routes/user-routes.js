@@ -19,9 +19,10 @@ router.get("/search", async (req, res) => {
     const pattern = `%${q.replace(/[\\%_]/g, (c) => "\\" + c)}%`;
 
     const { rows } = await pool.query(
-        `SELECT id, name, username
+        `SELECT id, name, username, password_hash IS NOT NULL AS "isActivated"
          FROM users
-         WHERE (name ILIKE $1 OR username ILIKE $1)
+         WHERE NOT is_child -- children are managed by their parents, never added by search
+           AND (name ILIKE $1 OR username ILIKE $1)
            AND ($2::int IS NULL OR id NOT IN (SELECT user_id FROM group_members WHERE group_id = $2))
          ORDER BY name, username
          LIMIT 10`,

@@ -18,6 +18,7 @@ export default function Layout() {
                             Översikt
                         </NavLink>
                         <NavLink to="/groups">Grupper</NavLink>
+                        <NavLink to="/children">Mina barn</NavLink>
                         <NavLink to="/lists/new" className="nav-cta">
                             + Ny lista
                         </NavLink>

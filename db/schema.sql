@@ -1,13 +1,42 @@
 -- Wrappd – databasschema
 -- Kör hela filen i Neons SQL-editor (eller med psql) i en tom databas.
 
+-- password_hash is NULL for accounts a group admin created, until the person has chosen a password via the link.
+-- Children (is_child) can never log in: no username, no password. They can only be recipients of lists.
 CREATE TABLE users (
     id            SERIAL PRIMARY KEY,
     name          TEXT NOT NULL CHECK (length(trim(name)) > 0),
-    username      TEXT NOT NULL UNIQUE CHECK (username = lower(username)),
-    password_hash TEXT NOT NULL,
-    created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+    username      TEXT UNIQUE CHECK (username = lower(username)),
+    password_hash TEXT,
+    is_child      BOOLEAN NOT NULL DEFAULT false,
+    created_by    INT REFERENCES users(id) ON DELETE SET NULL,
+    created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+    CONSTRAINT users_adult_has_username CHECK (is_child OR username IS NOT NULL),
+    CONSTRAINT users_child_cannot_log_in CHECK (NOT is_child OR (username IS NULL AND password_hash IS NULL))
 );
+
+-- 1–2 parents per child (the maximum of two is checked in children-routes.js)
+CREATE TABLE child_parents (
+    child_id  INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    parent_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    PRIMARY KEY (child_id, parent_id),
+    CHECK (child_id <> parent_id)
+);
+CREATE INDEX child_parents_parent_idx ON child_parents (parent_id);
+
+-- One-time links: activate an account a group admin created, or reset a forgotten password.
+-- Only a hash of the link's token is stored, so a leaked database gives no working links.
+CREATE TABLE user_links (
+    id         SERIAL PRIMARY KEY,
+    user_id    INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    token_hash TEXT NOT NULL UNIQUE,
+    purpose    TEXT NOT NULL CHECK (purpose IN ('activate', 'reset')),
+    created_by INT REFERENCES users(id) ON DELETE SET NULL,
+    expires_at TIMESTAMPTZ NOT NULL,
+    used_at    TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX user_links_user_idx ON user_links (user_id);
 
 -- En grupp kan inte raderas, så inga ON DELETE-regler behövs för grupper
 CREATE TABLE groups (

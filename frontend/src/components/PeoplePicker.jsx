@@ -1,6 +1,17 @@
 // Checkboxes for picking people among the members of the list's groups.
-// lockedIds are always checked and can't be unchecked (e.g. the creator as admin).
-export default function PeoplePicker({ legend, hint, people, selected, onChange, lockedIds = [] }) {
+// lockedIds: always checked, can't be unchecked (e.g. the creator as admin).
+// disabledIds: can't be picked (e.g. someone else's child) – disabledHint says why.
+export default function PeoplePicker({
+    legend,
+    hint,
+    people,
+    selected,
+    onChange,
+    lockedIds = [],
+    disabledIds = [],
+    disabledHint,
+    emptyText = "Välj en grupp först.",
+}) {
     function toggle(id) {
         onChange(selected.includes(id) ? selected.filter((x) => x !== id) : [...selected, id]);
     }
@@ -10,21 +21,30 @@ export default function PeoplePicker({ legend, hint, people, selected, onChange,
             <legend>{legend}</legend>
             {hint && <p className="muted small">{hint}</p>}
             {people.length === 0 ? (
-                <p className="muted small">Välj en grupp först.</p>
+                <p className="muted small">{emptyText}</p>
             ) : (
                 <div className="checks">
                     {people.map((person) => {
                         const locked = lockedIds.includes(person.id);
+                        const disabled = disabledIds.includes(person.id);
                         return (
-                            <label key={person.id} className="check">
+                            <label key={person.id} className={`check${disabled ? " check-disabled" : ""}`} title={disabled ? disabledHint : undefined}>
                                 <input
                                     type="checkbox"
                                     checked={locked || selected.includes(person.id)}
                                     onChange={() => toggle(person.id)}
-                                    disabled={locked}
+                                    disabled={locked || disabled}
                                 />
                                 <span>
-                                    {person.name} <span className="muted">@{person.username}</span>
+                                    {person.name}{" "}
+                                    {person.isChild ? (
+                                        <span className="badge badge-gift">Barn</span>
+                                    ) : (
+                                        <span className="muted">@{person.username}</span>
+                                    )}
+                                    {person.isActivated === false && !person.isChild && (
+                                        <span className="badge badge-private">Ej aktiverad</span>
+                                    )}
                                 </span>
                             </label>
                         );

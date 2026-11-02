@@ -10,6 +10,7 @@ import groupRoutes from "./_routes/group-routes.js";
 import listRoutes from "./_routes/list-routes.js";
 import wishRoutes from "./_routes/wish-routes.js";
 import profileRoutes from "./_routes/profile-routes.js";
+import childrenRoutes from "./_routes/children-routes.js";
 
 const app = express();
 
@@ -27,6 +28,7 @@ app.use("/api/groups", requireAuth, groupRoutes);
 app.use("/api/lists", requireAuth, listRoutes);
 app.use("/api/wishes", requireAuth, wishRoutes);
 app.use("/api/profile", requireAuth, profileRoutes);
+app.use("/api/children", requireAuth, childrenRoutes);
 
 app.use((req, res) => {
     res.status(404).json({ error: "Adressen finns inte" });

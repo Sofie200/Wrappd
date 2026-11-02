@@ -56,8 +56,17 @@ export function requireReserver(access) {
  *  - every group exists
  *  - groups that are ADDED must be groups the editor is a member of
  *  - every recipient and admin is a member of at least one of the list's groups
+ *  - children are only recipients, never admins
+ *  - only a child's parents can pick it as a recipient
+ *  - a list to children is administered only by their parents
  */
-export async function checkListPeople(db, editorId, { groupIds, recipientIds, adminIds }, currentGroupIds = []) {
+export async function checkListPeople(
+    db,
+    editorId,
+    { groupIds, recipientIds, adminIds },
+    currentGroupIds = [],
+    currentRecipientIds = []
+) {
     const { rows: groups } = await db.query("SELECT id FROM groups WHERE id = ANY($1::int[])", [groupIds]);
     if (groups.length !== groupIds.length) throw new HttpError(400, "En av grupperna finns inte");
 
@@ -81,5 +90,30 @@ export async function checkListPeople(db, editorId, { groupIds, recipientIds, ad
     );
     if (outside.length > 0) {
         throw new HttpError(400, "Mottagare och admins måste vara med i någon av listans grupper");
+    }
+
+    // Children
+    const { rows: childAdmins } = await db.query("SELECT id FROM users WHERE id = ANY($1::int[]) AND is_child", [adminIds]);
+    if (childAdmins.length > 0) throw new HttpError(400, "Barn kan bara vara mottagare, inte admins");
+
+    const { rows: children } = await db.query(
+        `SELECT u.id, u.name, array_agg(cp.parent_id) AS "parentIds"
+         FROM users u JOIN child_parents cp ON cp.child_id = u.id
+         WHERE u.id = ANY($1::int[]) AND u.is_child
+         GROUP BY u.id, u.name`,
+        [recipientIds]
+    );
+    if (children.length === 0) return;
+
+    // A child that is ADDED as a recipient must be my child. One already on the list may stay.
+    for (const child of children) {
+        if (!currentRecipientIds.includes(child.id) && !child.parentIds.includes(editorId)) {
+            throw new HttpError(403, `Bara föräldrarna till ${child.name} kan göra listor till hen`);
+        }
+    }
+
+    const parents = new Set(children.flatMap((c) => c.parentIds));
+    if (adminIds.some((id) => !parents.has(id))) {
+        throw new HttpError(400, "Listor till barn kan bara administreras av barnets föräldrar");
     }
 }

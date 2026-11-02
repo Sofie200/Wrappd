@@ -6,6 +6,8 @@ import { useFetch } from "../hooks/useFetch.js";
 import { Empty, ErrorMessage, Loading } from "../components/Feedback.jsx";
 import ListCard from "../components/ListCard.jsx";
 import UserSearch from "../components/UserSearch.jsx";
+import CreateUserForm from "../components/CreateUserForm.jsx";
+import UserLinkBox from "../components/UserLinkBox.jsx";
 
 export default function GroupPage() {
     const { id } = useParams();
@@ -16,6 +18,7 @@ export default function GroupPage() {
     const [busy, setBusy] = useState(false);
     const [renaming, setRenaming] = useState(false);
     const [newName, setNewName] = useState("");
+    const [shownLink, setShownLink] = useState(null); // { user, link } – a link to copy and send
 
     if (!data && loading) return <Loading />;
     if (!data) return <ErrorMessage message={error} onRetry={reload} />;
@@ -46,6 +49,27 @@ export default function GroupPage() {
     function removeMember(member) {
         if (!window.confirm(`Ta bort ${member.name} ur gruppen?`)) return;
         run(() => api(`/groups/${id}/members/${member.id}`, { method: "DELETE" }));
+    }
+
+    // Not activated: a new activation link. Activated: a link to choose a new password.
+    async function makeLink(member) {
+        if (
+            member.isActivated &&
+            !window.confirm(
+                `Skapa en länk där ${member.name} kan välja ett nytt lösenord?\n\nDet nuvarande lösenordet fungerar tills länken används.`
+            )
+        ) {
+            return;
+        }
+        setBusy(true);
+        setActionError(null);
+        try {
+            setShownLink(await api(`/groups/${id}/members/${member.id}/link`, { method: "POST" }));
+        } catch (err) {
+            setActionError(err.message);
+        } finally {
+            setBusy(false);
+        }
     }
 
     async function leave() {
@@ -137,20 +161,45 @@ export default function GroupPage() {
 
             <section className="section">
                 <h2>Medlemmar ({members.length})</h2>
+                {shownLink && <UserLinkBox {...shownLink} onClose={() => setShownLink(null)} />}
                 <ul className="member-list">
                     {members.map((member) => {
                         const isMe = member.id === user.id;
                         const onlyAdmin = member.isAdmin && adminCount === 1;
+
+                        // Children are managed by their parents (Mina barn) – no admin actions here
+                        if (member.isChild) {
+                            return (
+                                <li key={member.id}>
+                                    <span>
+                                        {member.name} <span className="badge badge-gift">Barn</span>
+                                        {member.parents && <span className="muted small"> · Föräldrar: {member.parents}</span>}
+                                    </span>
+                                </li>
+                            );
+                        }
+
                         return (
                             <li key={member.id}>
                                 <span>
                                     {member.name} <span className="muted">@{member.username}</span>
                                     {isMe && <span className="muted"> (du)</span>}
                                     {member.isAdmin && <span className="badge">Admin</span>}
+                                    {!member.isActivated && <span className="badge badge-private">Ej aktiverad</span>}
                                 </span>
 
                                 {me.isAdmin && (
                                     <span className="member-actions">
+                                        {!isMe && (
+                                            <button
+                                                type="button"
+                                                className="btn btn-small btn-ghost"
+                                                onClick={() => makeLink(member)}
+                                                disabled={busy}
+                                            >
+                                                {member.isActivated ? "Återställ lösenord" : "Ny länk"}
+                                            </button>
+                                        )}
                                         {member.isAdmin ? (
                                             <button
                                                 type="button"
@@ -192,7 +241,21 @@ export default function GroupPage() {
             {me.isAdmin && (
                 <section className="section panel">
                     <h2>Lägg till medlem</h2>
+                    <p className="muted small">Har personen redan ett konto? Sök på namn eller användarnamn.</p>
                     <UserSearch excludeGroupId={group.id} onSelect={addMember} busy={busy} />
+
+                    <h3 className="subhead">Eller skapa en ny användare</h3>
+                    <CreateUserForm
+                        groupId={group.id}
+                        onCreated={(result) => {
+                            setShownLink(result);
+                            reload();
+                            // Scroll to the link, so it isn't missed
+                            setTimeout(() => {
+                                document.getElementById("user-link")?.scrollIntoView({ behavior: "smooth", block: "center" });
+                            }, 0);
+                        }}
+                    />
                 </section>
             )}
         </div>

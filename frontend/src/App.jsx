@@ -9,12 +9,16 @@ import GroupPage from "./pages/GroupPage.jsx";
 import ListFormPage from "./pages/ListFormPage.jsx";
 import ListPage from "./pages/ListPage.jsx";
 import NotFoundPage from "./pages/NotFoundPage.jsx";
+import LinkPage from "./pages/LinkPage.jsx";
+import ChildrenPage from "./pages/ChildrenPage.jsx";
 
 export default function App() {
     return (
         <Routes>
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
+            {/* Activation and reset links – open without being logged in */}
+            <Route path="/link/:token" element={<LinkPage />} />
 
             {/* Everything else requires login */}
             <Route
@@ -27,6 +31,7 @@ export default function App() {
                 <Route index element={<OverviewPage />} />
                 <Route path="groups" element={<GroupsPage />} />
                 <Route path="groups/:id" element={<GroupPage />} />
+                <Route path="children" element={<ChildrenPage />} />
                 {/* Different keys, so "new" and "edit" never share form state */}
                 <Route path="lists/new" element={<ListFormPage key="new" />} />
                 <Route path="lists/:id" element={<ListPage />} />

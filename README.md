@@ -10,6 +10,22 @@ En webbapp för att hålla koll på önskelistor och gåvor i familjen, bland v�
 - Registrering med namn, unikt användarnamn och lösenord. Inloggning med användarnamn och lösenord.
 - Inloggningen sparas i webbläsaren (localStorage) i ett år.
 
+**Användare skapade av en admin**
+- En gruppadmin kan skapa ett konto (namn och användarnamn) åt någon. Personen läggs till i gruppen direkt.
+- Admin får en länk att skicka till personen, som där väljer sitt lösenord och loggas in.
+- Innan lösenordet är valt visas personen som "Ej aktiverad", men kan ändå läggas till i grupper och väljas som mottagare eller admin på listor.
+- Länken fungerar en gång och gäller i 7 dagar. En gruppadmin kan ta fram en ny länk ("Ny länk"); då slutar den gamla att fungera.
+- **Glömt lösenord:** en gruppadmin kan ta fram en länk där en medlem väljer ett nytt lösenord ("Återställ lösenord"). Det gamla lösenordet fungerar tills länken används.
+- Bara en hash av länkens kod sparas i databasen.
+
+**Barn** (sidan *Mina barn*)
+- Alla kan lägga till ett barn till sig själv, med en medförälder (vilken användare som helst, via användarnamn – behöver inte vara aktiverad eller med i någon grupp). Ett barn har 1–2 föräldrar.
+- Barn har inget användarnamn eller lösenord och kan aldrig logga in. De kan bara vara mottagare av listor.
+- Ett barn är alltid med i minst en grupp. Föräldrarna lägger till barnet i grupper de själva är med i – gruppadmins kan inte lägga till eller ta bort barn.
+- Bara föräldrar kan göra listor till sina barn, och bara föräldrar kan vara admins för dem.
+- Bara föräldrar kan ändra barnet (namn, grupper, föräldrar). En förälder kan byta eller ta bort medföräldern, eller sig själv, så länge en förälder finns kvar.
+- När ett barn raderas raderas också listor där barnet är enda mottagare – även med reservationer. På listor med fler mottagare tas barnet bara bort som mottagare.
+
 **Grupper**
 - Den som skapar en grupp blir admin. En grupp kan ha flera admins.
 - Admins lägger till medlemmar genom att söka på namn eller användarnamn – ingen inbjudan behöver accepteras.
@@ -66,7 +82,10 @@ Kräver Node.js 20 eller senare.
 ### 1. Databasen (Neon)
 1. Skapa ett projekt på [neon.com](https://neon.com).
 2. Öppna **SQL Editor** och kör hela `db/schema.sql`.
-3. Kopiera anslutningssträngen under **Connect**.
+3. Vill du ha testdata: kör `db/seed.sql` direkt efteråt (7 användare med lösenordet `test1234` och ett barn).
+4. Kopiera anslutningssträngen under **Connect**.
+
+**Uppdatera en befintlig databas:** filerna i `db/migrations/` körs en gång var, i nummerordning, i en databas som skapades med ett äldre `schema.sql`.
 
 ### 2. Bildlagring (Vercel Blob)
 1. I Vercel: **Storage → Create → Blob**.
@@ -112,22 +131,30 @@ Namnet står på ett enda ställe: miljövariabeln `VITE_APP_NAME`. Ändra den i
 
 ## API
 
-Alla routes utom `/api/auth/register`, `/api/auth/login` och `/api/health` kräver `Authorization: Bearer <token>`.
+Alla routes utom `/api/auth/register`, `/api/auth/login`, `/api/auth/link/:token` och `/api/health` kräver `Authorization: Bearer <token>`.
 
 | Metod | Adress | Beskrivning |
 |---|---|---|
 | POST | `/api/auth/register` | Skapa konto → `{ token, user }` |
 | POST | `/api/auth/login` | Logga in → `{ token, user }` |
 | GET | `/api/auth/me` | Inloggad användare |
+| GET | `/api/auth/link/:token` | Vem en länk gäller → `{ purpose, name, username }` |
+| POST | `/api/auth/link/:token` | Välj lösenord via länk och logga in → `{ token, user }` |
 | GET | `/api/users/search?q=&excludeGroupId=` | Sök användare på namn eller användarnamn |
 | GET | `/api/groups` | Mina grupper |
 | POST | `/api/groups` | Skapa grupp |
 | GET | `/api/groups/members?ids=1,2` | Medlemmar i flera grupper (för att välja mottagare/admins) |
 | GET | `/api/groups/:id` | Grupp, medlemmar och listor |
+| POST | `/api/groups/:id/users` | Skapa användare i gruppen → `{ user, link }` (admin) |
+| POST | `/api/groups/:id/members/:userId/link` | Ny aktiverings- eller återställningslänk (admin) |
 | PATCH | `/api/groups/:id` | Byt namn (admin) |
 | POST | `/api/groups/:id/members` | Lägg till medlem (admin) |
 | PATCH | `/api/groups/:id/members/:userId` | Gör till / ta bort som admin (admin) |
 | DELETE | `/api/groups/:id/members/:userId` | Ta bort medlem (admin) eller lämna gruppen (själv) |
+| GET | `/api/children` | Mina barn, med vad som raderas om barnet raderas |
+| POST | `/api/children` | Lägg till barn `{ name, groupIds, coParentUsername? }` |
+| PUT | `/api/children/:id` | Ändra barn `{ name, groupIds, parentUsernames }` (förälder) |
+| DELETE | `/api/children/:id` | Radera barn och listor där det är enda mottagare (förälder) |
 | POST | `/api/lists` | Skapa lista |
 | GET | `/api/lists/:id` | Lista med önskningar (reservationer döljs för mottagare) |
 | PUT | `/api/lists/:id` | Ändra lista (admin) |
@@ -154,4 +181,5 @@ Alla routes utom `/api/auth/register`, `/api/auth/login` och `/api/health` kräv
 
 - **Mottagare som är admins** kan i vissa lägen ana att något är reserverat: en reserverad önskning kan inte raderas, och antalet kan inte sänkas under det som är reserverat. Felmeddelandet för mottagare är därför medvetet vagt.
 - **Tas någon bort ur en grupp** ligger hen kvar som mottagare eller admin på listor där hen redan var det.
-- **Glömt lösenord** finns inte i den här versionen.
+- **En gruppadmin kan återställa lösenordet** för alla medlemmar i sin grupp – och därmed i praktiken ta över deras konton. Ge bara admin till personer du litar på.
+- **Inloggningar på andra enheter** loggas inte ut när lösenordet återställs; de fortsätter gälla tills token går ut.

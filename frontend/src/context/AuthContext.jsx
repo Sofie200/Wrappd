@@ -50,8 +50,17 @@ export function AuthProvider({ children }) {
         setUser(data.user);
     }
 
+    // Choose a password via an activation or reset link – logs in directly afterwards
+    async function choosePassword(linkToken, password) {
+        const data = await api(`/auth/link/${linkToken}`, { method: "POST", body: { password } });
+        setToken(data.token);
+        setUser(data.user);
+    }
+
     return (
-        <AuthContext.Provider value={{ user, checking, error, login, register, logout, retry: checkToken }}>
+        <AuthContext.Provider
+            value={{ user, checking, error, login, register, choosePassword, logout, retry: checkToken }}
+        >
             {children}
         </AuthContext.Provider>
     );
