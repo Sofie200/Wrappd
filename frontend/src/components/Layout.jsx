@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, NavLink, Outlet } from "react-router-dom";
-import { Baby, Plus, Users } from "lucide-react";
+import { Baby, LogOut, Menu, Plus, Users } from "lucide-react";
 import { useAuth } from "../context/AuthContext.jsx";
 import { APP_NAME } from "../config.js";
 import Avatar from "./Avatar.jsx";
@@ -39,17 +39,18 @@ export default function Layout() {
                         >
                             <Avatar icon={user.avatarIcon} color={user.avatarColor} />
                         </button>
-                        <SettingsMenu label="Inställningar">
+                        <SettingsMenu label="Meny" icon={Menu}>
                             <NavLink to="/groups" className="menu-item" role="menuitem">
                                 <Users size={16} aria-hidden="true" /> Mina grupper
                             </NavLink>
                             <NavLink to="/children" className="menu-item" role="menuitem">
                                 <Baby size={16} aria-hidden="true" /> Mina barn
                             </NavLink>
+                            <hr className="menu-divider" />
+                            <button type="button" className="menu-item" role="menuitem" onClick={logout}>
+                                <LogOut size={16} aria-hidden="true" /> Logga ut
+                            </button>
                         </SettingsMenu>
-                        <button type="button" className="btn btn-small btn-ghost" onClick={logout}>
-                            Logga ut
-                        </button>
                     </div>
                 </div>
             </header>

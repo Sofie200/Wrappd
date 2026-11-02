@@ -27,16 +27,12 @@ function deleteWarning(child) {
 
 export default function ChildrenPage() {
     const children = useFetch("/children");
-    const groups = useFetch("/groups");
     const [mode, setMode] = useState(null); // "new" | child id being edited
     const [actionError, setActionError] = useState(null);
     const [busy, setBusy] = useState(false);
 
-    if ((!children.data || !groups.data) && (children.loading || groups.loading)) return <Loading />;
+    if (!children.data && children.loading) return <Loading />;
     if (!children.data) return <ErrorMessage message={children.error} onRetry={children.reload} />;
-    if (!groups.data) return <ErrorMessage message={groups.error} onRetry={groups.reload} />;
-
-    const myGroups = groups.data.data;
 
     function saved() {
         setMode(null);
@@ -78,13 +74,7 @@ export default function ChildrenPage() {
             {mode === "new" && (
                 <section className="panel">
                     <h2>Nytt barn</h2>
-                    {myGroups.length === 0 ? (
-                        <Empty>
-                            Ett barn måste vara med i en grupp. <Link to="/groups">Skapa eller gå med i en grupp</Link> först.
-                        </Empty>
-                    ) : (
-                        <ChildForm myGroups={myGroups} onSaved={saved} onCancel={() => setMode(null)} />
-                    )}
+                    <ChildForm onSaved={saved} onCancel={() => setMode(null)} />
                 </section>
             )}
 
@@ -96,7 +86,7 @@ export default function ChildrenPage() {
                         {children.data.data.map((child) =>
                             mode === child.id ? (
                                 <div key={child.id} className="card card-wide">
-                                    <ChildForm child={child} myGroups={myGroups} onSaved={saved} onCancel={() => setMode(null)} />
+                                    <ChildForm child={child} onSaved={saved} onCancel={() => setMode(null)} />
                                 </div>
                             ) : (
                                 <div key={child.id} className="card">
@@ -105,7 +95,9 @@ export default function ChildrenPage() {
                                         <span className="badge badge-gift">Barn</span>
                                     </div>
                                     <p className="muted small">Föräldrar: {child.parents.map((p) => p.name).join(", ")}</p>
-                                    <p className="muted small">Grupper: {child.groups.map((g) => g.name).join(", ")}</p>
+                                    <p className="muted small">
+                                        Grupper: {child.groups.length > 0 ? child.groups.map((g) => g.name).join(", ") : "inga än"}
+                                    </p>
                                     <p className="muted small">
                                         {child.listCount} {child.listCount === 1 ? "lista" : "listor"}
                                     </p>

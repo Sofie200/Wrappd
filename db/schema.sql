@@ -52,6 +52,9 @@ CREATE INDEX user_links_user_idx ON user_links (user_id);
 CREATE TABLE groups (
     id         SERIAL PRIMARY KEY,
     name       TEXT NOT NULL CHECK (length(trim(name)) > 0),
+    -- On: all members' children are members automatically. Off: no children.
+    -- A child is never in a group without one of its parents (kept in sync by api/_lib/childGroups.js)
+    include_children BOOLEAN NOT NULL DEFAULT false,
     created_by INT NOT NULL REFERENCES users(id),
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );

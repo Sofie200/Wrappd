@@ -4,6 +4,7 @@ import { pool, TODAY, withTransaction } from "../_db/pool.js";
 import { HttpError, parse, parseId } from "../_lib/http.js";
 import { name, username } from "../_lib/userSchema.js";
 import { createUserLink } from "../_lib/userLinks.js";
+import { syncChildGroups } from "../_lib/childGroups.js";
 
 const router = Router();
 
@@ -13,6 +14,11 @@ const GroupBody = z.object({
         .trim()
         .min(1, "Ange ett namn på gruppen")
         .max(80, "Namnet får vara högst 80 tecken"),
+});
+
+// "Inkludera barn": all members' children become members automatically (see _lib/childGroups.js)
+const CreateGroup = GroupBody.extend({
+    includeChildren: z.boolean().optional().default(false),
 });
 
 async function requireMember(db, groupId, userId) {
@@ -31,10 +37,10 @@ async function requireGroupAdmin(db, groupId, userId) {
     return member;
 }
 
-/* --- GET /api/groups → { data: [{ id, name, isAdmin, memberCount }] } – my groups --- */
+/* --- GET /api/groups → { data: [{ id, name, isAdmin, includeChildren, memberCount }] } – my groups --- */
 router.get("/", async (req, res) => {
     const { rows } = await pool.query(
-        `SELECT g.id, g.name, gm.is_admin AS "isAdmin",
+        `SELECT g.id, g.name, gm.is_admin AS "isAdmin", g.include_children AS "includeChildren",
                 (SELECT count(*)::int FROM group_members WHERE group_id = g.id) AS "memberCount"
          FROM groups g
          JOIN group_members gm ON gm.group_id = g.id AND gm.user_id = $1
@@ -44,19 +50,21 @@ router.get("/", async (req, res) => {
     res.json({ data: rows });
 });
 
-/* --- POST /api/groups  { name } → { id } – the creator becomes admin --- */
+/* --- POST /api/groups  { name, includeChildren? } → { id } – the creator becomes admin --- */
+// includeChildren: every member's children are members automatically – mine from the start
 router.post("/", async (req, res) => {
-    const { name } = parse(GroupBody, req.body);
+    const { name, includeChildren } = parse(CreateGroup, req.body);
 
     const id = await withTransaction(async (db) => {
         const { rows: [group] } = await db.query(
-            "INSERT INTO groups (name, created_by) VALUES ($1, $2) RETURNING id",
-            [name, req.user.id]
+            "INSERT INTO groups (name, include_children, created_by) VALUES ($1, $2, $3) RETURNING id",
+            [name, includeChildren, req.user.id]
         );
         await db.query(
             "INSERT INTO group_members (group_id, user_id, is_admin) VALUES ($1, $2, true)",
             [group.id, req.user.id]
         );
+        await syncChildGroups(db);
         return group.id;
     });
 
@@ -105,7 +113,10 @@ router.get("/:id", async (req, res) => {
     const groupId = parseId(req.params.id);
     const me = await requireMember(pool, groupId, req.user.id);
 
-    const { rows: [group] } = await pool.query("SELECT id, name FROM groups WHERE id = $1", [groupId]);
+    const { rows: [group] } = await pool.query(
+        `SELECT id, name, include_children AS "includeChildren" FROM groups WHERE id = $1`,
+        [groupId]
+    );
 
     const { rows: members } = await pool.query(
         `SELECT u.id, u.name, u.username, gm.is_admin AS "isAdmin",
@@ -153,19 +164,24 @@ router.patch("/:id", async (req, res) => {
 /* --- POST /api/groups/:id/members  { userId } – add a member directly, no invitation (admin) --- */
 const AddMember = z.object({ userId: z.coerce.number({ error: "Välj en användare" }).int().positive() });
 
+// If the group includes children, the new member's children come along automatically
 router.post("/:id/members", async (req, res) => {
     const groupId = parseId(req.params.id);
-    await requireGroupAdmin(pool, groupId, req.user.id);
     const { userId } = parse(AddMember, req.body);
 
-    const { rows: [user] } = await pool.query("SELECT id, is_child FROM users WHERE id = $1", [userId]);
-    if (!user) throw new HttpError(404, "Användaren finns inte");
-    if (user.is_child) throw new HttpError(403, "Barn läggs till i grupper av sina föräldrar, under Mina barn");
+    await withTransaction(async (db) => {
+        await requireGroupAdmin(db, groupId, req.user.id);
 
-    await pool.query(
-        "INSERT INTO group_members (group_id, user_id) VALUES ($1, $2) ON CONFLICT DO NOTHING",
-        [groupId, userId]
-    );
+        const { rows: [user] } = await db.query("SELECT id, is_child FROM users WHERE id = $1", [userId]);
+        if (!user) throw new HttpError(404, "Användaren finns inte");
+        if (user.is_child) throw new HttpError(403, "Barn kommer med automatiskt via sina föräldrar");
+
+        await db.query(
+            "INSERT INTO group_members (group_id, user_id) VALUES ($1, $2) ON CONFLICT DO NOTHING",
+            [groupId, userId]
+        );
+        await syncChildGroups(db);
+    });
     res.status(201).json({ added: userId });
 });
 
@@ -270,6 +286,7 @@ router.patch("/:id/members/:userId", async (req, res) => {
 });
 
 /* --- DELETE /api/groups/:id/members/:userId – remove a member (admin), or leave the group (yourself) --- */
+// The member's children leave with them, unless the other parent is still in the group.
 router.delete("/:id/members/:userId", async (req, res) => {
     const groupId = parseId(req.params.id);
     const userId = parseId(req.params.userId);
@@ -286,8 +303,8 @@ router.delete("/:id/members/:userId", async (req, res) => {
             [groupId, userId]
         );
         if (!target) throw new HttpError(404, "Användaren är inte med i gruppen");
-        // Only parents decide which groups a child is in
-        if (target.is_child) throw new HttpError(403, "Barn hanteras av sina föräldrar, under Mina barn");
+        // Children follow their parents – they can't be removed on their own
+        if (target.is_child) throw new HttpError(403, "Barn är med automatiskt via sina föräldrar och kan inte tas bort för sig");
 
         if (target.is_admin) {
             const { rows: [{ count }] } = await db.query(
@@ -305,6 +322,8 @@ router.delete("/:id/members/:userId", async (req, res) => {
         }
 
         await db.query("DELETE FROM group_members WHERE group_id = $1 AND user_id = $2", [groupId, userId]);
+        // Their children leave too – unless the other parent is still in the group
+        await syncChildGroups(db);
     });
 
     res.json({ removed: userId });

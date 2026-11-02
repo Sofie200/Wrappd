@@ -1,35 +1,30 @@
 // Children: users who can't log in, but can be recipients of lists.
 // Rules:
 //  - Anyone can create a child of their own, with an optional co-parent (any adult, by username).
-//  - A child has 1–2 parents and is always a member of at least one group.
-//  - Only parents manage the child: name, parents, and which of THEIR groups the child is in.
+//  - A child has 1–2 parents. Only parents manage the child: name and parents.
+//  - Groups are never chosen: a child is in every group with "Inkludera barn" that one of its
+//    parents is in, and in no other group (see _lib/childGroups.js).
 //  - Deleting a child deletes the lists where it is the only recipient – gifts included.
 import { Router } from "express";
 import { z } from "zod";
 import { pool, withTransaction } from "../_db/pool.js";
 import { HttpError, parse, parseId } from "../_lib/http.js";
 import { name } from "../_lib/userSchema.js";
+import { syncChildGroups } from "../_lib/childGroups.js";
 import { removeWishImages } from "../_integrations/storageAdapter.js";
 
 const router = Router();
 
 const unique = (list) => [...new Set(list)];
-const groupIds = z
-    .array(z.coerce.number().int().positive(), { error: "Ogiltiga grupper" })
-    .max(50)
-    .transform(unique);
 const usernameText = z.string().trim().toLowerCase().max(30, "Användarnamnet är för långt");
 
 const NewChild = z.object({
     name,
-    groupIds: groupIds.refine((ids) => ids.length > 0, "Välj minst en grupp"),
     coParentUsername: usernameText.optional().transform((v) => v || null),
 });
 
 const UpdateChild = z.object({
     name,
-    // Only the editing parent's own groups – the child's other groups are kept as they are
-    groupIds,
     parentUsernames: z
         .array(usernameText.min(1, "Ange ett användarnamn"), { error: "Ange barnets föräldrar" })
         .transform(unique)
@@ -48,17 +43,6 @@ async function requireParent(db, childId, userId) {
     );
     if (!child) throw new HttpError(404, "Barnet finns inte");
     return child;
-}
-
-async function myGroupIds(db, userId) {
-    const { rows } = await db.query("SELECT group_id FROM group_members WHERE user_id = $1", [userId]);
-    return rows.map((r) => r.group_id);
-}
-
-function requireOwnGroups(ids, mine) {
-    if (ids.some((id) => !mine.includes(id))) {
-        throw new HttpError(403, "Du kan bara lägga till barnet i grupper som du själv är med i");
-    }
 }
 
 // Usernames → ids of adults (children have no username, so they can never be parents)
@@ -103,13 +87,12 @@ router.get("/", async (req, res) => {
     res.json({ data: rows });
 });
 
-/* --- POST /api/children  { name, groupIds, coParentUsername? } → { id } – I become a parent --- */
+/* --- POST /api/children  { name, coParentUsername? } → { id } – I become a parent --- */
+// The child joins every group with "Inkludera barn" that one of its parents is in
 router.post("/", async (req, res) => {
     const body = parse(NewChild, req.body);
 
     const id = await withTransaction(async (db) => {
-        requireOwnGroups(body.groupIds, await myGroupIds(db, req.user.id));
-
         const parentIds = [req.user.id];
         if (body.coParentUsername) {
             if (body.coParentUsername === req.user.username) {
@@ -126,17 +109,15 @@ router.post("/", async (req, res) => {
             "INSERT INTO child_parents (child_id, parent_id) SELECT $1, unnest($2::int[])",
             [child.id, parentIds]
         );
-        await db.query(
-            "INSERT INTO group_members (group_id, user_id) SELECT unnest($2::int[]), $1",
-            [child.id, body.groupIds]
-        );
+        await syncChildGroups(db);
         return child.id;
     });
 
     res.status(201).json({ id });
 });
 
-/* --- PUT /api/children/:id  { name, groupIds, parentUsernames } – edit (parent) --- */
+/* --- PUT /api/children/:id  { name, parentUsernames } – edit (parent) --- */
+// New parents can change which groups the child is in – that follows automatically
 router.put("/:id", async (req, res) => {
     const childId = parseId(req.params.id);
     const body = parse(UpdateChild, req.body);
@@ -144,32 +125,13 @@ router.put("/:id", async (req, res) => {
     await withTransaction(async (db) => {
         await requireParent(db, childId, req.user.id);
 
-        // Groups: I decide over MY groups. Groups only the co-parent is in are kept.
-        const mine = await myGroupIds(db, req.user.id);
-        requireOwnGroups(body.groupIds, mine);
-        const { rows: current } = await db.query("SELECT group_id FROM group_members WHERE user_id = $1", [childId]);
-        const kept = current.map((r) => r.group_id).filter((id) => !mine.includes(id));
-        const finalGroups = unique([...kept, ...body.groupIds]);
-        if (finalGroups.length === 0) throw new HttpError(400, "Barnet måste vara med i minst en grupp");
-
-        // A recipient must be a member of one of the list's groups
-        const { rows: [stranded] } = await db.query(
-            `SELECT l.title FROM list_recipients lr JOIN lists l ON l.id = lr.list_id
-             WHERE lr.user_id = $1
-               AND NOT EXISTS (SELECT 1 FROM list_groups lg WHERE lg.list_id = l.id AND lg.group_id = ANY($2::int[]))`,
-            [childId, finalGroups]
-        );
-        if (stranded) {
-            throw new HttpError(400, `Barnet är mottagare på "${stranded.title}" och måste vara kvar i någon av listans grupper`);
-        }
-
         const parentIds = await adultIds(db, body.parentUsernames);
 
         await db.query("UPDATE users SET name = $1 WHERE id = $2", [body.name, childId]);
-        await db.query("DELETE FROM group_members WHERE user_id = $1", [childId]);
-        await db.query("INSERT INTO group_members (group_id, user_id) SELECT unnest($2::int[]), $1", [childId, finalGroups]);
         await db.query("DELETE FROM child_parents WHERE child_id = $1", [childId]);
         await db.query("INSERT INTO child_parents (child_id, parent_id) SELECT $1, unnest($2::int[])", [childId, parentIds]);
+        // The child's groups follow its (new) parents. Stops if it would leave a current list's groups.
+        await syncChildGroups(db);
 
         // Only parents may administer lists to children: someone who is no longer a parent
         // of any recipient on such a list stops being its admin.

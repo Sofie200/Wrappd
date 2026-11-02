@@ -3,12 +3,16 @@ import { Link, useNavigate } from "react-router-dom";
 import { api } from "../api.js";
 import { useFetch } from "../hooks/useFetch.js";
 import { Empty, ErrorMessage, Loading } from "../components/Feedback.jsx";
+import { joinNames } from "../format.js";
 import { Users } from "lucide-react";
 
 export default function GroupsPage() {
     const navigate = useNavigate();
     const { data, error, loading, reload } = useFetch("/groups");
+    const children = useFetch("/children");
+    const myChildren = children.data?.data ?? [];
     const [name, setName] = useState("");
+    const [includeChildren, setIncludeChildren] = useState(false);
     const [createError, setCreateError] = useState(null);
     const [busy, setBusy] = useState(false);
 
@@ -17,7 +21,7 @@ export default function GroupsPage() {
         setBusy(true);
         setCreateError(null);
         try {
-            const { id } = await api("/groups", { method: "POST", body: { name } });
+            const { id } = await api("/groups", { method: "POST", body: { name, includeChildren } });
             navigate(`/groups/${id}`);
         } catch (err) {
             setCreateError(err.message);
@@ -55,19 +59,35 @@ export default function GroupsPage() {
             <section className="section panel">
                 <h2>Skapa en grupp</h2>
                 <p className="muted">Du blir admin och kan lägga till andra.</p>
-                <form onSubmit={handleCreate} className="inline-form">
+                <form onSubmit={handleCreate} className="create-group-form">
                     <ErrorMessage message={createError} />
-                    <input
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        placeholder="T.ex. Familjen eller Jobbet"
-                        aria-label="Gruppens namn"
-                        maxLength={80}
-                        required
-                    />
-                    <button type="submit" className="btn btn-primary" disabled={busy}>
-                        {busy ? "Skapar…" : "Skapa"}
-                    </button>
+                    <div className="inline-form">
+                        <input
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            placeholder="T.ex. Familjen eller Jobbet"
+                            aria-label="Gruppens namn"
+                            maxLength={80}
+                            required
+                        />
+                        <button type="submit" className="btn btn-primary" disabled={busy}>
+                            {busy ? "Skapar…" : "Skapa"}
+                        </button>
+                    </div>
+                    <label className="check">
+                        <input
+                            type="checkbox"
+                            checked={includeChildren}
+                            onChange={(e) => setIncludeChildren(e.target.checked)}
+                            disabled={busy}
+                        />
+                        Inkludera barn
+                    </label>
+                    <small className="muted">
+                        Alla medlemmars barn kommer då med automatiskt
+                        {myChildren.length > 0 && <> – dina ({joinNames(myChildren.map((c) => c.name))}) direkt</>}. Utan det
+                        kan inga barn vara med i gruppen. Det går inte att ändra efteråt.
+                    </small>
                 </form>
             </section>
         </div>

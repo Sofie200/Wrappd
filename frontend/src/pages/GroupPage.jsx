@@ -9,6 +9,10 @@ import UserSearch from "../components/UserSearch.jsx";
 import CreateUserForm from "../components/CreateUserForm.jsx";
 import UserLinkBox from "../components/UserLinkBox.jsx";
 import Avatar from "../components/Avatar.jsx";
+import { Ellipsis, KeyRound, Link2, LogOut, Pencil, ShieldCheck, ShieldOff, UserMinus, UserPlus, Users } from "lucide-react";
+import Breadcrumbs from "../components/Breadcrumbs.jsx";
+import Modal from "../components/Modal.jsx";
+import SettingsMenu from "../components/SettingsMenu.jsx";
 
 export default function GroupPage() {
     const { id } = useParams();
@@ -20,6 +24,7 @@ export default function GroupPage() {
     const [renaming, setRenaming] = useState(false);
     const [newName, setNewName] = useState("");
     const [shownLink, setShownLink] = useState(null); // { user, link } – a link to copy and send
+    const [addingMember, setAddingMember] = useState(false); // the "add member" modal
 
     if (!data && loading) return <Loading />;
     if (!data) return <ErrorMessage message={error} onRetry={reload} />;
@@ -98,6 +103,7 @@ export default function GroupPage() {
 
     return (
         <div className="page">
+            <Breadcrumbs items={[{ label: "Mina grupper", to: "/groups" }, { label: group.name }]} />
             <div className="page-head">
                 {renaming ? (
                     <form onSubmit={rename} className="inline-form">
@@ -117,30 +123,35 @@ export default function GroupPage() {
                         </button>
                     </form>
                 ) : (
-                    <h1>{group.name}</h1>
+                    <h1 className="title-with-icon">
+                        <Users size={28} aria-hidden="true" /> {group.name}
+                        {me.isAdmin && (
+                            <button
+                                type="button"
+                                className="icon-btn title-edit"
+                                onClick={() => {
+                                    setNewName(group.name);
+                                    setRenaming(true);
+                                }}
+                                aria-label="Byt namn på gruppen"
+                                title="Byt namn"
+                            >
+                                <Pencil size={14} aria-hidden="true" />
+                            </button>
+                        )}
+                    </h1>
                 )}
 
                 <div className="actions">
-                    {me.isAdmin && !renaming && (
-                        <button
-                            type="button"
-                            className="btn btn-small btn-ghost"
-                            onClick={() => {
-                                setNewName(group.name);
-                                setRenaming(true);
-                            }}
-                        >
-                            Byt namn
-                        </button>
-                    )}
                     <button
                         type="button"
-                        className="btn btn-small btn-ghost"
+                        className="icon-btn icon-btn-danger icon-btn-danger-always"
                         onClick={leave}
                         disabled={busy || lastAdmin}
-                        title={lastAdmin ? "Gör någon annan till admin innan du lämnar" : undefined}
+                        aria-label="Lämna gruppen"
+                        title={lastAdmin ? "Gör någon annan till admin innan du lämnar" : "Lämna gruppen"}
                     >
-                        Lämna gruppen
+                        <LogOut size={18} aria-hidden="true" />
                     </button>
                 </div>
             </div>
@@ -161,7 +172,21 @@ export default function GroupPage() {
             </section>
 
             <section className="section">
-                <h2>Medlemmar ({members.length})</h2>
+                <div className="section-head">
+                    <h2>
+                    Medlemmar ({members.length})
+                    {group.includeChildren ? (
+                        <span className="badge badge-gift">Inkl. barn</span>
+                    ) : (
+                        <span className="badge">Utan barn</span>
+                    )}
+                </h2>
+                    {me.isAdmin && (
+                        <button type="button" className="btn btn-small" onClick={() => setAddingMember(true)} disabled={busy}>
+                            <UserPlus size={16} aria-hidden="true" /> Lägg till ny medlem
+                        </button>
+                    )}
+                </div>
                 {shownLink && <UserLinkBox {...shownLink} onClose={() => setShownLink(null)} />}
                 <ul className="member-list">
                     {members.map((member) => {
@@ -192,48 +217,60 @@ export default function GroupPage() {
                                 </span>
 
                                 {me.isAdmin && (
-                                    <span className="member-actions">
+                                    <SettingsMenu label={`Alternativ för ${member.name}`} icon={Ellipsis}>
                                         {!isMe && (
                                             <button
                                                 type="button"
-                                                className="btn btn-small btn-ghost"
+                                                className="menu-item"
+                                                role="menuitem"
                                                 onClick={() => makeLink(member)}
                                                 disabled={busy}
                                             >
-                                                {member.isActivated ? "Återställ lösenord" : "Ny länk"}
+                                                {member.isActivated ? (
+                                                    <>
+                                                        <KeyRound size={16} aria-hidden="true" /> Återställ lösenord
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <Link2 size={16} aria-hidden="true" /> Ny länk
+                                                    </>
+                                                )}
                                             </button>
                                         )}
                                         {member.isAdmin ? (
                                             <button
                                                 type="button"
-                                                className="btn btn-small btn-ghost"
+                                                className="menu-item"
+                                                role="menuitem"
                                                 onClick={() => setAdmin(member, false)}
                                                 disabled={busy || onlyAdmin}
                                                 title={onlyAdmin ? "Gruppen måste ha minst en admin" : undefined}
                                             >
-                                                Ta bort som admin
+                                                <ShieldOff size={16} aria-hidden="true" /> Ta bort som admin
                                             </button>
                                         ) : (
                                             <button
                                                 type="button"
-                                                className="btn btn-small btn-ghost"
+                                                className="menu-item"
+                                                role="menuitem"
                                                 onClick={() => setAdmin(member, true)}
                                                 disabled={busy}
                                             >
-                                                Gör till admin
+                                                <ShieldCheck size={16} aria-hidden="true" /> Gör till admin
                                             </button>
                                         )}
                                         {!isMe && (
                                             <button
                                                 type="button"
-                                                className="btn btn-small btn-danger-ghost"
+                                                className="menu-item menu-item-danger"
+                                                role="menuitem"
                                                 onClick={() => removeMember(member)}
                                                 disabled={busy || onlyAdmin}
                                             >
-                                                Ta bort
+                                                <UserMinus size={16} aria-hidden="true" /> Ta bort ur gruppen
                                             </button>
                                         )}
-                                    </span>
+                                    </SettingsMenu>
                                 )}
                             </li>
                         );
@@ -241,16 +278,23 @@ export default function GroupPage() {
                 </ul>
             </section>
 
-            {me.isAdmin && (
-                <section className="section panel">
-                    <h2>Lägg till medlem</h2>
+            {addingMember && (
+                <Modal title="Lägg till medlem" onClose={() => setAddingMember(false)}>
                     <p className="muted small">Har personen redan ett konto? Sök på namn eller användarnamn.</p>
-                    <UserSearch excludeGroupId={group.id} onSelect={addMember} busy={busy} />
+                    <UserSearch
+                        excludeGroupId={group.id}
+                        onSelect={(member) => {
+                            setAddingMember(false);
+                            addMember(member);
+                        }}
+                        busy={busy}
+                    />
 
                     <h3 className="subhead">Eller skapa en ny användare</h3>
                     <CreateUserForm
                         groupId={group.id}
                         onCreated={(result) => {
+                            setAddingMember(false);
                             setShownLink(result);
                             reload();
                             // Scroll to the link, so it isn't missed
@@ -259,7 +303,7 @@ export default function GroupPage() {
                             }, 0);
                         }}
                     />
-                </section>
+                </Modal>
             )}
         </div>
     );
