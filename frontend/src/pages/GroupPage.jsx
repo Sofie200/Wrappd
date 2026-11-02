@@ -12,6 +12,7 @@ import Avatar from "../components/Avatar.jsx";
 import { Ellipsis, KeyRound, Link2, LogOut, Pencil, ShieldCheck, ShieldOff, UserMinus, UserPlus, Users } from "lucide-react";
 import Breadcrumbs from "../components/Breadcrumbs.jsx";
 import Modal from "../components/Modal.jsx";
+import GroupSettingsModal from "../components/GroupSettingsModal.jsx";
 import SettingsMenu from "../components/SettingsMenu.jsx";
 
 export default function GroupPage() {
@@ -21,8 +22,7 @@ export default function GroupPage() {
     const { data, error, loading, reload } = useFetch(`/groups/${id}`);
     const [actionError, setActionError] = useState(null);
     const [busy, setBusy] = useState(false);
-    const [renaming, setRenaming] = useState(false);
-    const [newName, setNewName] = useState("");
+    const [editingSettings, setEditingSettings] = useState(false); // the group settings modal
     const [shownLink, setShownLink] = useState(null); // { user, link } – a link to copy and send
     const [addingMember, setAddingMember] = useState(false); // the "add member" modal
 
@@ -91,58 +91,30 @@ export default function GroupPage() {
         }
     }
 
-    function rename(e) {
-        e.preventDefault();
-        run(async () => {
-            await api(`/groups/${id}`, { method: "PATCH", body: { name: newName } });
-            setRenaming(false);
-        });
-    }
-
     const lastAdmin = me.isAdmin && adminCount === 1;
 
     return (
         <div className="page">
             <Breadcrumbs items={[{ label: "Mina grupper", to: "/groups" }, { label: group.name }]} />
             <div className="page-head">
-                {renaming ? (
-                    <form onSubmit={rename} className="inline-form">
-                        <input
-                            value={newName}
-                            onChange={(e) => setNewName(e.target.value)}
-                            aria-label="Gruppens namn"
-                            maxLength={80}
-                            required
-                            autoFocus
-                        />
-                        <button type="submit" className="btn btn-primary" disabled={busy}>
-                            Spara
-                        </button>
-                        <button type="button" className="btn btn-ghost" onClick={() => setRenaming(false)}>
-                            Avbryt
-                        </button>
-                    </form>
-                ) : (
-                    <h1 className="title-with-icon">
-                        <Users size={28} aria-hidden="true" /> {group.name}
-                        {me.isAdmin && (
-                            <button
-                                type="button"
-                                className="icon-btn title-edit"
-                                onClick={() => {
-                                    setNewName(group.name);
-                                    setRenaming(true);
-                                }}
-                                aria-label="Byt namn på gruppen"
-                                title="Byt namn"
-                            >
-                                <Pencil size={14} aria-hidden="true" />
-                            </button>
-                        )}
-                    </h1>
-                )}
+                <h1 className="title-with-icon">
+                    <Users size={28} aria-hidden="true" /> {group.name}
+                </h1>
 
                 <div className="actions">
+                    {me.isAdmin && (
+                        <button
+                            type="button"
+                            className="icon-btn"
+                            onClick={() => setEditingSettings(true)}
+                            disabled={busy}
+                            aria-label="Gruppens inställningar"
+                            title="Redigera gruppen"
+                            aria-haspopup="dialog"
+                        >
+                            <Pencil size={18} aria-hidden="true" />
+                        </button>
+                    )}
                     <button
                         type="button"
                         className="icon-btn icon-btn-danger icon-btn-danger-always"
@@ -198,7 +170,7 @@ export default function GroupPage() {
                             return (
                                 <li key={member.id}>
                                     <span className="member-name">
-                                        <Avatar icon={member.avatarIcon} color={member.avatarColor} size={32} />
+                                        <Avatar isChild id={member.id} size={32} />
                                         {member.name} <span className="badge badge-gift">Barn</span>
                                         {member.parents && <span className="muted small"> · Föräldrar: {member.parents}</span>}
                                     </span>
@@ -277,6 +249,17 @@ export default function GroupPage() {
                     })}
                 </ul>
             </section>
+
+            {editingSettings && (
+                <GroupSettingsModal
+                    group={group}
+                    onSaved={() => {
+                        setEditingSettings(false);
+                        reload();
+                    }}
+                    onClose={() => setEditingSettings(false)}
+                />
+            )}
 
             {addingMember && (
                 <Modal title="Lägg till medlem" onClose={() => setAddingMember(false)}>

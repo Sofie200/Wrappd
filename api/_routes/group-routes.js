@@ -151,13 +151,23 @@ router.get("/:id", async (req, res) => {
     res.json({ group, me: { isAdmin: me.is_admin }, members, lists });
 });
 
-/* --- PATCH /api/groups/:id  { name } – rename (admin) --- */
+/* --- PATCH /api/groups/:id  { name, includeChildren? } – group settings (admin) --- */
+// includeChildren on: all members' children join. Off: all children leave – stopped if a child
+// would then leave all groups of a current list it is a recipient on.
+const UpdateGroup = GroupBody.extend({ includeChildren: z.boolean().optional() });
+
 router.patch("/:id", async (req, res) => {
     const groupId = parseId(req.params.id);
-    await requireGroupAdmin(pool, groupId, req.user.id);
-    const { name } = parse(GroupBody, req.body);
+    const { name, includeChildren } = parse(UpdateGroup, req.body);
 
-    await pool.query("UPDATE groups SET name = $1 WHERE id = $2", [name, groupId]);
+    await withTransaction(async (db) => {
+        await requireGroupAdmin(db, groupId, req.user.id);
+        await db.query(
+            "UPDATE groups SET name = $1, include_children = COALESCE($2, include_children) WHERE id = $3",
+            [name, includeChildren ?? null, groupId]
+        );
+        if (includeChildren !== undefined) await syncChildGroups(db);
+    });
     res.json({ id: groupId, name });
 });
 

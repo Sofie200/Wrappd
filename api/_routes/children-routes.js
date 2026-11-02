@@ -7,7 +7,7 @@
 //  - Deleting a child deletes the lists where it is the only recipient – gifts included.
 import { Router } from "express";
 import { z } from "zod";
-import { pool, withTransaction } from "../_db/pool.js";
+import { pool, TODAY, withTransaction } from "../_db/pool.js";
 import { HttpError, parse, parseId } from "../_lib/http.js";
 import { name } from "../_lib/userSchema.js";
 import { syncChildGroups } from "../_lib/childGroups.js";
@@ -56,7 +56,7 @@ async function adultIds(db, usernames) {
     return usernames.map((u) => rows.find((r) => r.username === u).id);
 }
 
-/* --- GET /api/children → { data: [...] } – my children --- */
+/* --- GET /api/children → { data: [...] } – my children (groups = the child's, parentGroups = the parents', lists) --- */
 // Also counts what would be deleted with each child, for the warning before deleting.
 router.get("/", async (req, res) => {
     const { rows } = await pool.query(
@@ -64,11 +64,25 @@ router.get("/", async (req, res) => {
                 COALESCE((SELECT json_agg(json_build_object('id', g.id, 'name', g.name) ORDER BY g.name)
                           FROM group_members gm JOIN groups g ON g.id = gm.group_id
                           WHERE gm.user_id = u.id), '[]') AS groups,
+                -- Every group one of the parents is in. The child is in exactly those with includeChildren.
+                COALESCE((SELECT json_agg(json_build_object('id', g.id, 'name', g.name,
+                                                            'includeChildren', g.include_children)
+                                          ORDER BY g.include_children DESC, g.name)
+                          FROM groups g
+                          WHERE EXISTS (SELECT 1 FROM group_members pm
+                                        JOIN child_parents pc ON pc.parent_id = pm.user_id
+                                        WHERE pm.group_id = g.id AND pc.child_id = u.id)), '[]') AS "parentGroups",
                 (SELECT json_agg(json_build_object('id', p.id, 'name', p.name, 'username', p.username,
                                                    'isActivated', p.password_hash IS NOT NULL) ORDER BY p.name)
                  FROM child_parents cp2 JOIN users p ON p.id = cp2.parent_id
                  WHERE cp2.child_id = u.id) AS parents,
                 (SELECT count(*)::int FROM list_recipients WHERE user_id = u.id) AS "listCount",
+                -- The lists the child is a recipient on
+                COALESCE((SELECT json_agg(json_build_object('id', l.id, 'title', l.title, 'endDate', l.end_date,
+                                                            'isPublic', l.is_public, 'archived', l.end_date < ${TODAY})
+                                          ORDER BY l.end_date)
+                          FROM list_recipients lr2 JOIN lists l ON l.id = lr2.list_id
+                          WHERE lr2.user_id = u.id), '[]') AS lists,
                 (SELECT count(*)::int FROM list_recipients lr
                  WHERE lr.user_id = u.id
                    AND NOT EXISTS (SELECT 1 FROM list_recipients o WHERE o.list_id = lr.list_id AND o.user_id <> u.id))

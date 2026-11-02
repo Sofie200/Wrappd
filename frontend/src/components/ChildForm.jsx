@@ -76,18 +76,13 @@ export default function ChildForm({ child, onSaved, onCancel }) {
                 <small>Barn har inget användarnamn och kan inte logga in – de kan bara få listor.</small>
             </label>
 
-            <fieldset className="fieldset">
-                <legend>Grupper</legend>
-                {child && child.groups.length > 0 ? (
-                    <p className="small">{child.groups.map((g) => g.name).join(", ")}</p>
-                ) : child ? (
-                    <p className="small muted">Inte med i någon grupp än.</p>
-                ) : null}
+            {/* Groups aren't chosen – they're shown under Info on the child */}
+            {!child && (
                 <p className="muted small">
                     Barnet kommer med automatiskt i alla grupper med <strong>Inkludera barn</strong> som någon av
                     föräldrarna är med i.
                 </p>
-            </fieldset>
+            )}
 
             <fieldset className="fieldset">
                 <legend>Föräldrar</legend>

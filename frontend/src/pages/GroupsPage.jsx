@@ -86,7 +86,7 @@ export default function GroupsPage() {
                     <small className="muted">
                         Alla medlemmars barn kommer då med automatiskt
                         {myChildren.length > 0 && <> – dina ({joinNames(myChildren.map((c) => c.name))}) direkt</>}. Utan det
-                        kan inga barn vara med i gruppen. Det går inte att ändra efteråt.
+                        kan inga barn vara med i gruppen. Kan ändras senare.
                     </small>
                 </form>
             </section>

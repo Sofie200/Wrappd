@@ -4,7 +4,12 @@ import { api } from "../api.js";
 import { useFetch } from "../hooks/useFetch.js";
 import { Empty, ErrorMessage, Loading } from "../components/Feedback.jsx";
 import ChildForm from "../components/ChildForm.jsx";
-import { Baby, Plus } from "lucide-react";
+import ChildGroupsModal from "../components/ChildGroupsModal.jsx";
+import ChildListsModal from "../components/ChildListsModal.jsx";
+import Avatar from "../components/Avatar.jsx";
+import Modal from "../components/Modal.jsx";
+import SettingsMenu from "../components/SettingsMenu.jsx";
+import { Baby, Ellipsis, Gift, Pencil, Plus, Trash2, Users } from "lucide-react";
 
 // What disappears when a child is deleted – shown in the confirmation
 function deleteWarning(child) {
@@ -27,7 +32,9 @@ function deleteWarning(child) {
 
 export default function ChildrenPage() {
     const children = useFetch("/children");
-    const [mode, setMode] = useState(null); // "new" | child id being edited
+    const [mode, setMode] = useState(null); // "new" – the form for a new child is open
+    const [editing, setEditing] = useState(null); // the child being edited (modal)
+    const [showing, setShowing] = useState(null); // { child, what: "lists" | "groups" } (modal)
     const [actionError, setActionError] = useState(null);
     const [busy, setBusy] = useState(false);
 
@@ -36,6 +43,7 @@ export default function ChildrenPage() {
 
     function saved() {
         setMode(null);
+        setEditing(null);
         children.reload();
     }
 
@@ -83,41 +91,67 @@ export default function ChildrenPage() {
                     <Empty>Du har inte lagt till några barn än.</Empty>
                 ) : (
                     <div className="cards">
-                        {children.data.data.map((child) =>
-                            mode === child.id ? (
-                                <div key={child.id} className="card card-wide">
-                                    <ChildForm child={child} onSaved={saved} onCancel={() => setMode(null)} />
-                                </div>
-                            ) : (
-                                <div key={child.id} className="card">
-                                    <div className="card-top">
-                                        <h3>{child.name}</h3>
-                                        <span className="badge badge-gift">Barn</span>
-                                    </div>
-                                    <p className="muted small">Föräldrar: {child.parents.map((p) => p.name).join(", ")}</p>
-                                    <p className="muted small">
-                                        Grupper: {child.groups.length > 0 ? child.groups.map((g) => g.name).join(", ") : "inga än"}
-                                    </p>
-                                    <p className="muted small">
-                                        {child.listCount} {child.listCount === 1 ? "lista" : "listor"}
-                                    </p>
-                                    <div className="card-actions">
+                        {children.data.data.map((child) => (
+                            <div key={child.id} className="card">
+                                <div className="card-top">
+                                    <h3 className="child-title">
+                                        <Avatar isChild id={child.id} size={32} />
+                                        {child.name}
+                                    </h3>
+                                    <div className="actions">
                                         <Link to={`/lists/new?for=${child.id}`} className="btn btn-small">
                                             <Plus size={16} aria-hidden="true" /> Ny lista
                                         </Link>
-                                        <button type="button" className="btn btn-small btn-ghost" onClick={() => setMode(child.id)} disabled={busy}>
-                                            Redigera
-                                        </button>
-                                        <button type="button" className="btn btn-small btn-danger-ghost" onClick={() => remove(child)} disabled={busy}>
-                                            Radera
-                                        </button>
+                                        <SettingsMenu label={`Alternativ för ${child.name}`} icon={Ellipsis}>
+                                            <button
+                                                type="button"
+                                                className="menu-item"
+                                                role="menuitem"
+                                                onClick={() => setShowing({ child, what: "lists" })}
+                                            >
+                                                <Gift size={16} aria-hidden="true" /> Listor
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className="menu-item"
+                                                role="menuitem"
+                                                onClick={() => setShowing({ child, what: "groups" })}
+                                            >
+                                                <Users size={16} aria-hidden="true" /> Grupper
+                                            </button>
+                                            <button type="button" className="menu-item" role="menuitem" onClick={() => setEditing(child)} disabled={busy}>
+                                                <Pencil size={16} aria-hidden="true" /> Redigera
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className="menu-item menu-item-danger"
+                                                role="menuitem"
+                                                onClick={() => remove(child)}
+                                                disabled={busy}
+                                            >
+                                                <Trash2 size={16} aria-hidden="true" /> Ta bort
+                                            </button>
+                                        </SettingsMenu>
                                     </div>
                                 </div>
-                            )
-                        )}
+                                <p className="muted small">Föräldrar: {child.parents.map((p) => p.name).join(", ")}</p>
+                                <p className="muted small">
+                                    {child.listCount} {child.listCount === 1 ? "lista" : "listor"}
+                                </p>
+                            </div>
+                        ))}
                     </div>
                 )}
             </section>
+
+            {showing?.what === "lists" && <ChildListsModal child={showing.child} onClose={() => setShowing(null)} />}
+            {showing?.what === "groups" && <ChildGroupsModal child={showing.child} onClose={() => setShowing(null)} />}
+
+            {editing && (
+                <Modal title={`Redigera ${editing.name}`} onClose={() => setEditing(null)}>
+                    <ChildForm child={editing} onSaved={saved} onCancel={() => setEditing(null)} />
+                </Modal>
+            )}
         </div>
     );
 }

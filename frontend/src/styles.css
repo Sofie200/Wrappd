@@ -1542,3 +1542,62 @@ select {
     flex-direction: column;
     gap: 0.75rem;
 }
+
+/* ---------- Mina barn ---------- */
+.child-title {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.child-groups {
+    list-style: none;
+    margin: 0 0 0.75rem;
+    padding: 0;
+}
+
+.child-groups li {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--line);
+}
+
+.child-groups li:last-child {
+    border-bottom: 0;
+}
+
+.child-groups li svg {
+    flex: none;
+    color: var(--accent);
+}
+
+/* A parent's group that doesn't include children */
+.child-group-off {
+    color: var(--muted);
+    opacity: 0.6;
+}
+
+.child-group-off svg {
+    color: var(--muted) !important;
+}
+
+/* A list in "Listor till …": title and date stacked */
+.child-list-main {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+}
+
+.child-list-archived {
+    opacity: 0.7;
+}
+
+/* "Ny lista" + ⋯ at the top of a child's card – keep them together on one row */
+.card-top .actions {
+    flex: none;
+    flex-wrap: nowrap;
+    gap: 0.25rem;
+}
