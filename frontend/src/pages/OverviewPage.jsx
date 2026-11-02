@@ -5,38 +5,43 @@ import { Empty, ErrorMessage, Loading } from "../components/Feedback.jsx";
 import ListCard from "../components/ListCard.jsx";
 import { formatPrice, formatShortDate } from "../format.js";
 
-// Reserved wishes as a table, with the item's price × number of copies
-function ReservationTable({ rows }) {
-    const total = rows.reduce((sum, r) => sum + (r.price ?? 0) * r.quantity, 0);
+// My gifts as a table: the gift's total price, and my share of it. The sum is what I pay.
+function GiftTable({ rows }) {
+    const myTotal = rows.reduce((sum, g) => sum + Math.round((g.myShare ?? 0) * 100), 0) / 100;
 
     return (
         <div className="table-wrap">
             <table className="table">
                 <thead>
                     <tr>
-                        <th>Önskning</th>
+                        <th>Gåva</th>
                         <th>Lista</th>
                         <th className="num">Antal</th>
                         <th className="num">Pris</th>
+                        <th className="num">Min del</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {rows.map((r) => (
-                        <tr key={r.wishId}>
-                            <td>{r.title}</td>
+                    {rows.map((g) => (
+                        <tr key={g.id}>
                             <td>
-                                <Link to={`/lists/${r.listId}`}>{r.listTitle}</Link>
-                                <span className="muted"> · {formatShortDate(r.endDate)}</span>
+                                <Link to={`/gifts/${g.id}`}>{g.title}</Link>
+                                {g.sharedWith && <div className="muted small">Delas med {g.sharedWith}</div>}
                             </td>
-                            <td className="num">{r.quantity}</td>
-                            <td className="num">{r.price === null ? "–" : formatPrice(r.price * r.quantity)}</td>
+                            <td>
+                                <Link to={`/lists/${g.listId}`}>{g.listTitle}</Link>
+                                <span className="muted"> · {formatShortDate(g.endDate)}</span>
+                            </td>
+                            <td className="num">{g.quantity}</td>
+                            <td className="num">{g.price === null ? "–" : formatPrice(g.price)}</td>
+                            <td className="num share">{g.myShare === null ? "–" : formatPrice(g.myShare)}</td>
                         </tr>
                     ))}
                 </tbody>
                 <tfoot>
                     <tr>
-                        <td colSpan={3}>Totalt</td>
-                        <td className="num">{formatPrice(total)}</td>
+                        <td colSpan={4}>Totalt för mig</td>
+                        <td className="num share">{formatPrice(myTotal)}</td>
                     </tr>
                 </tfoot>
             </table>
@@ -51,17 +56,19 @@ export default function OverviewPage() {
     if (!data && loading) return <Loading />;
     if (!data) return <ErrorMessage message={error} onRetry={reload} />;
 
-    const { upcoming, reservations, adminLists } = data;
+    const { upcoming, gifts, adminLists } = data;
+    const activeAdminLists = adminLists.filter((list) => !list.archived);
+    const archivedCount = adminLists.length - activeAdminLists.length;
 
     return (
         <div className="page">
             <h1>Hej {user.name}!</h1>
 
             <section className="section">
-                <h2>Kommande event</h2>
+                <h2>Kommande händelser</h2>
                 {upcoming.length === 0 ? (
                     <Empty>
-                        Inga kommande event i dina grupper än. <Link to="/groups">Gå med i eller skapa en grupp</Link>.
+                        Inget planerat än, men allt kan firas 🎉 <Link to="/lists/new">Klicka här</Link> för att skapa en ny önskelista!
                     </Empty>
                 ) : (
                     <div className="cards">
@@ -77,33 +84,39 @@ export default function OverviewPage() {
             </section>
 
             <section className="section">
-                <h2>Mina reservationer</h2>
-                {reservations.current.length === 0 ? (
-                    <Empty>Du har inga aktuella reservationer.</Empty>
+                <h2>Mina inköp</h2>
+                {gifts.current.length === 0 ? (
+                    <Empty>Du har inga aktuella gåvor.</Empty>
                 ) : (
-                    <ReservationTable rows={reservations.current} />
+                    <GiftTable rows={gifts.current} />
                 )}
 
-                {reservations.history.length > 0 && (
+                {gifts.history.length > 0 && (
                     <details className="history">
-                        <summary>Historik ({reservations.history.length})</summary>
-                        <ReservationTable rows={reservations.history} />
+                        <summary>Historik ({gifts.history.length})</summary>
+                        <GiftTable rows={gifts.history} />
                     </details>
                 )}
             </section>
 
             <section className="section">
                 <div className="section-head">
-                    <h2>Listor jag administrerar</h2>
-                    <Link to="/lists/new" className="btn btn-small">
-                        + Ny lista
-                    </Link>
+                    <h2>Mina önskelistor</h2>
+                    <div className="actions">
+                        <Link to="/lists/new" className="btn btn-small">
+                            + Ny lista
+                        </Link>
+                        <Link to="/archive" className="btn btn-small btn-ghost">
+                            Arkiv{archivedCount > 0 && ` (${archivedCount})`}
+                        </Link>
+                    </div>
                 </div>
-                {adminLists.length === 0 ? (
-                    <Empty>Du administrerar inga listor än.</Empty>
+                {/* Lists whose date has passed are in the archive */}
+                {activeAdminLists.length === 0 ? (
+                    <Empty>Du har inga aktuella önskelistor.</Empty>
                 ) : (
                     <div className="cards">
-                        {adminLists.map((list) => (
+                        {activeAdminLists.map((list) => (
                             <ListCard
                                 key={list.id}
                                 list={{ ...list, isAdmin: true }}

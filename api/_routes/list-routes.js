@@ -100,22 +100,29 @@ router.get("/:id", async (req, res) => {
 
     let result = wishes.rows;
     if (access.seesReservations) {
-        const { rows: reservations } = await pool.query(
-            `SELECT r.wish_id, r.quantity, u.id AS user_id, u.name
-             FROM reservations r
-             JOIN wishes w ON w.id = r.wish_id
-             JOIN users u ON u.id = r.user_id
+        // Per gift: quantity and who shares it. Not the price, the split, or who created it.
+        const { rows: gifts } = await pool.query(
+            `SELECT g.id, g.wish_id, g.quantity,
+                    array_agg(u.name ORDER BY u.name) AS names,
+                    bool_or(u.id = $2) AS mine
+             FROM gifts g
+             JOIN wishes w ON w.id = g.wish_id
+             JOIN gift_members gm ON gm.gift_id = g.id
+             JOIN users u ON u.id = gm.user_id
              WHERE w.list_id = $1
-             ORDER BY r.created_at`,
-            [listId]
+             GROUP BY g.id
+             ORDER BY g.created_at, g.id`,
+            [listId, req.user.id]
         );
         result = result.map((wish) => {
-            const own = reservations.filter((r) => r.wish_id === wish.id);
+            const own = gifts.filter((g) => g.wish_id === wish.id);
+            const mine = own.find((g) => g.mine);
             return {
                 ...wish,
-                reserved: own.reduce((sum, r) => sum + r.quantity, 0),
-                myQuantity: own.find((r) => r.user_id === req.user.id)?.quantity ?? 0,
-                reservations: own.map((r) => ({ userId: r.user_id, name: r.name, quantity: r.quantity })),
+                reserved: own.reduce((sum, g) => sum + g.quantity, 0),
+                myGiftId: mine?.id ?? null,
+                myQuantity: mine?.quantity ?? 0,
+                gifts: own.map((g) => ({ quantity: g.quantity, names: g.names })),
             };
         });
     }
@@ -205,11 +212,11 @@ router.delete("/:id", async (req, res) => {
         if (!access.isAdmin) throw new HttpError(403, "Bara listans admins kan radera listan");
 
         const { rows: [{ count }] } = await db.query(
-            `SELECT count(*)::int AS count FROM reservations r
-             JOIN wishes w ON w.id = r.wish_id WHERE w.list_id = $1`,
+            `SELECT count(*)::int AS count FROM gifts g
+             JOIN wishes w ON w.id = g.wish_id WHERE w.list_id = $1`,
             [listId]
         );
-        if (count > 0) throw new HttpError(409, "Listan har reservationer och kan inte raderas");
+        if (count > 0) throw new HttpError(409, "Listan har reserverade gåvor och kan inte raderas");
 
         const { rows } = await db.query(
             "SELECT image_url FROM wishes WHERE list_id = $1 AND image_url IS NOT NULL",

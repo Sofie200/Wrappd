@@ -7,11 +7,11 @@ const RECIPIENTS = `(SELECT string_agg(u.name, ', ' ORDER BY u.name)
                      FROM list_recipients lr JOIN users u ON u.id = lr.user_id
                      WHERE lr.list_id = l.id)`;
 
-/* --- GET /api/profile → { upcoming, reservations: { current, history }, adminLists } --- */
+/* --- GET /api/profile → { upcoming, gifts: { current, history }, adminLists } --- */
 router.get("/", async (req, res) => {
     const me = req.user.id;
 
-    const [upcoming, reservations, adminLists] = await Promise.all([
+    const [upcoming, gifts, adminLists] = await Promise.all([
         // Coming events: public lists in my groups whose end date hasn't passed – also lists to me
         pool.query(
             `SELECT l.id, l.title, l.end_date AS "endDate",
@@ -33,17 +33,25 @@ router.get("/", async (req, res) => {
             [me]
         ),
 
-        // My reservations, with the wish's price (the item's price, not a share)
+        // Gifts I share. price is the total; myShare is my custom amount, or the price split equally.
         pool.query(
-            `SELECT r.quantity, w.id AS "wishId", w.title, w.price, w.image_url AS "imageUrl",
+            `SELECT g.id, g.title, g.quantity, g.price, g.comment, g.split,
+                    CASE WHEN g.split = 'custom' THEN me.amount
+                         ELSE round(g.price / (SELECT count(*) FROM gift_members WHERE gift_id = g.id), 2)
+                    END AS "myShare",
+                    (SELECT string_agg(u.name, ', ' ORDER BY u.name) FROM gift_members o
+                     JOIN users u ON u.id = o.user_id
+                     WHERE o.gift_id = g.id AND o.user_id <> $1) AS "sharedWith",
+                    w.id AS "wishId", w.image_url AS "imageUrl",
                     l.id AS "listId", l.title AS "listTitle", l.end_date AS "endDate",
                     l.end_date < ${TODAY} AS archived,
                     ${RECIPIENTS} AS recipients
-             FROM reservations r
-             JOIN wishes w ON w.id = r.wish_id
+             FROM gift_members me
+             JOIN gifts g ON g.id = me.gift_id
+             JOIN wishes w ON w.id = g.wish_id
              JOIN lists l ON l.id = w.list_id
-             WHERE r.user_id = $1
-             ORDER BY l.end_date DESC, l.title, w.title`,
+             WHERE me.user_id = $1
+             ORDER BY l.end_date DESC, l.title, g.title`,
             [me]
         ),
 
@@ -62,10 +70,10 @@ router.get("/", async (req, res) => {
 
     res.json({
         upcoming: upcoming.rows,
-        reservations: {
+        gifts: {
             // Current: soonest event first. History: latest first.
-            current: reservations.rows.filter((r) => !r.archived).reverse(),
-            history: reservations.rows.filter((r) => r.archived),
+            current: gifts.rows.filter((g) => !g.archived).reverse(),
+            history: gifts.rows.filter((g) => g.archived),
         },
         adminLists: adminLists.rows,
     });

@@ -17,12 +17,18 @@ async function loadWish(db, wishId, userId) {
     return { wish, access };
 }
 
-async function reservedTotal(db, wishId) {
-    const { rows: [{ total }] } = await db.query(
-        "SELECT COALESCE(SUM(quantity), 0)::int AS total FROM reservations WHERE wish_id = $1",
-        [wishId]
+async function giftCount(db, wishId) {
+    const { rows: [{ count }] } = await db.query("SELECT count(*)::int AS count FROM gifts WHERE wish_id = $1", [wishId]);
+    return count;
+}
+
+// A wish can't be changed or deleted once someone has reserved it.
+// Recipients must not learn what is reserved – so a vaguer message for them.
+function lockedByGifts(access, what) {
+    return new HttpError(
+        409,
+        access.isRecipient ? `Önskningen kan inte ${what} just nu.` : `Önskningen är reserverad och kan inte ${what}`
     );
-    return total;
 }
 
 /* --- PATCH /api/wishes/:id  (multipart, same fields as create + removeImage) – edit (list admin) --- */
@@ -31,6 +37,9 @@ router.patch("/:id", receiveImage, async (req, res) => {
     const { wish, access } = await loadWish(pool, wishId, req.user.id);
     requireEditor(access);
     const body = parse(WishBody, req.body ?? {});
+
+    // Check before uploading a new image – no point uploading it if the save will be refused
+    if ((await giftCount(pool, wishId)) > 0) throw lockedByGifts(access, "ändras");
 
     // 1. A new image is uploaded first. The old one is only deleted once the wish is saved.
     let newImageUrl = null;
@@ -48,17 +57,8 @@ router.patch("/:id", receiveImage, async (req, res) => {
     try {
         await withTransaction(async (db) => {
             await db.query("SELECT id FROM wishes WHERE id = $1 FOR UPDATE", [wishId]);
-
-            const reserved = await reservedTotal(db, wishId);
-            if (body.quantity < reserved) {
-                // Recipients must not learn what is reserved – so a vaguer message for them
-                throw new HttpError(
-                    400,
-                    access.isRecipient
-                        ? "Antalet kan inte sänkas så mycket just nu."
-                        : `${reserved} st är redan reserverade. Antalet kan inte vara lägre än så.`
-                );
-            }
+            // Again, inside the lock – someone may have reserved it meanwhile
+            if ((await giftCount(db, wishId)) > 0) throw lockedByGifts(access, "ändras");
 
             await db.query(
                 `UPDATE wishes
@@ -88,14 +88,7 @@ router.delete("/:id", async (req, res) => {
 
     await withTransaction(async (db) => {
         await db.query("SELECT id FROM wishes WHERE id = $1 FOR UPDATE", [wishId]);
-        if ((await reservedTotal(db, wishId)) > 0) {
-            throw new HttpError(
-                409,
-                access.isRecipient
-                    ? "Önskningen kan inte raderas just nu."
-                    : "Önskningen är reserverad och kan inte raderas"
-            );
-        }
+        if ((await giftCount(db, wishId)) > 0) throw lockedByGifts(access, "raderas");
         await db.query("DELETE FROM wishes WHERE id = $1", [wishId]);
     });
 
@@ -105,7 +98,8 @@ router.delete("/:id", async (req, res) => {
     res.json({ deleted: wishId });
 });
 
-/* --- PUT /api/wishes/:id/reservation  { quantity } – reserve, or change how many I take --- */
+/* --- POST /api/wishes/:id/gifts  { quantity } → { id } – reserve: creates a gift with me in it --- */
+// The gift gets a copy of the title, and the price = the wish's price × quantity. Both are then the gift's own.
 const Reserve = z.object({
     quantity: z.coerce
         .number({ error: "Ange hur många du vill reservera" })
@@ -114,22 +108,31 @@ const Reserve = z.object({
         .max(99, "Antalet får vara högst 99"),
 });
 
-router.put("/:id/reservation", async (req, res) => {
+router.post("/:id/gifts", async (req, res) => {
     const wishId = parseId(req.params.id);
     const { quantity } = parse(Reserve, req.body);
     const { access } = await loadWish(pool, wishId, req.user.id);
     requireReserver(access);
 
-    await withTransaction(async (db) => {
+    const giftId = await withTransaction(async (db) => {
         // Lock the wish, so two people can't reserve the last copy at the same time
-        const { rows: [wish] } = await db.query("SELECT quantity FROM wishes WHERE id = $1 FOR UPDATE", [wishId]);
-        const { rows: [{ others }] } = await db.query(
-            `SELECT COALESCE(SUM(quantity), 0)::int AS others
-             FROM reservations WHERE wish_id = $1 AND user_id <> $2`,
-            [wishId, req.user.id]
+        const { rows: [wish] } = await db.query(
+            "SELECT quantity, title, price FROM wishes WHERE id = $1 FOR UPDATE",
+            [wishId]
         );
 
-        const available = wish.quantity - others;
+        const { rows: [mine] } = await db.query(
+            `SELECT g.id FROM gifts g JOIN gift_members gm ON gm.gift_id = g.id
+             WHERE g.wish_id = $1 AND gm.user_id = $2`,
+            [wishId, req.user.id]
+        );
+        if (mine) throw new HttpError(409, "Du är redan med i en gåva för den här önskningen");
+
+        const { rows: [{ taken }] } = await db.query(
+            "SELECT COALESCE(SUM(quantity), 0)::int AS taken FROM gifts WHERE wish_id = $1",
+            [wishId]
+        );
+        const available = wish.quantity - taken;
         if (quantity > available) {
             throw new HttpError(
                 409,
@@ -137,27 +140,16 @@ router.put("/:id/reservation", async (req, res) => {
             );
         }
 
-        await db.query(
-            `INSERT INTO reservations (wish_id, user_id, quantity) VALUES ($1, $2, $3)
-             ON CONFLICT (wish_id, user_id) DO UPDATE SET quantity = EXCLUDED.quantity, updated_at = now()`,
-            [wishId, req.user.id, quantity]
+        const { rows: [gift] } = await db.query(
+            `INSERT INTO gifts (wish_id, created_by, quantity, title, price)
+             VALUES ($1, $2, $3, $4, $5::numeric * $3::int) RETURNING id`,
+            [wishId, req.user.id, quantity, wish.title, wish.price]
         );
+        await db.query("INSERT INTO gift_members (gift_id, user_id) VALUES ($1, $2)", [gift.id, req.user.id]);
+        return gift.id;
     });
 
-    res.json({ wishId, quantity });
-});
-
-/* --- DELETE /api/wishes/:id/reservation – undo my reservation --- */
-router.delete("/:id/reservation", async (req, res) => {
-    const wishId = parseId(req.params.id);
-    const { access } = await loadWish(pool, wishId, req.user.id);
-    requireReserver(access);
-
-    const { rowCount } = await pool.query(
-        "DELETE FROM reservations WHERE wish_id = $1 AND user_id = $2",
-        [wishId, req.user.id]
-    );
-    res.json({ wishId, deleted: rowCount > 0 });
+    res.status(201).json({ id: giftId });
 });
 
 export default router;

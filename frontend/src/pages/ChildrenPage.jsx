@@ -11,8 +11,8 @@ function deleteWarning(child) {
     if (child.listsDeletedWithChild > 0) {
         lines.push(
             `${child.listsDeletedWithChild} ${child.listsDeletedWithChild === 1 ? "lista" : "listor"} till ${child.name} raderas också` +
-                (child.reservationsDeletedWithChild > 0
-                    ? `, med ${child.reservationsDeletedWithChild} ${child.reservationsDeletedWithChild === 1 ? "reservation" : "reservationer"}.`
+                (child.giftsDeletedWithChild > 0
+                    ? `, med ${child.giftsDeletedWithChild} ${child.giftsDeletedWithChild === 1 ? "reserverad gåva" : "reserverade gåvor"}. Gåvorna försvinner från inköpen för dem som köpt dem.`
                     : ".")
         );
     }

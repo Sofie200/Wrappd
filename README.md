@@ -24,7 +24,7 @@ En webbapp för att hålla koll på önskelistor och gåvor i familjen, bland v�
 - Ett barn är alltid med i minst en grupp. Föräldrarna lägger till barnet i grupper de själva är med i – gruppadmins kan inte lägga till eller ta bort barn.
 - Bara föräldrar kan göra listor till sina barn, och bara föräldrar kan vara admins för dem.
 - Bara föräldrar kan ändra barnet (namn, grupper, föräldrar). En förälder kan byta eller ta bort medföräldern, eller sig själv, så länge en förälder finns kvar.
-- När ett barn raderas raderas också listor där barnet är enda mottagare – även med reservationer. På listor med fler mottagare tas barnet bara bort som mottagare.
+- När ett barn raderas raderas också listor där barnet är enda mottagare – även med reserverade gåvor, som då försvinner från inköpen. På listor med fler mottagare tas barnet bara bort som mottagare.
 
 **Grupper**
 - Den som skapar en grupp blir admin. En grupp kan ha flera admins.
@@ -39,14 +39,18 @@ En webbapp för att hålla koll på önskelistor och gåvor i familjen, bland v�
 - Mottagarna kan inte öppna listan. Är en mottagare själv admin ser hen listan men aldrig vad som är reserverat.
 - En lista kan bara raderas om ingenting på den är reserverat.
 
-**Önskningar och reservationer**
+**Önskningar och gåvor**
 - En önskning har titel (obligatorisk), beskrivning, pris, länk, bild och önskat antal.
-- Alla som ser listan – utom mottagarna – kan reservera och väljer hur många exemplar de tar. Man ser vem som reserverat vad.
-- En reservation kan ändras eller ångras tills listan arkiveras. En önskning kan bara raderas om den inte är reserverad.
+- När någon reserverar en önskning skapas en **gåva** (`gift` i kod och databas). Den får en kopia av titeln och priset (önskningens pris × antal). Priset är gåvans totalpris och kan sedan ändras, och man kan skriva en kommentar.
+- En gåva kan delas med andra vuxna i listans grupper – aldrig med mottagarna. Kostnaden delas lika eller med egna belopp i kronor som måste bli exakt priset.
+- Alla som delar på en gåva har samma rättigheter: de ser den bland sina inköp och kan ändra den. En person kan bara vara med i en gåva per önskning.
+- Andra ser bara "Reserverad av Anna och Erik", inte pris, fördelning eller vem som reserverade först.
+- Antal kan ändras och gåvan ångras tills listan arkiveras. Pris, kommentar och fördelning (även vilka som delar) går att ändra även efteråt.
+- En önskning kan inte ändras eller raderas när den har reserverats.
 
 **Översikt**
 - Kommande event i mina grupper, även listor till mig.
-- Mina reservationer, aktuella och historiska, med pris.
+- Mina inköp (gåvor), aktuella och historiska, med totalpris och min del – och summan av mina delar.
 - Listor jag administrerar.
 
 ## Struktur
@@ -156,16 +160,18 @@ Alla routes utom `/api/auth/register`, `/api/auth/login`, `/api/auth/link/:token
 | PUT | `/api/children/:id` | Ändra barn `{ name, groupIds, parentUsernames }` (förälder) |
 | DELETE | `/api/children/:id` | Radera barn och listor där det är enda mottagare (förälder) |
 | POST | `/api/lists` | Skapa lista |
-| GET | `/api/lists/:id` | Lista med önskningar (reservationer döljs för mottagare) |
+| GET | `/api/lists/:id` | Lista med önskningar (gåvorna döljs för mottagare) |
 | PUT | `/api/lists/:id` | Ändra lista (admin) |
 | POST | `/api/lists/:id/publish` | Publicera (admin) |
 | DELETE | `/api/lists/:id` | Radera, om inget är reserverat (admin) |
 | POST | `/api/lists/:id/wishes` | Lägg till önskning, multipart med bild (admin) |
-| PATCH | `/api/wishes/:id` | Ändra önskning, multipart (admin) |
+| PATCH | `/api/wishes/:id` | Ändra önskning, multipart, om den inte är reserverad (admin) |
 | DELETE | `/api/wishes/:id` | Radera önskning, om den inte är reserverad (admin) |
-| PUT | `/api/wishes/:id/reservation` | Reservera / ändra antal `{ quantity }` |
-| DELETE | `/api/wishes/:id/reservation` | Ångra min reservation |
-| GET | `/api/profile` | Kommande event, mina reservationer, listor jag administrerar |
+| POST | `/api/wishes/:id/gifts` | Reservera: skapa en gåva `{ quantity }` → `{ id }` |
+| GET | `/api/gifts/:id` | Gåvan, önskningen, de som delar och vilka som kan läggas till (de som delar) |
+| PUT | `/api/gifts/:id` | Ändra `{ quantity, price, comment, split, members: [{ userId, amount }] }` (de som delar) |
+| DELETE | `/api/gifts/:id` | Ångra reservationen, före datumet (de som delar) |
+| GET | `/api/profile` | Kommande event, mina gåvor, listor jag administrerar |
 
 ## Säkerhet och felhantering
 
@@ -173,13 +179,13 @@ Alla routes utom `/api/auth/register`, `/api/auth/login`, `/api/auth/link/:token
 - All indata valideras med Zod på servern. Felmeddelanden är på svenska.
 - Listor och grupper som man inte har åtkomst till ger 404, så att man inte kan gissa sig till vilka som finns.
 - Behörighetsreglerna för listor finns samlade i `api/_lib/access.js`.
-- Reservationer görs i en transaktion med radlås, så två personer kan inte reservera det sista exemplaret samtidigt.
+- Reservationer (nya gåvor) görs i en transaktion med radlås, så två personer kan inte reservera det sista exemplaret samtidigt.
 - Bilder kontrolleras både på filtyp och på filens innehåll (JPG/PNG), max 4 MB.
 - Databasanrop har timeout (10 s), bilduppladdning 15 s, och frontendens anrop 15–30 s.
 
 ## Att känna till
 
-- **Mottagare som är admins** kan i vissa lägen ana att något är reserverat: en reserverad önskning kan inte raderas, och antalet kan inte sänkas under det som är reserverat. Felmeddelandet för mottagare är därför medvetet vagt.
+- **Mottagare som är admins** kan i vissa lägen ana att något är reserverat: en reserverad önskning kan varken ändras eller raderas. Felmeddelandet för mottagare är därför medvetet vagt.
 - **Tas någon bort ur en grupp** ligger hen kvar som mottagare eller admin på listor där hen redan var det.
 - **En gruppadmin kan återställa lösenordet** för alla medlemmar i sin grupp – och därmed i praktiken ta över deras konton. Ge bara admin till personer du litar på.
 - **Inloggningar på andra enheter** loggas inte ut när lösenordet återställs; de fortsätter gälla tills token går ut.

@@ -104,14 +104,29 @@ CREATE TABLE wishes (
 );
 CREATE INDEX wishes_list_idx ON wishes (list_id);
 
--- En reservation per person och önskning. Personen väljer hur många exemplar hen tar.
-CREATE TABLE reservations (
+-- A gift ("gåva" in the UI) is created when someone reserves a wish. It has its own copy of the title,
+-- its own price (what was actually paid, in total for all copies) and a comment.
+-- One person can be in at most one gift per wish – checked in gift-routes.js.
+CREATE TABLE gifts (
     id         SERIAL PRIMARY KEY,
     wish_id    INT NOT NULL REFERENCES wishes(id) ON DELETE CASCADE,
-    user_id    INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    created_by INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     quantity   INT NOT NULL CHECK (quantity BETWEEN 1 AND 99),
+    title      TEXT NOT NULL,
+    price      NUMERIC(10, 2) CHECK (price >= 0),
+    comment    TEXT,
+    split      TEXT NOT NULL DEFAULT 'equal' CHECK (split IN ('equal', 'custom')),
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    UNIQUE (wish_id, user_id)
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-CREATE INDEX reservations_user_idx ON reservations (user_id);
+CREATE INDEX gifts_wish_idx ON gifts (wish_id);
+CREATE INDEX gifts_created_by_idx ON gifts (created_by);
+
+-- Everyone who shares a gift – all with the same rights to it. amount is only used when split = 'custom'.
+CREATE TABLE gift_members (
+    gift_id INT NOT NULL REFERENCES gifts(id) ON DELETE CASCADE,
+    user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    amount  NUMERIC(10, 2) CHECK (amount >= 0),
+    PRIMARY KEY (gift_id, user_id)
+);
+CREATE INDEX gift_members_user_idx ON gift_members (user_id);

@@ -41,3 +41,22 @@ export function relativeDays(iso) {
     if (days === -1) return "Igår";
     return `För ${-days} dagar sedan`;
 }
+
+// ["Anna"] → "Anna", ["Anna", "Erik"] → "Anna och Erik", ["Anna", "Erik", "Sara"] → "Anna, Erik och Sara"
+export function joinNames(names) {
+    if (names.length <= 1) return names.join("");
+    return `${names.slice(0, -1).join(", ")} och ${names[names.length - 1]}`;
+}
+
+// "1 299,50" / "299" → 1299.5 / 299. Empty or not a number → null.
+export function parseAmount(text) {
+    const clean = String(text ?? "").replace(/\s/g, "").replace(",", ".");
+    if (!/^\d+(\.\d{1,2})?$/.test(clean)) return null;
+    return Number(clean);
+}
+
+// A number shown in an input field: 299.5 → "299,50", 299 → "299", null → ""
+export function amountText(value) {
+    if (value === null || value === undefined) return "";
+    return Number.isInteger(Number(value)) ? String(Number(value)) : Number(value).toFixed(2).replace(".", ",");
+}

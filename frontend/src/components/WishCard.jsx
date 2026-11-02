@@ -1,21 +1,20 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { api } from "../api.js";
-import { formatPrice } from "../format.js";
+import { formatPrice, joinNames } from "../format.js";
 import { ErrorMessage } from "./Feedback.jsx";
 import WishForm from "./WishForm.jsx";
 
 // One wish. What it shows depends on `me` from the server:
-//  - seesReservations: who has reserved what (never for recipients)
-//  - canReserve: reserve / change / undo my own reservation
-//  - canEdit: edit and delete (list admins, not archived)
+//  - seesReservations: who has reserved it, per gift (never for recipients)
+//  - canReserve: reserve (creates a gift), or go to my gift
+//  - canEdit: edit and delete (list admins, not archived) – not once someone has reserved it
 export default function WishCard({ wish, me, listId, onChanged }) {
+    const navigate = useNavigate();
     const [editing, setEditing] = useState(false);
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState(null);
-    const [qty, setQty] = useState(wish.myQuantity || 1);
-
-    // After a reload: show my current number
-    useEffect(() => setQty(wish.myQuantity || 1), [wish.myQuantity]);
+    const [qty, setQty] = useState(1);
 
     async function run(action) {
         setBusy(true);
@@ -30,9 +29,19 @@ export default function WishCard({ wish, me, listId, onChanged }) {
         }
     }
 
-    const reserve = () =>
-        run(() => api(`/wishes/${wish.id}/reservation`, { method: "PUT", body: { quantity: Number(qty) } }));
-    const unreserve = () => run(() => api(`/wishes/${wish.id}/reservation`, { method: "DELETE" }));
+    // Reserving creates a gift – then straight to it, to add a price, comment or people to share with
+    async function reserve() {
+        setBusy(true);
+        setError(null);
+        try {
+            const { id } = await api(`/wishes/${wish.id}/gifts`, { method: "POST", body: { quantity: Number(qty) } });
+            navigate(`/gifts/${id}`);
+        } catch (err) {
+            setError(err.message);
+            setBusy(false);
+            onChanged();
+        }
+    }
 
     function remove() {
         if (!window.confirm(`Ta bort "${wish.title}"?`)) return;
@@ -56,11 +65,11 @@ export default function WishCard({ wish, me, listId, onChanged }) {
     }
 
     const reserved = wish.reserved ?? 0;
-    const mine = wish.myQuantity ?? 0;
-    const full = me.seesReservations && reserved >= wish.quantity;
-    // The most I can hold: what's left, plus what I already have
-    const maxForMe = wish.quantity - reserved + mine;
-    const options = Array.from({ length: Math.max(maxForMe, 0) }, (_, i) => i + 1);
+    const available = wish.quantity - reserved;
+    const full = me.seesReservations && available <= 0;
+    const options = Array.from({ length: Math.max(available, 0) }, (_, i) => i + 1);
+    // Recipients don't know if it's reserved – the server answers them if they try
+    const locked = me.seesReservations && reserved > 0;
 
     return (
         <article className={`wish${full ? " wish-full" : ""}`}>
@@ -87,44 +96,30 @@ export default function WishCard({ wish, me, listId, onChanged }) {
                 )}
 
                 <p className="muted small">
-                    {wish.quantity > 1 ? `Önskat antal: ${wish.quantity}` : "Önskat antal: 1"}
+                    Önskat antal: {wish.quantity}
                     {me.seesReservations && ` · Reserverat: ${reserved} av ${wish.quantity}`}
                 </p>
 
-                {me.seesReservations && wish.reservations.length > 0 && (
-                    <p className="small">
-                        Reserverad av:{" "}
-                        {wish.reservations.map((r) => `${r.name}${wish.quantity > 1 ? ` (${r.quantity})` : ""}`).join(", ")}
-                    </p>
-                )}
+                {/* Who shares each gift – not the price, the split or who reserved first */}
+                {me.seesReservations &&
+                    wish.gifts.map((gift, i) => (
+                        <p key={i} className="small">
+                            Reserverad av {joinNames(gift.names)}
+                            {wish.quantity > 1 && ` (${gift.quantity} st)`}
+                        </p>
+                    ))}
 
                 <ErrorMessage message={error} />
 
                 {me.canReserve && (
                     <div className="wish-actions">
-                        {mine > 0 ? (
+                        {wish.myGiftId ? (
+                            <Link to={`/gifts/${wish.myGiftId}`} className="btn btn-small">
+                                Hantera gåva
+                            </Link>
+                        ) : available > 0 ? (
                             <>
-                                {maxForMe > 1 && (
-                                    <select value={qty} onChange={(e) => setQty(e.target.value)} aria-label="Antal" disabled={busy}>
-                                        {options.map((n) => (
-                                            <option key={n} value={n}>
-                                                {n} st
-                                            </option>
-                                        ))}
-                                    </select>
-                                )}
-                                {maxForMe > 1 && Number(qty) !== mine && (
-                                    <button type="button" className="btn btn-small" onClick={reserve} disabled={busy}>
-                                        Ändra
-                                    </button>
-                                )}
-                                <button type="button" className="btn btn-small btn-ghost" onClick={unreserve} disabled={busy}>
-                                    Ångra reservation
-                                </button>
-                            </>
-                        ) : maxForMe > 0 ? (
-                            <>
-                                {maxForMe > 1 && (
+                                {available > 1 && (
                                     <select value={qty} onChange={(e) => setQty(e.target.value)} aria-label="Antal" disabled={busy}>
                                         {options.map((n) => (
                                             <option key={n} value={n}>
@@ -143,14 +138,26 @@ export default function WishCard({ wish, me, listId, onChanged }) {
                     </div>
                 )}
 
-                {mine > 0 && <p className="small reserved-by-me">✓ Du har reserverat {mine} st</p>}
+                {wish.myGiftId && <p className="small reserved-by-me">✓ Du är med i en gåva ({wish.myQuantity} st)</p>}
 
                 {me.canEdit && (
                     <div className="wish-admin">
-                        <button type="button" className="btn btn-small btn-ghost" onClick={() => setEditing(true)} disabled={busy}>
+                        <button
+                            type="button"
+                            className="btn btn-small btn-ghost"
+                            onClick={() => setEditing(true)}
+                            disabled={busy || locked}
+                            title={locked ? "Önskningen är reserverad och kan inte ändras" : undefined}
+                        >
                             Redigera
                         </button>
-                        <button type="button" className="btn btn-small btn-danger-ghost" onClick={remove} disabled={busy}>
+                        <button
+                            type="button"
+                            className="btn btn-small btn-danger-ghost"
+                            onClick={remove}
+                            disabled={busy || locked}
+                            title={locked ? "Önskningen är reserverad och kan inte tas bort" : undefined}
+                        >
                             Ta bort
                         </button>
                     </div>

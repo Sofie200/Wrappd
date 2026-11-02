@@ -310,7 +310,8 @@ select {
     width: 100%;
 }
 
-input[type="checkbox"] {
+input[type="checkbox"],
+input[type="radio"] {
     width: auto;
     accent-color: var(--accent);
 }
@@ -913,4 +914,28 @@ select {
     .list-head {
         padding: 1.25rem;
     }
+}
+
+/* ---------- Gift: split per person ---------- */
+.split-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin: 0.75rem 0 0.5rem;
+}
+
+.split-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.split-row input {
+    width: 8rem;
+    text-align: right;
+}
+
+.table .share {
+    font-weight: 600;
 }

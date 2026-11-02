@@ -1,4 +1,4 @@
--- Testdata för Gåvobanken
+-- Testdata för Wrappd
 -- Kör EFTER schema.sql, i en tom databas. Alla användare har lösenordet: test1234
 --
 -- Användare        Användarnamn   Grupper
@@ -15,8 +15,8 @@
 -- Majas 7-årskalas    Till Maja    Familjen   Publik    Om 14 dagar   Admins: Anna, Erik
 -- Annas 40-årsdag     Till Anna    Vännerna   Publik    Om 30 dagar   Admins: Sara, Johan   (Anna ser den bara i översikten)
 -- Oskars julklappar   Till Oskar   Familjen   Privat    Om 50 dagar   Admin: Elsa           (bara Elsa ser den)
--- Lukas önskelista    Till Lukas   Vännerna   Publik    Om 60 dagar   Admin: Lukas          (Lukas ser inte reservationerna)
--- Eriks födelsedag    Till Erik    Jobbet     Publik    För 20 dagar sedan – arkiverad, med reservationer i Saras historik
+-- Lukas önskelista    Till Lukas   Vännerna   Publik    Om 60 dagar   Admin: Lukas          (Lukas ser inte gåvorna)
+-- Eriks födelsedag    Till Erik    Jobbet     Publik    För 20 dagar sedan – arkiverad, med gåvor i Saras och Johans historik
 
 -- bcrypt-hashar direkt i databasen – samma format som bcryptjs i backend läser
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
@@ -142,14 +142,16 @@ FROM (VALUES
     ('Eriks födelsedag', 'Bok om fågelskådning', null, 349.00, null, 1)
 ) AS x(l, t, d, p, u, q);
 
--- ---------- Reservationer ----------
-INSERT INTO reservations (wish_id, user_id, quantity)
-SELECT seed_wish(l, w), seed_user(u), q
+-- ---------- Gåvor (reservationer) ----------
+-- Titel och pris kopieras från önskningen när någon reserverar. Priset är totalt: önskningens pris × antal.
+INSERT INTO gifts (wish_id, created_by, quantity, title, price)
+SELECT w.id, seed_user(u), q, w.title, w.price * q
 FROM (VALUES
     ('Majas 7-årskalas', 'Lego Friends djurklinik', 'oskar', 1),
     ('Majas 7-årskalas', 'Pysselpaket', 'elsa', 1),
     ('Majas 7-årskalas', 'Kapitelböcker', 'erik', 2),
 
+    ('Annas 40-årsdag', 'Presentkort på spa', 'sara', 1),
     ('Annas 40-årsdag', 'Sällskapsspel', 'lukas', 1),
     ('Annas 40-årsdag', 'Fina vinglas', 'johan', 2),
     ('Annas 40-årsdag', 'Fina vinglas', 'sara', 2),
@@ -159,7 +161,28 @@ FROM (VALUES
 
     ('Eriks födelsedag', 'Kaffebönor', 'sara', 2),
     ('Eriks födelsedag', 'Bok om fågelskådning', 'johan', 1)
-) AS x(l, w, u, q);
+) AS x(l, t, u, q)
+JOIN wishes w ON w.id = seed_wish(l, t);
+
+-- Den som reserverade är alltid med
+INSERT INTO gift_members (gift_id, user_id) SELECT id, created_by FROM gifts;
+
+-- Delade gåvor:
+--  Spa-presentkortet: Sara, Johan och Lukas delar lika (800 kr → 266,67 kr var)
+INSERT INTO gift_members (gift_id, user_id)
+SELECT g.id, seed_user(u)
+FROM gifts g, (VALUES ('johan'), ('lukas')) AS x(u)
+WHERE g.wish_id = seed_wish('Annas 40-årsdag', 'Presentkort på spa');
+
+--  Fågelboken (arkiverad): Johan och Sara med egna belopp, 249 + 100 = 349 kr, och en kommentar
+UPDATE gifts SET split = 'custom', comment = 'Köpt på bokrean, Sara la till ett fint bokmärke.'
+WHERE wish_id = seed_wish('Eriks födelsedag', 'Bok om fågelskådning');
+INSERT INTO gift_members (gift_id, user_id)
+SELECT id, seed_user('sara') FROM gifts WHERE wish_id = seed_wish('Eriks födelsedag', 'Bok om fågelskådning');
+UPDATE gift_members gm SET amount = x.amount
+FROM gifts g, (VALUES ('johan', 249.00), ('sara', 100.00)) AS x(u, amount)
+WHERE gm.gift_id = g.id AND g.wish_id = seed_wish('Eriks födelsedag', 'Bok om fågelskådning')
+  AND gm.user_id = seed_user(x.u);
 
 -- ---------- Städa bort hjälpfunktionerna ----------
 DROP FUNCTION seed_user(text);

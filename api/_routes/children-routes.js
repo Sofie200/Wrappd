@@ -3,7 +3,7 @@
 //  - Anyone can create a child of their own, with an optional co-parent (any adult, by username).
 //  - A child has 1–2 parents and is always a member of at least one group.
 //  - Only parents manage the child: name, parents, and which of THEIR groups the child is in.
-//  - Deleting a child deletes the lists where it is the only recipient – reservations included.
+//  - Deleting a child deletes the lists where it is the only recipient – gifts included.
 import { Router } from "express";
 import { z } from "zod";
 import { pool, withTransaction } from "../_db/pool.js";
@@ -89,11 +89,11 @@ router.get("/", async (req, res) => {
                  WHERE lr.user_id = u.id
                    AND NOT EXISTS (SELECT 1 FROM list_recipients o WHERE o.list_id = lr.list_id AND o.user_id <> u.id))
                     AS "listsDeletedWithChild",
-                (SELECT count(*)::int FROM reservations r
-                 JOIN wishes w ON w.id = r.wish_id
+                (SELECT count(*)::int FROM gifts g
+                 JOIN wishes w ON w.id = g.wish_id
                  JOIN list_recipients lr ON lr.list_id = w.list_id AND lr.user_id = u.id
                  WHERE NOT EXISTS (SELECT 1 FROM list_recipients o WHERE o.list_id = lr.list_id AND o.user_id <> u.id))
-                    AS "reservationsDeletedWithChild"
+                    AS "giftsDeletedWithChild"
          FROM users u
          JOIN child_parents cp ON cp.child_id = u.id AND cp.parent_id = $1
          WHERE u.is_child
@@ -218,7 +218,7 @@ router.delete("/:id", async (req, res) => {
             [listIds]
         );
 
-        // Lists, wishes and reservations go with ON DELETE CASCADE.
+        // Lists, wishes and gifts go with ON DELETE CASCADE.
         // On lists with other recipients too, the child is just removed as a recipient (also by cascade).
         await db.query("DELETE FROM lists WHERE id = ANY($1::int[])", [listIds]);
         await db.query("DELETE FROM users WHERE id = $1", [childId]);
