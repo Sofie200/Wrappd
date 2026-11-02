@@ -10,7 +10,8 @@ CREATE TABLE users (
     password_hash TEXT,
     is_child      BOOLEAN NOT NULL DEFAULT false,
     -- Profile icon in the top menu (same values in api/_lib/userSchema.js and frontend/src/profileOptions.js)
-    avatar_icon   TEXT NOT NULL DEFAULT 'user' CHECK (avatar_icon IN ('user', 'cat', 'dog', 'rabbit', 'flower')),
+    avatar_icon   TEXT NOT NULL DEFAULT 'user' CHECK (avatar_icon IN ('user', 'cat', 'snail', 'bug', 'bird', 'ghost', 'banana',
+                                                                   'hand-metal', 'citrus', 'lollipop', 'coffee', 'squirrel', 'sun', 'germ')),
     avatar_color  TEXT NOT NULL DEFAULT 'pink' CHECK (avatar_color IN ('pink', 'orange', 'green', 'purple', 'blue')),
     created_by    INT REFERENCES users(id) ON DELETE SET NULL,
     created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),

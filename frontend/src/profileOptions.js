@@ -1,13 +1,37 @@
-// The profile icon: 5 icons × 5 colours. The keys are what's saved in the database
+// The profile icon: 14 icons × 5 colours. The keys are what's saved in the database
 // (the same values as in api/_lib/userSchema.js and the CHECKs in db/schema.sql).
-import { Cat, Dog, Flower2, Rabbit, User } from "lucide-react";
+import {
+    Banana,
+    Bird,
+    Bug,
+    Cat,
+    Citrus,
+    Coffee,
+    Germ,
+    Ghost,
+    HandMetal,
+    Lollipop,
+    Snail,
+    Squirrel,
+    Sun,
+    User,
+} from "lucide-react";
 
 export const AVATAR_ICONS = {
     user: { label: "Person", Icon: User },
     cat: { label: "Katt", Icon: Cat },
-    dog: { label: "Hund", Icon: Dog },
-    rabbit: { label: "Kanin", Icon: Rabbit },
-    flower: { label: "Blomma", Icon: Flower2 },
+    snail: { label: "Snigel", Icon: Snail },
+    bug: { label: "Insekt", Icon: Bug },
+    bird: { label: "Fågel", Icon: Bird },
+    ghost: { label: "Spöke", Icon: Ghost },
+    banana: { label: "Banan", Icon: Banana },
+    "hand-metal": { label: "Rock on", Icon: HandMetal },
+    citrus: { label: "Citrus", Icon: Citrus },
+    lollipop: { label: "Klubba", Icon: Lollipop },
+    coffee: { label: "Kaffe", Icon: Coffee },
+    squirrel: { label: "Ekorre", Icon: Squirrel },
+    sun: { label: "Sol", Icon: Sun },
+    germ: { label: "Bacill", Icon: Germ },
 };
 
 export const AVATAR_COLORS = {
