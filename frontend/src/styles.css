@@ -121,6 +121,9 @@ img {
 }
 
 .nav a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
     color: var(--ink);
     text-decoration: none;
     padding: 0.4rem 0.75rem;
@@ -793,6 +796,12 @@ select {
     cursor: not-allowed;
 }
 
+/* The page you're on (NavLink sets .active) */
+.menu-item.active {
+    font-weight: 600;
+    color: var(--accent);
+}
+
 .menu-item-danger {
     color: var(--danger);
 }
@@ -903,6 +912,7 @@ select {
     color: var(--ink);
     width: min(560px, calc(100% - 2rem));
     max-height: calc(100dvh - 2rem);
+    overflow-y: auto;
     box-shadow: var(--shadow);
 }
 
@@ -994,8 +1004,18 @@ select {
 }
 
 .wish-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
     font-weight: 500;
     width: fit-content;
+}
+
+/* "← Översikten" at the top of a page */
+.back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
 }
 
 .wish-actions,
@@ -1221,4 +1241,225 @@ select {
 
 .days-left-today {
     color: var(--accent);
+}
+
+/* ---------- Overview: my gifts grouped by event ---------- */
+.gift-groups {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.gift-group-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.gift-group-head h3 {
+    margin: 0;
+}
+
+.gift-group-head p {
+    margin: 0.15rem 0 0;
+}
+
+.gift-group-count {
+    white-space: nowrap;
+}
+
+.gift-grand-total {
+    display: flex;
+    justify-content: space-between;
+    margin: 0;
+    padding: 0.85rem 1rem;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-small);
+    font-weight: 600;
+}
+
+/* An event I'm invited to but haven't bought anything for yet */
+.gift-reminder {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.75rem 1rem;
+    flex-wrap: wrap;
+    padding: 1rem 1.25rem;
+    border: 2px dashed var(--line);
+    border-radius: var(--radius-small);
+    background: var(--surface);
+}
+
+.gift-reminder p {
+    margin: 0;
+}
+
+/* Edit/delete icons at the end of a table row */
+.row-actions {
+    text-align: right;
+    white-space: nowrap;
+    width: 1%;
+}
+
+.icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    border: none;
+    border-radius: var(--radius-small);
+    background: none;
+    color: var(--muted);
+    cursor: pointer;
+}
+
+.icon-btn + .icon-btn {
+    margin-left: 0.15rem;
+}
+
+.icon-btn:hover {
+    background: var(--surface-soft);
+    color: var(--ink);
+}
+
+.icon-btn-danger:hover {
+    background: var(--danger-soft);
+    color: var(--danger);
+}
+
+.icon-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.icon-btn:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+/* Hidden visually, still read by screen readers */
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* The gift editor inside a modal: tighter spacing than on its own page */
+.gift-editor > .muted:first-child {
+    margin-top: 0;
+}
+
+.gift-editor .section {
+    margin-top: 1rem;
+}
+
+/* ---------- Profile icon ---------- */
+.avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    border-radius: 50%;
+    color: #fff;
+}
+
+.profile-button {
+    display: inline-flex;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: none;
+    cursor: pointer;
+    transition: transform 0.15s;
+}
+
+.profile-button:hover {
+    transform: scale(1.06);
+}
+
+.profile-button:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+.profile-preview {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.avatar-choices {
+    display: flex;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    margin-top: 0.5rem;
+}
+
+.avatar-choice {
+    display: inline-flex;
+    padding: 3px;
+    border: 2px solid transparent;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+/* The chosen one gets a ring; keyboard focus too */
+.avatar-choice:has(input:checked) {
+    border-color: var(--ink);
+}
+
+.avatar-choice:has(input:focus-visible) {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+.color-swatch {
+    display: block;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+}
+
+/* A page heading with a lucide icon in front, e.g. "Mina grupper" */
+.title-with-icon {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.title-with-icon svg {
+    flex: none;
+    color: var(--accent);
+}
+
+/* "Reserverad" followed by the reservers' profile icons, slightly overlapping */
+.reserved-by {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.avatar-stack {
+    display: inline-flex;
+    align-items: center;
+}
+
+.avatar-stack .avatar {
+    box-shadow: 0 0 0 2px var(--surface);
+}
+
+.avatar-stack .avatar + .avatar {
+    margin-left: -6px;
 }

@@ -101,10 +101,13 @@ router.get("/:id", async (req, res) => {
 
     let result = wishes.rows;
     if (access.seesReservations) {
-        // Per gift: quantity and who shares it. Not the price, the split, or who created it.
+        // Per gift: quantity and who shares it (with their profile icon). Not the price, the split, or who created it.
         const { rows: gifts } = await pool.query(
             `SELECT g.id, g.wish_id, g.quantity,
                     array_agg(u.name ORDER BY u.name) AS names,
+                    json_agg(json_build_object('id', u.id, 'name', u.name,
+                                               'avatarIcon', u.avatar_icon, 'avatarColor', u.avatar_color)
+                             ORDER BY u.name) AS people,
                     bool_or(u.id = $2) AS mine
              FROM gifts g
              JOIN wishes w ON w.id = g.wish_id
@@ -123,7 +126,7 @@ router.get("/:id", async (req, res) => {
                 reserved: own.reduce((sum, g) => sum + g.quantity, 0),
                 myGiftId: mine?.id ?? null,
                 myQuantity: mine?.quantity ?? 0,
-                gifts: own.map((g) => ({ quantity: g.quantity, names: g.names })),
+                gifts: own.map((g) => ({ quantity: g.quantity, names: g.names, people: g.people })),
             };
         });
     }

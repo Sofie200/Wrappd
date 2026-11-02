@@ -8,6 +8,7 @@ import { ErrorMessage, Loading, Notice } from "../components/Feedback.jsx";
 import ImageField from "../components/ImageField.jsx";
 import ProductLinkField from "../components/ProductLinkField.jsx";
 import { amountText, formatDate, formatPrice, formatShortDate, parseAmount } from "../format.js";
+import { ArrowLeft, ArrowUpRight } from "lucide-react";
 
 // /gifts/:id – a gift ("gåva"), and /gifts/new – a new gift bought outside the wish list.
 //  - A gift on a wish: quantity, price, comment, who shares and how. After the event: price, comment and split.
@@ -15,8 +16,15 @@ import { amountText, formatDate, formatPrice, formatShortDate, parseAmount } fro
 //    Everything can always be changed. Never shown on the list. Can only be shared when it has a list.
 export default function GiftPage() {
     const { id } = useParams();
-    const isNew = id === "new";
     const [searchParams] = useSearchParams();
+    return <GiftEditor id={id} presetListId={searchParams.get("list") ?? ""} />;
+}
+
+// The gift editor itself – used by the page, and in a modal (e.g. from the overview).
+// With `onDone` it runs in modal mode: no page chrome, and onDone() is called after
+// a save or a delete instead of navigating.
+export function GiftEditor({ id, presetListId = "", onDone }) {
+    const isNew = id === "new";
     const gift = useFetch(isNew ? null : `/gifts/${id}`);
     const isFree = isNew || gift.data?.gift.kind === "free";
     const lists = useFetch(isFree ? "/gifts/lists" : null);
@@ -31,7 +39,8 @@ export default function GiftPage() {
             key={isNew ? "new" : JSON.stringify(gift.data)}
             data={isNew ? null : gift.data}
             lists={lists.data?.data ?? []}
-            presetListId={searchParams.get("list") ?? ""}
+            presetListId={presetListId}
+            onDone={onDone}
             justSaved={justSaved}
             onSaved={() => {
                 setJustSaved(true);
@@ -42,7 +51,7 @@ export default function GiftPage() {
     );
 }
 
-function GiftForm({ data, lists, presetListId, justSaved, onSaved, onEdit }) {
+function GiftForm({ data, lists, presetListId, justSaved, onSaved, onEdit, onDone }) {
     const { user } = useAuth();
     const navigate = useNavigate();
     const isNew = !data;
@@ -151,6 +160,7 @@ function GiftForm({ data, lists, presetListId, justSaved, onSaved, onEdit }) {
                 return navigate(`/gifts/${id}`, { replace: true });
             }
             const result = await api(`/gifts/${gift.id}`, { method: "PUT", formData, timeoutMs: 30_000 });
+            if (onDone) return onDone();
             if (!result.stillMember) return navigate(data.list ? `/lists/${data.list.id}` : "/");
             onSaved();
         } catch (err) {
@@ -168,6 +178,7 @@ function GiftForm({ data, lists, presetListId, justSaved, onSaved, onEdit }) {
         setError(null);
         try {
             await api(`/gifts/${gift.id}`, { method: "DELETE" });
+            if (onDone) return onDone();
             navigate(!isFree && data.list ? `/lists/${data.list.id}` : "/");
         } catch (err) {
             setError(err.message);
@@ -180,12 +191,8 @@ function GiftForm({ data, lists, presetListId, justSaved, onSaved, onEdit }) {
     const listOptions = list && isFree && !lists.some((l) => l.id === list.id) ? [{ ...list, archived: false }, ...lists] : lists;
     const quantityOptions = gift && !isFree ? Array.from({ length: Math.max(gift.maxQuantity, gift.quantity) }, (_, i) => i + 1) : [];
 
-    return (
-        <div className="page page-narrow">
-            <p>
-                {list ? <Link to={`/lists/${list.id}`}>← {list.title}</Link> : <Link to="/">← Översikten</Link>}
-            </p>
-            <h1>{isNew ? "Ny gåva" : gift.title}</h1>
+    const content = (
+        <>
             {!isNew && (
                 <p className="muted">
                     {list ? `Gåva till ${list.recipients} · ${formatDate(list.endDate)}` : `Till ${gift.recipient} · ${formatDate(gift.giftDate)}`}
@@ -210,7 +217,7 @@ function GiftForm({ data, lists, presetListId, justSaved, onSaved, onEdit }) {
                         {wish.description && <p className="wish-description">{wish.description}</p>}
                         {wish.url && (
                             <a href={wish.url} target="_blank" rel="noopener noreferrer" className="wish-link">
-                                Se produkten ↗
+                                Se produkten <ArrowUpRight size={16} aria-hidden="true" />
                             </a>
                         )}
                         <p className="muted small">Önskat antal: {wish.quantity}</p>
@@ -391,6 +398,27 @@ function GiftForm({ data, lists, presetListId, justSaved, onSaved, onEdit }) {
                     )}
                 </div>
             </form>
+        </>
+    );
+
+    // In a modal the modal has the title and the close button
+    if (onDone) return <div className="gift-editor">{content}</div>;
+
+    return (
+        <div className="page page-narrow">
+            <p>
+                {list ? (
+                    <Link to={`/lists/${list.id}`} className="back-link">
+                        <ArrowLeft size={16} aria-hidden="true" /> {list.title}
+                    </Link>
+                ) : (
+                    <Link to="/" className="back-link">
+                        <ArrowLeft size={16} aria-hidden="true" /> Översikten
+                    </Link>
+                )}
+            </p>
+            <h1>{isNew ? "Ny gåva" : gift.title}</h1>
+            {content}
         </div>
     );
 }

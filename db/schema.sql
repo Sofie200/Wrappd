@@ -9,6 +9,9 @@ CREATE TABLE users (
     username      TEXT UNIQUE CHECK (username = lower(username)),
     password_hash TEXT,
     is_child      BOOLEAN NOT NULL DEFAULT false,
+    -- Profile icon in the top menu (same values in api/_lib/userSchema.js and frontend/src/profileOptions.js)
+    avatar_icon   TEXT NOT NULL DEFAULT 'user' CHECK (avatar_icon IN ('user', 'cat', 'dog', 'rabbit', 'flower')),
+    avatar_color  TEXT NOT NULL DEFAULT 'pink' CHECK (avatar_color IN ('pink', 'orange', 'green', 'purple', 'blue')),
     created_by    INT REFERENCES users(id) ON DELETE SET NULL,
     created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
     CONSTRAINT users_adult_has_username CHECK (is_child OR username IS NOT NULL),

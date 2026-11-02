@@ -57,9 +57,16 @@ export function AuthProvider({ children }) {
         setUser(data.user);
     }
 
+    // Name, icon and colour. The server sends a new token, since the name is in it.
+    async function updateProfile(profile) {
+        const data = await api("/auth/me", { method: "PUT", body: profile });
+        setToken(data.token);
+        setUser(data.user);
+    }
+
     return (
         <AuthContext.Provider
-            value={{ user, checking, error, login, register, choosePassword, logout, retry: checkToken }}
+            value={{ user, checking, error, login, register, choosePassword, logout, updateProfile, retry: checkToken }}
         >
             {children}
         </AuthContext.Provider>

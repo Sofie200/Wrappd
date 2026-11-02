@@ -4,7 +4,7 @@ import { z } from "zod";
 import { pool, withTransaction } from "../_db/pool.js";
 import { requireAuth, signToken } from "../_middleware/auth.js";
 import { HttpError, parse } from "../_lib/http.js";
-import { name, password, username } from "../_lib/userSchema.js";
+import { avatarColor, avatarIcon, name, password, username } from "../_lib/userSchema.js";
 import { hashToken, isTokenFormat } from "../_lib/userLinks.js";
 
 const router = Router();
@@ -16,6 +16,9 @@ const Login = z.object({
     password: z.string({ error: "Ange ditt lösenord" }).min(1, "Ange ditt lösenord"),
 });
 
+// What the frontend gets to know about the logged-in user
+const USER_FIELDS = `id, name, username, avatar_icon AS "avatarIcon", avatar_color AS "avatarColor"`;
+
 const LINK_INVALID = "Länken är ogiltig, redan använd eller har gått ut. Be en admin i din grupp om en ny länk.";
 
 /* --- POST /api/auth/register  { name, username, password } → { token, user } --- */
@@ -25,7 +28,7 @@ router.post("/register", async (req, res) => {
 
     try {
         const { rows: [user] } = await pool.query(
-            "INSERT INTO users (name, username, password_hash) VALUES ($1, $2, $3) RETURNING id, name, username",
+            `INSERT INTO users (name, username, password_hash) VALUES ($1, $2, $3) RETURNING ${USER_FIELDS}`,
             [body.name, body.username, passwordHash]
         );
         res.status(201).json({ token: signToken(user), user });
@@ -40,7 +43,7 @@ router.post("/login", async (req, res) => {
     const body = parse(Login, req.body);
 
     const { rows: [user] } = await pool.query(
-        "SELECT id, name, username, password_hash FROM users WHERE username = $1",
+        `SELECT ${USER_FIELDS}, password_hash FROM users WHERE username = $1`,
         [body.username]
     );
     // Same message whether the user exists, isn't activated yet, or the password is wrong –
@@ -48,15 +51,29 @@ router.post("/login", async (req, res) => {
     const ok = user?.password_hash && (await bcrypt.compare(body.password, user.password_hash));
     if (!ok) throw new HttpError(401, "Fel användarnamn eller lösenord");
 
-    const safeUser = { id: user.id, name: user.name, username: user.username };
+    const { password_hash, ...safeUser } = user; // eslint-disable-line no-unused-vars
     res.json({ token: signToken(safeUser), user: safeUser });
 });
 
 /* --- GET /api/auth/me → { user } – checks that the saved token still works --- */
 router.get("/me", requireAuth, async (req, res) => {
-    const { rows: [user] } = await pool.query("SELECT id, name, username FROM users WHERE id = $1", [req.user.id]);
+    const { rows: [user] } = await pool.query(`SELECT ${USER_FIELDS} FROM users WHERE id = $1`, [req.user.id]);
     if (!user) throw new HttpError(401, "Kontot finns inte längre. Logga in igen.");
     res.json({ user });
+});
+
+/* --- PUT /api/auth/me  { name, avatarIcon, avatarColor } → { token, user } – edit my profile --- */
+// A new token, since the name is in it
+const EditProfile = z.object({ name, avatarIcon, avatarColor });
+
+router.put("/me", requireAuth, async (req, res) => {
+    const body = parse(EditProfile, req.body);
+    const { rows: [user] } = await pool.query(
+        `UPDATE users SET name = $1, avatar_icon = $2, avatar_color = $3 WHERE id = $4 RETURNING ${USER_FIELDS}`,
+        [body.name, body.avatarIcon, body.avatarColor, req.user.id]
+    );
+    if (!user) throw new HttpError(401, "Kontot finns inte längre. Logga in igen.");
+    res.json({ token: signToken(user), user });
 });
 
 /* --- GET /api/auth/link/:token → { purpose, name, username } – who the link is for --- */
@@ -97,7 +114,7 @@ router.post("/link/:token", async (req, res) => {
         if (!link) throw new HttpError(404, LINK_INVALID);
 
         const { rows: [updated] } = await db.query(
-            "UPDATE users SET password_hash = $1 WHERE id = $2 RETURNING id, name, username",
+            `UPDATE users SET password_hash = $1 WHERE id = $2 RETURNING ${USER_FIELDS}`,
             [passwordHash, link.user_id]
         );
         // This link – and any other open link for the same user – is now used up

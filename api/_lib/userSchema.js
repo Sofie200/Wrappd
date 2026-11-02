@@ -20,3 +20,10 @@ export const password = z
     .string({ error: "Ange ett lösenord" })
     .min(8, "Lösenordet ska vara minst 8 tecken")
     .max(200, "Lösenordet får vara högst 200 tecken");
+
+// The profile icon and its colour – the same values as the CHECKs in db/schema.sql
+export const AVATAR_ICONS = ["user", "cat", "dog", "rabbit", "flower"];
+export const AVATAR_COLORS = ["pink", "orange", "green", "purple", "blue"];
+
+export const avatarIcon = z.enum(AVATAR_ICONS, { error: "Välj en av ikonerna" });
+export const avatarColor = z.enum(AVATAR_COLORS, { error: "Välj en av färgerna" });

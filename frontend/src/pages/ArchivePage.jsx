@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { useFetch } from "../hooks/useFetch.js";
 import { Empty, ErrorMessage, Loading } from "../components/Feedback.jsx";
 import ListCard from "../components/ListCard.jsx";
+import { ArrowLeft } from "lucide-react";
 
 // /archive – the lists I administer whose date has passed
 export default function ArchivePage() {
@@ -16,7 +17,9 @@ export default function ArchivePage() {
     return (
         <div className="page">
             <p>
-                <Link to="/">← Översikten</Link>
+                <Link to="/" className="back-link">
+                    <ArrowLeft size={16} aria-hidden="true" /> Översikten
+                </Link>
             </p>
             <h1>Arkiv</h1>
             <p className="muted">Önskelistor du administrerar vars datum har passerat. De kan inte längre ändras.</p>

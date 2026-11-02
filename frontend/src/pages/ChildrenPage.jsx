@@ -4,6 +4,7 @@ import { api } from "../api.js";
 import { useFetch } from "../hooks/useFetch.js";
 import { Empty, ErrorMessage, Loading } from "../components/Feedback.jsx";
 import ChildForm from "../components/ChildForm.jsx";
+import { Baby, Plus } from "lucide-react";
 
 // What disappears when a child is deleted – shown in the confirmation
 function deleteWarning(child) {
@@ -59,10 +60,12 @@ export default function ChildrenPage() {
     return (
         <div className="page">
             <div className="page-head">
-                <h1>Mina barn</h1>
+                <h1 className="title-with-icon">
+                    <Baby size={28} aria-hidden="true" /> Mina barn
+                </h1>
                 {mode !== "new" && (
                     <button type="button" className="btn btn-primary" onClick={() => setMode("new")}>
-                        + Lägg till barn
+                        <Plus size={16} aria-hidden="true" /> Lägg till barn
                     </button>
                 )}
             </div>
@@ -108,7 +111,7 @@ export default function ChildrenPage() {
                                     </p>
                                     <div className="card-actions">
                                         <Link to={`/lists/new?for=${child.id}`} className="btn btn-small">
-                                            + Ny lista
+                                            <Plus size={16} aria-hidden="true" /> Ny lista
                                         </Link>
                                         <button type="button" className="btn btn-small btn-ghost" onClick={() => setMode(child.id)} disabled={busy}>
                                             Redigera

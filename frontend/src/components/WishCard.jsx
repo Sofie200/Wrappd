@@ -2,9 +2,11 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { api } from "../api.js";
 import { formatPrice, joinNames } from "../format.js";
+import Avatar from "./Avatar.jsx";
 import { ErrorMessage } from "./Feedback.jsx";
 import Modal from "./Modal.jsx";
 import WishForm from "./WishForm.jsx";
+import { ArrowUpRight } from "lucide-react";
 
 // One wish: a compact row (image, title, price, reserved badge) that opens the full wish in a modal.
 // What the modal shows depends on `me` from the server:
@@ -73,11 +75,29 @@ export default function WishCard({ wish, me, listId, onChanged }) {
             </div>
         );
 
-    // Only those who may see reservations get the badge – recipients never do
+    // Everyone who has reserved it (in any of its gifts), once each
+    const reservers = [];
+    for (const gift of wish.gifts ?? []) {
+        for (const person of gift.people ?? []) {
+            if (!reservers.some((p) => p.id === person.id)) reservers.push(person);
+        }
+    }
+
+    // Only those who may see reservations get the badge and the icons – recipients never do
     const reservedBadge =
         me.seesReservations && reserved > 0 ? (
-            <span className={`badge ${full ? "badge-gift" : "badge-partial"}`}>
-                {full ? "Reserverad" : `Reserverad ${reserved}/${wish.quantity}`}
+            <span className="reserved-by">
+                <span className={`badge ${full ? "badge-gift" : "badge-partial"}`}>
+                    {full ? "Reserverad" : `Reserverad ${reserved}/${wish.quantity}`}
+                </span>
+                {reservers.length > 0 && (
+                    <span className="avatar-stack" title={joinNames(reservers.map((p) => p.name))}>
+                        {reservers.map((p) => (
+                            <Avatar key={p.id} icon={p.avatarIcon} color={p.avatarColor} size={22} />
+                        ))}
+                        <span className="visually-hidden">av {joinNames(reservers.map((p) => p.name))}</span>
+                    </span>
+                )}
             </span>
         ) : null;
 
@@ -124,7 +144,7 @@ export default function WishCard({ wish, me, listId, onChanged }) {
 
                             {wish.url && (
                                 <a href={wish.url} target="_blank" rel="noopener noreferrer" className="wish-link">
-                                    Se produkten ↗
+                                    Se produkten <ArrowUpRight size={16} aria-hidden="true" />
                                 </a>
                             )}
 

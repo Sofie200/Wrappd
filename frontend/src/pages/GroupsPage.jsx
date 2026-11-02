@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { api } from "../api.js";
 import { useFetch } from "../hooks/useFetch.js";
 import { Empty, ErrorMessage, Loading } from "../components/Feedback.jsx";
+import { Users } from "lucide-react";
 
 export default function GroupsPage() {
     const navigate = useNavigate();
@@ -26,7 +27,9 @@ export default function GroupsPage() {
 
     return (
         <div className="page">
-            <h1>Grupper</h1>
+            <h1 className="title-with-icon">
+                <Users size={28} aria-hidden="true" /> Mina grupper
+            </h1>
 
             <section className="section">
                 {!data && loading && <Loading />}
