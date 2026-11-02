@@ -109,6 +109,7 @@ router.get("/:id", async (req, res) => {
 
     const { rows: members } = await pool.query(
         `SELECT u.id, u.name, u.username, gm.is_admin AS "isAdmin",
+                u.avatar_icon AS "avatarIcon", u.avatar_color AS "avatarColor",
                 u.password_hash IS NOT NULL AS "isActivated",
                 u.is_child AS "isChild",
                 (SELECT string_agg(p.name, ', ' ORDER BY p.name) FROM child_parents cp

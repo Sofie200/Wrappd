@@ -672,6 +672,18 @@ select {
     border-bottom: 0;
 }
 
+/* Profile icon, name and badges on one line */
+.member-name {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+}
+
+.member-name .avatar {
+    margin-right: 0.35rem;
+}
+
 .member-actions {
     display: flex;
     gap: 0.25rem;

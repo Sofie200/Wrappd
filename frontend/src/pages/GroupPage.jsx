@@ -8,6 +8,7 @@ import ListCard from "../components/ListCard.jsx";
 import UserSearch from "../components/UserSearch.jsx";
 import CreateUserForm from "../components/CreateUserForm.jsx";
 import UserLinkBox from "../components/UserLinkBox.jsx";
+import Avatar from "../components/Avatar.jsx";
 
 export default function GroupPage() {
     const { id } = useParams();
@@ -171,7 +172,8 @@ export default function GroupPage() {
                         if (member.isChild) {
                             return (
                                 <li key={member.id}>
-                                    <span>
+                                    <span className="member-name">
+                                        <Avatar icon={member.avatarIcon} color={member.avatarColor} size={32} />
                                         {member.name} <span className="badge badge-gift">Barn</span>
                                         {member.parents && <span className="muted small"> · Föräldrar: {member.parents}</span>}
                                     </span>
@@ -181,7 +183,8 @@ export default function GroupPage() {
 
                         return (
                             <li key={member.id}>
-                                <span>
+                                <span className="member-name">
+                                    <Avatar icon={member.avatarIcon} color={member.avatarColor} size={32} />
                                     {member.name} <span className="muted">@{member.username}</span>
                                     {isMe && <span className="muted"> (du)</span>}
                                     {member.isAdmin && <span className="badge">Admin</span>}

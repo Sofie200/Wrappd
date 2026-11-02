@@ -10,9 +10,15 @@ CREATE TABLE users (
     password_hash TEXT,
     is_child      BOOLEAN NOT NULL DEFAULT false,
     -- Profile icon in the top menu (same values in api/_lib/userSchema.js and frontend/src/profileOptions.js)
-    avatar_icon   TEXT NOT NULL DEFAULT 'user' CHECK (avatar_icon IN ('user', 'cat', 'snail', 'bug', 'bird', 'ghost', 'banana',
-                                                                   'hand-metal', 'citrus', 'lollipop', 'coffee', 'squirrel', 'sun', 'germ')),
-    avatar_color  TEXT NOT NULL DEFAULT 'pink' CHECK (avatar_color IN ('pink', 'orange', 'green', 'purple', 'blue')),
+    -- A random icon and colour for every new user
+    avatar_icon   TEXT NOT NULL
+                  DEFAULT (ARRAY['user', 'cat', 'snail', 'bug', 'bird', 'ghost', 'banana',
+                                 'hand-metal', 'citrus', 'lollipop', 'coffee', 'squirrel', 'sun', 'germ'])[floor(random() * 14)::int + 1]
+                  CHECK (avatar_icon IN ('user', 'cat', 'snail', 'bug', 'bird', 'ghost', 'banana',
+                                         'hand-metal', 'citrus', 'lollipop', 'coffee', 'squirrel', 'sun', 'germ')),
+    avatar_color  TEXT NOT NULL
+                  DEFAULT (ARRAY['pink', 'orange', 'green', 'purple', 'blue'])[floor(random() * 5)::int + 1]
+                  CHECK (avatar_color IN ('pink', 'orange', 'green', 'purple', 'blue')),
     created_by    INT REFERENCES users(id) ON DELETE SET NULL,
     created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
     CONSTRAINT users_adult_has_username CHECK (is_child OR username IS NOT NULL),
