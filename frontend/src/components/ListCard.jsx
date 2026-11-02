@@ -1,5 +1,22 @@
 import { Link } from "react-router-dom";
-import { formatDate, relativeDays } from "../format.js";
+import { daysUntil, formatDate } from "../format.js";
+
+// "27 dagar kvar" with the number in a round badge. On the day itself: "Idag!"
+function DaysLeft({ iso }) {
+    const days = daysUntil(iso);
+    if (days < 0) return null;
+    return (
+        <p className="days-left">
+            {days === 0 ? (
+                <span className="days-left-today">Idag!</span>
+            ) : (
+                <>
+                    <span className="days-badge">{days}</span> {days === 1 ? "dag" : "dagar"} kvar
+                </>
+            )}
+        </p>
+    );
+}
 
 // One list in an overview. Lists TO me that I don't administer have no link – I can't open them.
 export default function ListCard({ list, extra }) {
@@ -17,10 +34,9 @@ export default function ListCard({ list, extra }) {
             </div>
             <p className="card-date">
                 {formatDate(list.endDate)}
-                {!list.archived && <span className="muted"> · {relativeDays(list.endDate)}</span>}
             </p>
-            {list.recipients && <p className="muted">Till: {list.recipients}</p>}
-            {extra}
+            {!list.archived && <DaysLeft iso={list.endDate} />}
+            {list.recipients && <p className="card-recipient">Till: {list.recipients}</p>}
         </>
     );
 

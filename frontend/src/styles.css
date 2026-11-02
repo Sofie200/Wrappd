@@ -1,26 +1,33 @@
+@import url('https://fonts.googleapis.com/css2?family=Google+Sans:ital,opsz,wght@0,17..18,400..700;1,17..18,400..700&display=swap');
+
 /* ---------- Tokens ---------- */
 :root {
-    --bg: #f8f4ee;
+    --bg: #feeddc;
     --surface: #ffffff;
-    --surface-soft: #f2ece3;
-    --ink: #2a2421;
+    --surface-soft: #feeddc;
+    --ink: #632519;
     --muted: #7a6f68;
     --line: #e6ddd2;
-    --accent: #b0384a;
+    --accent: #ec556f;
     --accent-ink: #ffffff;
-    --accent-soft: #f7e3e5;
-    --green: #2f6b4f;
-    --green-soft: #e1efe7;
-    --blue-soft: #e4ecf6;
-    --blue: #2c4f7c;
+    --accent-soft: #fea82e;
+    --green: #74ba73;
+    --green-soft: #fdc366;
+    --blue-soft: #cc9cd2;
+    --blue: #aa72c2;
     --danger: #b3261e;
     --danger-soft: #fbe5e3;
 
     --radius: 14px;
     --radius-small: 8px;
     --shadow: 0 1px 2px rgba(42, 36, 33, 0.06), 0 4px 16px rgba(42, 36, 33, 0.06);
-    --font: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
-    --font-display: "Fraunces", Georgia, serif;
+    --shadow-harsh: 6px 6px 0 #fea3ac;
+    --font: "Google Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --font-display: "Google Sans",
+        system-ui,
+        -apple-system,
+        "Segoe UI",
+        sans-serif;
 }
 
 *,
@@ -52,11 +59,11 @@ h1 {
 }
 
 h2 {
-    font-size: 1.35rem;
+    font-size: 1.5rem;
 }
 
 h3 {
-    font-size: 1.1rem;
+    font-size: 1.4rem;
 }
 
 a {
@@ -76,6 +83,10 @@ img {
 }
 
 /* ---------- Layout ---------- */
+
+#logo{
+    max-width: 150px;
+}
 .header {
     background: var(--surface);
     border-bottom: 1px solid var(--line);
@@ -123,7 +134,7 @@ img {
 
 .nav a.active {
     background: var(--accent-soft);
-    color: var(--accent);
+    color: var(--accent-ink);
 }
 
 .nav a.nav-cta {
@@ -488,7 +499,7 @@ select {
 
 .badge-gift {
     background: var(--accent-soft);
-    color: var(--accent);
+    color: var(--accent-ink);
 }
 
 .badge-public {
@@ -510,8 +521,8 @@ select {
 
 .card {
     background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
+    border: 2px solid var(--accent);
+    box-shadow: var(--shadow-harsh);
     padding: 1.1rem 1.25rem;
     color: inherit;
     text-decoration: none;
@@ -521,6 +532,7 @@ select {
 }
 
 .card p {
+    font-size: 1rem;
     margin: 0;
 }
 
@@ -529,8 +541,7 @@ select {
 }
 
 .card-link:hover {
-    box-shadow: var(--shadow);
-    transform: translateY(-1px);
+    transform: translateY(-4px);
 }
 
 .card-top {
@@ -545,7 +556,14 @@ select {
 }
 
 .card-date {
+    font-weight: 200;
+
+}
+.card-recipient{
     font-weight: 500;
+    font-size: 0.8rem !important;
+    text-transform: uppercase;
+    letter-spacing: 1px;
 }
 
 /* ---------- Auth ---------- */
@@ -959,4 +977,43 @@ select {
 
 .input-with-button .btn {
     white-space: nowrap;
+}
+
+/* ---------- List page: wishes in price groups ---------- */
+.price-group + .price-group {
+    margin-top: 0.5rem;
+}
+
+.price-group .subhead {
+    margin: 1.25rem 0 0.75rem;
+}
+
+/* ---------- List card: days left, the number in a round badge ---------- */
+.days-left {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0.5rem 0;
+    font-weight: 600;
+}
+
+.days-badge {
+    /* Same width and height + 50 % radius = a perfect circle. Room for three digits. */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    width: 2.6em;
+    height: 2.6em;
+    border-radius: 50%;
+    background: var(--accent);
+    color: var(--accent-ink);
+    font-size: 0.95rem;
+    font-weight: 700;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+}
+
+.days-left-today {
+    color: var(--accent);
 }

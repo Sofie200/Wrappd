@@ -32,9 +32,14 @@ export function todayIso() {
     return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
 }
 
+// Days from today to the date: 0 = today, negative = passed
+export function daysUntil(iso) {
+    return Math.round((toDate(iso) - toDate(todayIso())) / 86_400_000);
+}
+
 // "Idag", "Imorgon", "Om 12 dagar", "För 3 dagar sedan"
 export function relativeDays(iso) {
-    const days = Math.round((toDate(iso) - toDate(todayIso())) / 86_400_000);
+    const days = daysUntil(iso);
     if (days === 0) return "Idag";
     if (days === 1) return "Imorgon";
     if (days > 1) return `Om ${days} dagar`;

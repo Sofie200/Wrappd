@@ -10,7 +10,7 @@ export default function Layout() {
             <header className="header">
                 <div className="header-inner">
                     <Link to="/" className="logo">
-                        <span aria-hidden="true">🎁</span> {APP_NAME}
+                        <img src="/logo.png" alt="{APP_NAME}" id="logo" />
                     </Link>
 
                     <nav className="nav" aria-label="Huvudmeny">
