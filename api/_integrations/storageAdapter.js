@@ -26,12 +26,25 @@ function requireToken() {
  * @param {{ buffer: Buffer, mimeType: string }} image
  * @returns {Promise<string>} the public URL
  */
-export async function uploadWishImage(listId, { buffer, mimeType }) {
+export function uploadWishImage(listId, image) {
+    return uploadImage(`wishes/${listId}`, image);
+}
+
+/**
+ * Uploads the image of a gift bought outside the wish list.
+ * @param {{ buffer: Buffer, mimeType: string }} image
+ * @returns {Promise<string>} the public URL
+ */
+export function uploadGiftImage(image) {
+    return uploadImage("gifts", image);
+}
+
+async function uploadImage(folder, { buffer, mimeType }) {
     requireToken();
     const extension = EXTENSIONS[mimeType];
     if (!extension) throw new Error(`Unsupported image type: ${mimeType}`);
 
-    const blob = await put(`wishes/${listId}/${randomUUID()}.${extension}`, buffer, {
+    const blob = await put(`${folder}/${randomUUID()}.${extension}`, buffer, {
         access: "public",
         contentType: mimeType,
         addRandomSuffix: false, // the UUID already makes the path unique
@@ -41,7 +54,7 @@ export async function uploadWishImage(listId, { buffer, mimeType }) {
 }
 
 /**
- * Deletes images we no longer use. Callers treat failures as "log and go on":
+ * Deletes images we no longer use (wishes' and gifts'). Callers treat failures as "log and go on":
  * a leftover file in the store is better than a failed request.
  * @param {string[]} urls
  */

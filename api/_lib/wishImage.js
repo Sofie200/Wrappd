@@ -1,10 +1,18 @@
-// A wish's NEW image: an uploaded file, or an image from a shop (imageFromUrl, from "Hämta uppgifter").
+// A wish's (or a gift's) NEW image: an uploaded file, or an image from a shop (imageFromUrl, from "Hämta uppgifter").
 // Either way it ends up as our own copy in Vercel Blob. Returns the new URL, or null if there is no new image.
 import { HttpError } from "./http.js";
 import { downloadImage } from "./productScraper.js";
-import { uploadWishImage } from "../_integrations/storageAdapter.js";
+import { uploadGiftImage, uploadWishImage } from "../_integrations/storageAdapter.js";
 
-export async function uploadNewWishImage(listId, file, imageFromUrl) {
+export function uploadNewWishImage(listId, file, imageFromUrl) {
+    return uploadNewImage((image) => uploadWishImage(listId, image), file, imageFromUrl);
+}
+
+export function uploadNewGiftImage(file, imageFromUrl) {
+    return uploadNewImage(uploadGiftImage, file, imageFromUrl);
+}
+
+async function uploadNewImage(upload, file, imageFromUrl) {
     let image = null;
     if (file) {
         image = { buffer: file.buffer, mimeType: file.mimetype };
@@ -19,7 +27,7 @@ export async function uploadNewWishImage(listId, file, imageFromUrl) {
     if (!image) return null;
 
     try {
-        return await uploadWishImage(listId, image);
+        return await upload(image);
     } catch (err) {
         console.error("[WISH] Image upload failed:", err);
         throw new HttpError(502, "Bildtjänsten svarar inte just nu. Försök igen, eller spara utan ny bild.");

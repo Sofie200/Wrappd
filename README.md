@@ -48,10 +48,11 @@ En webbapp för att hålla koll på önskelistor och gåvor i familjen, bland v�
 - Andra ser bara "Reserverad av Anna och Erik", inte pris, fördelning eller vem som reserverade först.
 - Antal kan ändras och gåvan ångras tills listan arkiveras. Pris, kommentar och fördelning (även vilka som delar) går att ändra även efteråt.
 - En önskning kan inte ändras eller raderas när den har reserverats.
+- **Gåvor utanför önskelistan:** man kan spara gåvor man köpt som inte står på listan, med titel, beskrivning, länk (med Hämta uppgifter), bild, antal, pris och kommentar. De kopplas till en lista (även arkiverad) eller får en mottagare i fritext och ett datum. De visas aldrig på listan, bara för dem som delar på gåvan. Bara gåvor med lista kan delas. Allt kan alltid ändras, även listan, och gåvan kan alltid tas bort. Raderas listan raderas gåvan också.
 
 **Översikt**
 - Kommande event i mina grupper, även listor till mig.
-- Mina inköp (gåvor), aktuella och historiska, med totalpris och min del – och summan av mina delar.
+- Mina inköp (gåvor, även de utanför önskelistan), aktuella och historiska, med totalpris och min del – och summan av mina delar.
 - Listor jag administrerar.
 
 ## Struktur
@@ -170,9 +171,11 @@ Alla routes utom `/api/auth/register`, `/api/auth/login`, `/api/auth/link/:token
 | PATCH | `/api/wishes/:id` | Ändra önskning, multipart, om den inte är reserverad (admin) |
 | DELETE | `/api/wishes/:id` | Radera önskning, om den inte är reserverad (admin) |
 | POST | `/api/wishes/:id/gifts` | Reservera: skapa en gåva `{ quantity }` → `{ id }` |
+| GET | `/api/gifts/lists` | Listor som en gåva utanför önskelistan kan kopplas till |
+| POST | `/api/gifts` | Ny gåva utanför önskelistan, multipart med bild → `{ id }` |
 | GET | `/api/gifts/:id` | Gåvan, önskningen, de som delar och vilka som kan läggas till (de som delar) |
-| PUT | `/api/gifts/:id` | Ändra `{ quantity, price, comment, split, members: [{ userId, amount }] }` (de som delar) |
-| DELETE | `/api/gifts/:id` | Ångra reservationen, före datumet (de som delar) |
+| PUT | `/api/gifts/:id` | Ändra `{ quantity, price, comment, split, members: [{ userId, amount }] }`, plus titel, beskrivning, länk, bild och lista/mottagare/datum för gåvor utanför listan. JSON eller multipart. (de som delar) |
+| DELETE | `/api/gifts/:id` | Ångra reservationen (före datumet) / ta bort en gåva utanför listan (de som delar) |
 | GET | `/api/profile` | Kommande event, mina gåvor, listor jag administrerar |
 
 ## Säkerhet och felhantering

@@ -118,11 +118,19 @@ export default function ListPage() {
             <section className="section">
                 <div className="section-head">
                     <h2>Önskningar ({wishes.length})</h2>
-                    {me.canEdit && !adding && (
-                        <button type="button" className="btn btn-small" onClick={() => setAdding(true)}>
-                            + Lägg till önskning
-                        </button>
-                    )}
+                    <div className="actions">
+                        {me.canEdit && !adding && (
+                            <button type="button" className="btn btn-small" onClick={() => setAdding(true)}>
+                                + Lägg till önskning
+                            </button>
+                        )}
+                        {/* A gift bought outside the list – only those who share it ever see it */}
+                        {me.seesReservations && (
+                            <Link to={`/gifts/new?list=${list.id}`} className="btn btn-small btn-ghost">
+                                + Gåva utanför listan
+                            </Link>
+                        )}
+                    </div>
                 </div>
 
                 {adding && (

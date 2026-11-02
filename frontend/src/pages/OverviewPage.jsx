@@ -15,7 +15,7 @@ function GiftTable({ rows }) {
                 <thead>
                     <tr>
                         <th>Gåva</th>
-                        <th>Lista</th>
+                        <th>Lista / till</th>
                         <th className="num">Antal</th>
                         <th className="num">Pris</th>
                         <th className="num">Min del</th>
@@ -26,10 +26,11 @@ function GiftTable({ rows }) {
                         <tr key={g.id}>
                             <td>
                                 <Link to={`/gifts/${g.id}`}>{g.title}</Link>
+                                {g.offList && <span className="muted small"> · utanför listan</span>}
                                 {g.sharedWith && <div className="muted small">Delas med {g.sharedWith}</div>}
                             </td>
                             <td>
-                                <Link to={`/lists/${g.listId}`}>{g.listTitle}</Link>
+                                {g.listId ? <Link to={`/lists/${g.listId}`}>{g.listTitle}</Link> : <>Till {g.recipients}</>}
                                 <span className="muted"> · {formatShortDate(g.endDate)}</span>
                             </td>
                             <td className="num">{g.quantity}</td>
@@ -84,7 +85,12 @@ export default function OverviewPage() {
             </section>
 
             <section className="section">
-                <h2>Mina inköp</h2>
+                <div className="section-head">
+                    <h2>Mina inköp</h2>
+                    <Link to="/gifts/new" className="btn btn-small">
+                        + Lägg till gåva
+                    </Link>
+                </div>
                 {gifts.current.length === 0 ? (
                     <Empty>Du har inga aktuella gåvor.</Empty>
                 ) : (

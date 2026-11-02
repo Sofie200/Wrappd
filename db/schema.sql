@@ -104,23 +104,40 @@ CREATE TABLE wishes (
 );
 CREATE INDEX wishes_list_idx ON wishes (list_id);
 
--- A gift ("gåva" in the UI) is created when someone reserves a wish. It has its own copy of the title,
--- its own price (what was actually paid, in total for all copies) and a comment.
+-- A gift ("gåva" in the UI) is either:
+--  - reserved on a wish (wish_id): its own copy of the title, its own price (total, for all copies)
+--    and a comment – everything else is read from the wish, or
+--  - bought outside the wish list (wish_id NULL): its own title, description, link and image, and
+--    either linked to a list (list_id) or given a recipient in free text and a date.
+--    These are never shown on the list – only to the people who share the gift.
 -- One person can be in at most one gift per wish – checked in gift-routes.js.
 CREATE TABLE gifts (
-    id         SERIAL PRIMARY KEY,
-    wish_id    INT NOT NULL REFERENCES wishes(id) ON DELETE CASCADE,
-    created_by INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    quantity   INT NOT NULL CHECK (quantity BETWEEN 1 AND 99),
-    title      TEXT NOT NULL,
-    price      NUMERIC(10, 2) CHECK (price >= 0),
-    comment    TEXT,
-    split      TEXT NOT NULL DEFAULT 'equal' CHECK (split IN ('equal', 'custom')),
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    id          SERIAL PRIMARY KEY,
+    wish_id     INT REFERENCES wishes(id) ON DELETE CASCADE,
+    list_id     INT REFERENCES lists(id) ON DELETE CASCADE,
+    created_by  INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    quantity    INT NOT NULL CHECK (quantity BETWEEN 1 AND 99),
+    title       TEXT NOT NULL,
+    price       NUMERIC(10, 2) CHECK (price >= 0),
+    comment     TEXT,
+    split       TEXT NOT NULL DEFAULT 'equal' CHECK (split IN ('equal', 'custom')),
+    recipient   TEXT,
+    gift_date   DATE,
+    description TEXT,
+    url         TEXT,
+    image_url   TEXT,
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+    CONSTRAINT gifts_wish_or_free CHECK (
+        (wish_id IS NOT NULL AND list_id IS NULL AND recipient IS NULL AND gift_date IS NULL
+            AND description IS NULL AND url IS NULL AND image_url IS NULL)
+        OR (wish_id IS NULL AND list_id IS NOT NULL AND recipient IS NULL AND gift_date IS NULL)
+        OR (wish_id IS NULL AND list_id IS NULL AND recipient IS NOT NULL AND gift_date IS NOT NULL)
+    )
 );
 CREATE INDEX gifts_wish_idx ON gifts (wish_id);
 CREATE INDEX gifts_created_by_idx ON gifts (created_by);
+CREATE INDEX gifts_list_idx ON gifts (list_id);
 
 -- Everyone who shares a gift – all with the same rights to it. amount is only used when split = 'custom'.
 CREATE TABLE gift_members (

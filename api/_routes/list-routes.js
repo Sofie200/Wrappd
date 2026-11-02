@@ -220,7 +220,10 @@ router.delete("/:id", async (req, res) => {
         if (count > 0) throw new HttpError(409, "Listan har reserverade gåvor och kan inte raderas");
 
         const { rows } = await db.query(
-            "SELECT image_url FROM wishes WHERE list_id = $1 AND image_url IS NOT NULL",
+            // Wishes' images, and the images of gifts bought outside the list – they are deleted with it
+            `SELECT image_url FROM wishes WHERE list_id = $1 AND image_url IS NOT NULL
+             UNION ALL
+             SELECT image_url FROM gifts WHERE list_id = $1 AND image_url IS NOT NULL`,
             [listId]
         );
         await db.query("DELETE FROM lists WHERE id = $1", [listId]);

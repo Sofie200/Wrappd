@@ -184,6 +184,21 @@ FROM gifts g, (VALUES ('johan', 249.00), ('sara', 100.00)) AS x(u, amount)
 WHERE gm.gift_id = g.id AND g.wish_id = seed_wish('Eriks födelsedag', 'Bok om fågelskådning')
   AND gm.user_id = seed_user(x.u);
 
+-- ---------- Gåvor utanför önskelistan ----------
+-- Visas aldrig på listan, bara för dem som delar på gåvan.
+--  Sara och Johan köpte blommor till Annas 40-årsdag, utöver önskningarna (lika delat)
+INSERT INTO gifts (created_by, quantity, title, price, comment, list_id)
+VALUES (seed_user('sara'), 1, 'Blomsterbukett', 450.00, 'Beställd till lördag förmiddag.', seed_list('Annas 40-årsdag'));
+INSERT INTO gift_members (gift_id, user_id)
+SELECT g.id, seed_user(u) FROM gifts g, (VALUES ('sara'), ('johan')) AS x(u) WHERE g.title = 'Blomsterbukett';
+
+--  Elsa har köpt en present utan lista – med mottagare och datum
+INSERT INTO gifts (created_by, quantity, title, description, price, recipient, gift_date)
+VALUES (seed_user('elsa'), 1, 'Stickad halsduk', 'Mörkgrön, ull.', 349.00, 'Grannen Margit',
+        (now() AT TIME ZONE 'Europe/Stockholm')::date + 25);
+INSERT INTO gift_members (gift_id, user_id)
+SELECT id, seed_user('elsa') FROM gifts WHERE title = 'Stickad halsduk';
+
 -- ---------- Städa bort hjälpfunktionerna ----------
 DROP FUNCTION seed_user(text);
 DROP FUNCTION seed_group(text);
