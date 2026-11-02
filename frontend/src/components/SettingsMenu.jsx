@@ -1,14 +1,22 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Settings } from "lucide-react";
 
-// A button (a cog by default, or the lucide icon passed as `icon`) that opens a small dropdown menu. Pass the items as children
+// A button (a cog by default, the lucide icon passed as `icon`, or any content passed as `trigger`,
+// e.g. a profile icon) that opens a small dropdown menu. Pass the items as children
 // (links or buttons with className="menu-item"). Closes on a click outside, on Esc
 // and when an item is chosen.
 //
 // The menu is position: fixed and placed from the button's position on screen, so it always
 // stays inside the window: under the button, right-aligned to it – pushed in from the edges
 // if needed, and opened upwards if there's no room below.
-export default function SettingsMenu({ label = "Inställningar", icon: Icon = Settings, children }) {
+export default function SettingsMenu({
+    label = "Inställningar",
+    icon: Icon = Settings,
+    trigger,
+    buttonClassName = "btn btn-ghost btn-icon",
+    title,
+    children,
+}) {
     const [open, setOpen] = useState(false);
     const ref = useRef(null);
     const buttonRef = useRef(null);
@@ -73,14 +81,14 @@ export default function SettingsMenu({ label = "Inställningar", icon: Icon = Se
             <button
                 ref={buttonRef}
                 type="button"
-                className="btn btn-ghost btn-icon"
+                className={buttonClassName}
                 aria-label={label}
-                title={label}
+                title={title ?? label}
                 aria-haspopup="menu"
                 aria-expanded={open}
                 onClick={() => setOpen((o) => !o)}
             >
-                <Icon size={18} aria-hidden="true" />
+                {trigger ?? <Icon size={18} aria-hidden="true" />}
             </button>
 
             {open && (

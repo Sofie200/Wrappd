@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, NavLink, Outlet } from "react-router-dom";
-import { Baby, LogOut, Menu, Plus, Users } from "lucide-react";
+import { Baby, LogOut, Plus, UserPen, Users } from "lucide-react";
 import { useAuth } from "../context/AuthContext.jsx";
 import { APP_NAME } from "../config.js";
 import Avatar from "./Avatar.jsx";
@@ -29,17 +29,15 @@ export default function Layout() {
                     </nav>
 
                     <div className="user-menu">
-                        <button
-                            type="button"
-                            className="profile-button"
-                            onClick={() => setEditingProfile(true)}
-                            aria-label={`Min profil – ${user.name}`}
+                        <SettingsMenu
+                            label={`Meny för ${user.name}`}
                             title={`${user.name} (@${user.username})`}
-                            aria-haspopup="dialog"
+                            buttonClassName="profile-button"
+                            trigger={<Avatar icon={user.avatarIcon} color={user.avatarColor} />}
                         >
-                            <Avatar icon={user.avatarIcon} color={user.avatarColor} />
-                        </button>
-                        <SettingsMenu label="Meny" icon={Menu}>
+                            <button type="button" className="menu-item" role="menuitem" onClick={() => setEditingProfile(true)}>
+                                <UserPen size={16} aria-hidden="true" /> Redigera profil
+                            </button>
                             <NavLink to="/groups" className="menu-item" role="menuitem">
                                 <Users size={16} aria-hidden="true" /> Mina grupper
                             </NavLink>
