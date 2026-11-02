@@ -41,6 +41,7 @@ En webbapp för att hålla koll på önskelistor och gåvor i familjen, bland v�
 
 **Önskningar och gåvor**
 - En önskning har titel (obligatorisk), beskrivning, pris, länk, bild och önskat antal.
+- Med en produktlänk kan man klicka **Hämta uppgifter**: servern läser sidan och fyller i titel, beskrivning (max 200 tecken), pris och bild. Det skriver över det som står i fälten; det som inte hittas lämnas orört. Bilden sparas som en egen kopia i Vercel Blob (bara JPG/PNG, max 4 MB). Priset fylls i som det står, även i annan valuta – formuläret varnar då.
 - När någon reserverar en önskning skapas en **gåva** (`gift` i kod och databas). Den får en kopia av titeln och priset (önskningens pris × antal). Priset är gåvans totalpris och kan sedan ändras, och man kan skriva en kommentar.
 - En gåva kan delas med andra vuxna i listans grupper – aldrig med mottagarna. Kostnaden delas lika eller med egna belopp i kronor som måste bli exakt priset.
 - Alla som delar på en gåva har samma rättigheter: de ser den bland sina inköp och kan ändra den. En person kan bara vara med i en gåva per önskning.
@@ -165,6 +166,7 @@ Alla routes utom `/api/auth/register`, `/api/auth/login`, `/api/auth/link/:token
 | POST | `/api/lists/:id/publish` | Publicera (admin) |
 | DELETE | `/api/lists/:id` | Radera, om inget är reserverat (admin) |
 | POST | `/api/lists/:id/wishes` | Lägg till önskning, multipart med bild (admin) |
+| POST | `/api/scrape` | Läs en produktsida `{ url }` → `{ title, description, price, currency, imageUrl }`. Sparar inget. |
 | PATCH | `/api/wishes/:id` | Ändra önskning, multipart, om den inte är reserverad (admin) |
 | DELETE | `/api/wishes/:id` | Radera önskning, om den inte är reserverad (admin) |
 | POST | `/api/wishes/:id/gifts` | Reservera: skapa en gåva `{ quantity }` → `{ id }` |
@@ -179,6 +181,7 @@ Alla routes utom `/api/auth/register`, `/api/auth/login`, `/api/auth/link/:token
 - All indata valideras med Zod på servern. Felmeddelanden är på svenska.
 - Listor och grupper som man inte har åtkomst till ger 404, så att man inte kan gissa sig till vilka som finns.
 - Behörighetsreglerna för listor finns samlade i `api/_lib/access.js`.
+- **Hämta uppgifter** hämtar sidor som användaren anger. Därför hämtar servern bara publika adresser (inte localhost, interna nät eller molnets metadata), på port 80/443, med max 5 omdirigeringar, tidsgräns och storleksgräns – se `api/_lib/safeFetch.js`.
 - Reservationer (nya gåvor) görs i en transaktion med radlås, så två personer kan inte reservera det sista exemplaret samtidigt.
 - Bilder kontrolleras både på filtyp och på filens innehåll (JPG/PNG), max 4 MB.
 - Databasanrop har timeout (10 s), bilduppladdning 15 s, och frontendens anrop 15–30 s.

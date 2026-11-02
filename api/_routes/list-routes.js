@@ -5,7 +5,8 @@ import { HttpError, parse, parseId, todayInSweden } from "../_lib/http.js";
 import { checkListPeople, getListAccess, requireEditor } from "../_lib/access.js";
 import { WishBody } from "../_lib/wishSchema.js";
 import { receiveImage } from "../_middleware/imageUpload.js";
-import { removeWishImages, uploadWishImage } from "../_integrations/storageAdapter.js";
+import { removeWishImages } from "../_integrations/storageAdapter.js";
+import { uploadNewWishImage } from "../_lib/wishImage.js";
 
 const router = Router();
 
@@ -239,16 +240,9 @@ router.post("/:id/wishes", receiveImage, async (req, res) => {
     requireEditor(access);
     const body = parse(WishBody, req.body ?? {});
 
-    // 1. The image first – if Vercel Blob is down, nothing is saved and the user can try again
-    let imageUrl = null;
-    if (req.file) {
-        try {
-            imageUrl = await uploadWishImage(listId, { buffer: req.file.buffer, mimeType: req.file.mimetype });
-        } catch (err) {
-            console.error("[WISH] Image upload failed:", err);
-            throw new HttpError(502, "Bildtjänsten svarar inte just nu. Försök igen, eller spara utan bild.");
-        }
-    }
+    // 1. The image first – an uploaded file, or a copy of the shop's image.
+    //    If that fails, nothing is saved and the user can try again.
+    const imageUrl = await uploadNewWishImage(listId, req.file, body.imageFromUrl);
 
     // 2. Then the wish. If it fails, remove the image again so it isn't left without a wish.
     try {

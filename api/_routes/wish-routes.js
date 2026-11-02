@@ -5,7 +5,8 @@ import { HttpError, parse, parseId } from "../_lib/http.js";
 import { getListAccess, requireEditor, requireReserver } from "../_lib/access.js";
 import { WishBody } from "../_lib/wishSchema.js";
 import { receiveImage } from "../_middleware/imageUpload.js";
-import { removeWishImages, uploadWishImage } from "../_integrations/storageAdapter.js";
+import { removeWishImages } from "../_integrations/storageAdapter.js";
+import { uploadNewWishImage } from "../_lib/wishImage.js";
 
 const router = Router();
 
@@ -41,16 +42,9 @@ router.patch("/:id", receiveImage, async (req, res) => {
     // Check before uploading a new image – no point uploading it if the save will be refused
     if ((await giftCount(pool, wishId)) > 0) throw lockedByGifts(access, "ändras");
 
-    // 1. A new image is uploaded first. The old one is only deleted once the wish is saved.
-    let newImageUrl = null;
-    if (req.file) {
-        try {
-            newImageUrl = await uploadWishImage(wish.list_id, { buffer: req.file.buffer, mimeType: req.file.mimetype });
-        } catch (err) {
-            console.error("[WISH] Image upload failed:", err);
-            throw new HttpError(502, "Bildtjänsten svarar inte just nu. Försök igen, eller spara utan ny bild.");
-        }
-    }
+    // 1. A new image (uploaded file, or a copy of the shop's image) is saved first.
+    //    The old one is only deleted once the wish is saved.
+    const newImageUrl = await uploadNewWishImage(wish.list_id, req.file, body.imageFromUrl);
 
     const imageUrl = newImageUrl ?? (body.removeImage ? null : wish.image_url);
 

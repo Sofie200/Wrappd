@@ -58,6 +58,25 @@ export const WishBody = z.object({
         .max(99, "Antalet får vara högst 99")
         .default(1),
 
+    // An image from a shop's page ("Hämta uppgifter"). The server downloads it and saves its own copy.
+    // Ignored if a file is uploaded too.
+    imageFromUrl: z
+        .string()
+        .trim()
+        .max(2000)
+        .optional()
+        .transform((value, ctx) => {
+            if (!value) return null;
+            try {
+                const url = new URL(value);
+                if (url.protocol !== "http:" && url.protocol !== "https:") throw new Error();
+                return url.toString();
+            } catch {
+                ctx.addIssue({ code: "custom", message: "Bildlänken är inte en giltig webbadress" });
+                return z.NEVER;
+            }
+        }),
+
     // Only when editing: "true" removes the current image
     removeImage: z.enum(["true", "false"]).optional().transform((v) => v === "true"),
 });

@@ -11,7 +11,7 @@ const upload = multer({
 });
 
 // The file's first bytes tell what it REALLY is – the mimetype only comes from the file name
-function realImageType(buffer) {
+export function realImageType(buffer) {
     const isPng = buffer.length > 8 && buffer[0] === 0x89 && buffer[1] === 0x50 && buffer[2] === 0x4e && buffer[3] === 0x47;
     if (isPng) return "image/png";
     const isJpeg = buffer.length > 3 && buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff;
