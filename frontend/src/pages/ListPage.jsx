@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import { Pencil, Trash2 } from "lucide-react";
 import { api } from "../api.js";
 import { useFetch } from "../hooks/useFetch.js";
 import { Empty, ErrorMessage, Loading, Notice } from "../components/Feedback.jsx";
+import SettingsMenu from "../components/SettingsMenu.jsx";
 import WishCard from "../components/WishCard.jsx";
 import WishForm from "../components/WishForm.jsx";
 import { formatDate, relativeDays } from "../format.js";
@@ -20,7 +22,7 @@ export default function ListPage() {
     if (!data && loading) return <Loading />;
     if (!data) return <ErrorMessage message={error} onRetry={reload} />;
 
-    const { list, me, groups, admins, recipients, wishes } = data;
+    const { list, me, groups, recipients, wishes } = data;
 
     async function publish() {
         const ok = window.confirm(
@@ -75,14 +77,6 @@ export default function ListPage() {
                             <dt>Till</dt>
                             <dd>{names(recipients)}</dd>
                         </div>
-                        <div>
-                            <dt>Grupper</dt>
-                            <dd>{names(groups)}</dd>
-                        </div>
-                        <div>
-                            <dt>Admins</dt>
-                            <dd>{names(admins)}</dd>
-                        </div>
                     </dl>
                 </div>
 
@@ -93,14 +87,22 @@ export default function ListPage() {
                                 Publicera
                             </button>
                         )}
-                        {me.canEdit && (
-                            <Link to={`/lists/${id}/edit`} className="btn btn-ghost">
-                                Redigera
-                            </Link>
-                        )}
-                        <button type="button" className="btn btn-danger-ghost" onClick={remove} disabled={busy}>
-                            Radera
-                        </button>
+                        <SettingsMenu label="Listans inställningar">
+                            {me.canEdit && (
+                                <Link to={`/lists/${id}/edit`} className="menu-item" role="menuitem">
+                                    <Pencil size={16} aria-hidden="true" /> Redigera
+                                </Link>
+                            )}
+                            <button
+                                type="button"
+                                className="menu-item menu-item-danger"
+                                role="menuitem"
+                                onClick={remove}
+                                disabled={busy}
+                            >
+                                <Trash2 size={16} aria-hidden="true" /> Ta bort
+                            </button>
+                        </SettingsMenu>
                     </div>
                 )}
             </header>

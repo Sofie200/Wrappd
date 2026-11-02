@@ -741,25 +741,103 @@ select {
     margin: 0;
 }
 
+/* ---------- Cog menu (SettingsMenu) ---------- */
+.btn-icon {
+    padding: 0.5rem;
+    line-height: 0;
+}
+
+.menu {
+    position: relative;
+}
+
+.menu-list {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 0.35rem);
+    z-index: 20;
+    min-width: 180px;
+    display: flex;
+    flex-direction: column;
+    padding: 0.35rem;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-small);
+    box-shadow: var(--shadow);
+}
+
+.menu-item {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    width: 100%;
+    padding: 0.55rem 0.75rem;
+    border: none;
+    border-radius: 6px;
+    background: none;
+    font: inherit;
+    color: var(--ink);
+    text-align: left;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.menu-item:hover,
+.menu-item:focus-visible {
+    background: var(--surface-soft);
+    outline: none;
+}
+
+.menu-item:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.menu-item-danger {
+    color: var(--danger);
+}
+
+.menu-item-danger:hover,
+.menu-item-danger:focus-visible {
+    background: var(--danger-soft);
+}
+
 /* ---------- Wishes ---------- */
+/* One wish per row: image on the left, title, price and badge on the right.
+   The whole row is a button that opens the full wish in a modal. */
 .wishes {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
 }
 
 .wish {
+    /* Reset the <button> look */
+    font: inherit;
+    color: inherit;
+    text-align: left;
+    width: 100%;
+    padding: 0;
+    cursor: pointer;
+
     background: var(--surface);
     border: 1px solid var(--line);
     border-radius: var(--radius);
     overflow: hidden;
     display: flex;
-    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    transition: border-color 0.15s, box-shadow 0.15s;
 }
 
-.wish-editing {
-    padding: 1.25rem;
-    grid-column: 1 / -1;
+.wish:hover {
+    border-color: var(--accent);
+    box-shadow: var(--shadow);
+}
+
+.wish:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
 }
 
 .wish-full {
@@ -767,8 +845,9 @@ select {
 }
 
 .wish-image {
-    width: 100%;
-    aspect-ratio: 4 / 3;
+    flex: none;
+    width: 88px;
+    height: 88px;
     object-fit: cover;
     background: var(--surface-soft);
     display: block;
@@ -777,19 +856,132 @@ select {
 .wish-image-empty {
     display: grid;
     place-items: center;
-    font-size: 3rem;
+    font-size: 2rem;
 }
 
-.wish-body {
-    padding: 1rem 1.25rem 1.25rem;
+.wish-summary {
+    flex: 1;
+    min-width: 0;
+    padding: 0.75rem 1rem 0.75rem 0;
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
-    flex: 1;
+    gap: 0.35rem;
 }
 
-.wish-body p {
+.wish-title {
+    font-weight: 600;
+    font-size: 1.05rem;
+    /* One line, then an ellipsis – the full title is in the modal */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.wish-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.wish-meta .badge,
+.wish-detail-top .badge {
+    margin-left: 0;
+}
+
+.badge-partial {
+    background: var(--green-soft);
+    color: var(--ink);
+}
+
+/* ---------- Modal (native <dialog>) ---------- */
+.modal {
+    border: none;
+    padding: 0;
+    border-radius: var(--radius);
+    background: var(--surface);
+    color: var(--ink);
+    width: min(560px, calc(100% - 2rem));
+    max-height: calc(100dvh - 2rem);
+    box-shadow: var(--shadow);
+}
+
+.modal::backdrop {
+    background: rgba(42, 36, 33, 0.45);
+}
+
+.modal-inner {
+    padding: 1.25rem 1.5rem 1.5rem;
+}
+
+.modal-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.modal-head h2 {
     margin: 0;
+    font-size: 1.35rem;
+    overflow-wrap: anywhere;
+}
+
+.modal-close {
+    flex: none;
+    font: inherit;
+    font-size: 1.6rem;
+    line-height: 1;
+    width: 2.25rem;
+    height: 2.25rem;
+    border: none;
+    border-radius: 50%;
+    background: var(--surface-soft);
+    color: var(--ink);
+    cursor: pointer;
+}
+
+.modal-close:hover {
+    background: var(--line);
+}
+
+.modal-close:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+.wish-detail {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+.wish-detail p {
+    margin: 0;
+}
+
+.wish-detail-image {
+    width: 100%;
+    max-height: 320px;
+    aspect-ratio: 4 / 3;
+    object-fit: contain;
+    background: var(--surface-soft);
+    border-radius: var(--radius-small);
+    display: block;
+}
+
+.wish-detail-image.wish-image-empty {
+    font-size: 3rem;
+    aspect-ratio: 16 / 9;
+}
+
+.wish-detail-top {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    font-size: 1.1rem;
 }
 
 .wish-description {
@@ -931,6 +1123,19 @@ select {
 
     .list-head {
         padding: 1.25rem;
+    }
+
+    .wish-image {
+        width: 72px;
+        height: 72px;
+    }
+
+    .wish {
+        gap: 0.75rem;
+    }
+
+    .modal-inner {
+        padding: 1rem 1.1rem 1.25rem;
     }
 }
 
