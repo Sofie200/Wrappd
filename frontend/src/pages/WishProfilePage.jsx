@@ -79,21 +79,24 @@ function WishProfileForm({ data, reload }) {
 
     return (
         <div className="page page-narrow">
-            <Breadcrumbs
-                items={
-                    isMe
-                        ? [{ label: "Översikt", to: "/" }, { label: "Min önskeprofil" }]
-                        : [{ label: "Mina barn", to: "/children" }, { label: `${person.name}s önskeprofil` }]
-                }
-            />
-            <div className="profile-preview">
-                <Avatar isChild={person.isChild} id={person.id} icon={person.avatarIcon} color={person.avatarColor} size={56} />
-                <div>
-                    <h1 className="title-with-icon">
-                        <Heart size={26} aria-hidden="true" /> {isMe ? "Min önskeprofil" : `${person.name}s önskeprofil`}
-                    </h1>
-                </div>
-            </div>
+            {/* Your own profile is reached from the menu – just the title. A child's gets a way back and its avatar. */}
+            {isMe ? (
+                <h1 className="title-with-icon">
+                    <Heart size={26} aria-hidden="true" /> Min önskeprofil
+                </h1>
+            ) : (
+                <>
+                    <Breadcrumbs items={[{ label: "Mina barn", to: "/children" }, { label: `${person.name}s önskeprofil` }]} />
+                    <div className="profile-preview">
+                        <Avatar isChild={person.isChild} id={person.id} icon={person.avatarIcon} color={person.avatarColor} size={56} />
+                        <div>
+                            <h1 className="title-with-icon">
+                                <Heart size={26} aria-hidden="true" /> {person.name}s önskeprofil
+                            </h1>
+                        </div>
+                    </div>
+                </>
+            )}
             <p className="muted">
                 Det här ser alla som är med i en grupp med {isMe ? "dig" : person.name} när de klickar på namnet.
                 {isMe ? " Du ser aldrig vad andra har reserverat åt dig." : ""}

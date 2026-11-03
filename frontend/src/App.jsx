@@ -17,6 +17,7 @@ import SantaFormPage from "./pages/SantaFormPage.jsx";
 import WishProfilePage from "./pages/WishProfilePage.jsx";
 import ListsPage from "./pages/ListsPage.jsx";
 import GiftsPage from "./pages/GiftsPage.jsx";
+import ProfilePage from "./pages/ProfilePage.jsx";
 
 export default function App() {
     return (
@@ -48,6 +49,7 @@ export default function App() {
                 <Route path="gifts/:id" element={<GiftPage />} />
                 <Route path="santa/new" element={<SantaFormPage />} />
                 <Route path="people/:id/edit" element={<WishProfilePage />} />
+                <Route path="profile" element={<ProfilePage />} />
                 <Route path="*" element={<NotFoundPage />} />
             </Route>
         </Routes>

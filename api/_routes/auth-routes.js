@@ -62,18 +62,24 @@ router.get("/me", requireAuth, async (req, res) => {
     res.json({ user });
 });
 
-/* --- PUT /api/auth/me  { name, avatarIcon, avatarColor } → { token, user } – edit my profile --- */
-// A new token, since the name is in it
-const EditProfile = z.object({ name, avatarIcon, avatarColor });
+/* --- PUT /api/auth/me  { name, username, avatarIcon, avatarColor } → { token, user } – edit my profile --- */
+// A new token, since the name and username are in it
+const EditProfile = z.object({ name, username, avatarIcon, avatarColor });
 
 router.put("/me", requireAuth, async (req, res) => {
     const body = parse(EditProfile, req.body);
-    const { rows: [user] } = await pool.query(
-        `UPDATE users SET name = $1, avatar_icon = $2, avatar_color = $3 WHERE id = $4 RETURNING ${USER_FIELDS}`,
-        [body.name, body.avatarIcon, body.avatarColor, req.user.id]
-    );
-    if (!user) throw new HttpError(401, "Kontot finns inte längre. Logga in igen.");
-    res.json({ token: signToken(user), user });
+    try {
+        const { rows: [user] } = await pool.query(
+            `UPDATE users SET name = $1, username = $2, avatar_icon = $3, avatar_color = $4
+             WHERE id = $5 RETURNING ${USER_FIELDS}`,
+            [body.name, body.username, body.avatarIcon, body.avatarColor, req.user.id]
+        );
+        if (!user) throw new HttpError(401, "Kontot finns inte längre. Logga in igen.");
+        res.json({ token: signToken(user), user });
+    } catch (err) {
+        if (err.code === "23505") throw new HttpError(409, "Användarnamnet är redan upptaget");
+        throw err;
+    }
 });
 
 /* --- GET /api/auth/link/:token → { purpose, name, username } – who the link is for --- */

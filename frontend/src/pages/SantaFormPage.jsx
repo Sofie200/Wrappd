@@ -6,7 +6,6 @@ import { useAuth } from "../context/AuthContext.jsx";
 import { useFetch } from "../hooks/useFetch.js";
 import { Empty, ErrorMessage, Loading } from "../components/Feedback.jsx";
 import Avatar from "../components/Avatar.jsx";
-import Breadcrumbs from "../components/Breadcrumbs.jsx";
 import { todayIso } from "../format.js";
 
 const MIN_PARTICIPANTS = 3;
@@ -64,7 +63,6 @@ export default function SantaFormPage() {
 
     return (
         <div className="page page-narrow">
-            <Breadcrumbs items={[{ label: "Översikt", to: "/" }, { label: "Ny Secret Santa" }]} />
             <h1 className="title-with-icon">
                 <TreePine size={28} aria-hidden="true" /> Ny Secret Santa
             </h1>

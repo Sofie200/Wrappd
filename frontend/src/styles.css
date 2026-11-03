@@ -12,9 +12,10 @@
 
     --bg: var(--cream);
     --surface: #ffffff;
+    --sheet: #fff8f3; /* the faintly warm-tinted sheet behind the page content */
     --surface-soft: #fdeee4;
-    --ink: #5b2418;
-    --muted: #7d625a;
+    --ink: #3f1911;
+    --muted: #5f4b45;
     --line: #f3e2d7;
 
     /* Rose: --accent for icons, borders and focus; --accent-strong behind white text (4.75:1);
@@ -43,8 +44,32 @@
     --ribbon: linear-gradient(90deg, var(--rose), var(--coral) 35%, var(--orange) 65%, var(--lavender));
     /* Pink candy stripes, like the wrapping paper */
     --stripes: repeating-linear-gradient(-45deg, var(--rose) 0 10px, #f28aa0 10px 20px);
+    /* Page backdrop: warm gradient with diagonal white see-through stripes (login and inside the app) */
+    --backdrop:
+        repeating-linear-gradient(-45deg, rgba(255, 255, 255, 0.14) 0 12px, transparent 12px 30px),
+        linear-gradient(
+            135deg,
+            var(--yellow) 0%,
+            var(--orange) 22%,
+            var(--coral) 42%,
+            var(--rose) 62%,
+            var(--lavender) 100%
+        );
+    --sheet-gap: clamp(8px, 1.5vw, 20px);
+    /* Header + sheet are at most 1500px wide; on wider screens the backdrop takes the rest */
+    --panel-inset: max(var(--sheet-gap), calc((100% - 1500px) / 2));
+    /* Header measurements. On wide screens the page content is inset by exactly the space in front
+       of the menu (header padding + logo + gaps + link padding), so the menu and the content line up. */
+    --logo-width: 150px;
+    --header-pad: max(var(--sheet-gap), 1rem);
+    --header-gap: 1.5rem;
+    --nav-offset: 0.5rem;
+    --nav-link-pad: 0.85rem;
+    --content-inset: calc(
+        var(--header-pad) + var(--logo-width) + var(--header-gap) + var(--nav-offset) + var(--nav-link-pad)
+    );
 
-    --font: "Nunito", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --font: "Urbanist", system-ui, -apple-system, "Segoe UI", sans-serif;
     --font-display: var(--font);
 }
 
@@ -64,11 +89,16 @@ body {
     -webkit-font-smoothing: antialiased;
 }
 
+b,
+strong {
+    font-weight: 600;
+}
+
 h1,
 h2,
 h3 {
     font-family: var(--font-display);
-    font-weight: 800;
+    font-weight: 600;
     letter-spacing: -0.01em;
     line-height: 1.2;
     margin: 0 0 0.5rem;
@@ -91,6 +121,21 @@ a {
     text-underline-offset: 0.15em;
 }
 
+/* Plain text links (no class – buttons, the logo and cards keep their own styles) */
+a:not([class]) {
+    text-decoration-color: rgba(236, 91, 120, 0.4);
+    text-decoration-thickness: 1px;
+    transition: color 0.15s ease, text-decoration-color 0.15s ease, text-decoration-thickness 0.15s ease,
+        text-underline-offset 0.15s ease;
+}
+
+a:not([class]):hover {
+    color: var(--accent-strong);
+    text-decoration-color: var(--coral);
+    text-decoration-thickness: 2px;
+    text-underline-offset: 0.25em;
+}
+
 img {
     max-width: 100%;
 }
@@ -105,10 +150,30 @@ img {
 
 /* ---------- Layout ---------- */
 
-#logo{
-    max-width: 150px;
+#logo {
+    max-width: var(--logo-width);
 }
+/* ---------- App frame: full-width header, backdrop below with a white sheet on top ---------- */
+.app {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: var(--backdrop);
+    background-attachment: fixed;
+}
+
+.app-sheet {
+    flex: 1;
+    /* Sits flush under the header; the backdrop shows on the left, right and bottom */
+    margin: 0 var(--panel-inset) var(--sheet-gap);
+    background: var(--sheet);
+    border-radius: 0 0 28px 28px;
+    box-shadow: 0 2px 6px rgba(91, 36, 24, 0.08), 0 24px 56px rgba(85, 40, 124, 0.22);
+}
+
 .header {
+    /* Same side gap as the sheet, so header and sheet read as one panel on the backdrop */
+    margin: 0 var(--panel-inset);
     background: var(--surface);
     box-shadow: 0 4px 20px rgba(236, 91, 120, 0.08);
     position: sticky;
@@ -116,78 +181,136 @@ img {
     z-index: 10;
 }
 
-/* A thin ribbon under the header */
-.header::after {
-    content: "";
-    display: block;
-    height: 4px;
-    background: var(--ribbon);
-}
-
 .header-inner {
-    max-width: 1100px;
-    margin: 0 auto;
-    padding: 0.75rem 1rem;
+    padding: 0.75rem var(--header-pad);
     display: flex;
     align-items: center;
-    gap: 1.5rem;
+    gap: var(--header-gap);
     flex-wrap: wrap;
+}
+
+/* Block image (no baseline gap under it), nudged down a little to sit level with the menu */
+.header .logo img {
+    display: block;
+    width: var(--logo-width);
+    transform: translateY(3px);
 }
 
 .logo {
     font-family: var(--font-display);
-    font-weight: 700;
+    font-weight: 600;
     font-size: 1.25rem;
     color: var(--ink);
     text-decoration: none;
 }
 
+/* Main menu: plain links next to the logo; the active one gets a short rounded bar underneath */
 .nav {
     display: flex;
+    align-items: center;
     gap: 0.25rem;
-    flex: 1;
-    flex-wrap: wrap;
+    margin-left: var(--nav-offset);
 }
 
 .nav a {
+    position: relative;
     display: inline-flex;
     align-items: center;
-    gap: 0.3rem;
-    color: var(--ink);
+    justify-content: center;
+    gap: 0.4rem;
+    color: var(--muted);
     text-decoration: none;
-    padding: 0.45rem 0.9rem;
-    border-radius: 999px;
-    font-weight: 700;
-    transition: background-color 0.15s, color 0.15s;
+    padding: 0.5rem var(--nav-link-pad);
+    font-weight: 600;
+    white-space: nowrap;
+    transition: color 0.15s;
+}
+
+.nav a svg {
+    color: var(--accent);
+}
+
+.nav a::after {
+    content: "";
+    position: absolute;
+    left: var(--nav-link-pad);
+    right: calc(var(--nav-link-pad) - 0.3rem); /* a little longer on the right to balance the icon's air on the left */
+    bottom: 0.1rem;
+    height: 3px;
+    border-radius: 3px;
+    background: var(--accent);
+    transform: scaleX(0);
+    transition: transform 0.2s ease;
 }
 
 .nav a:hover {
-    background: var(--surface-soft);
+    color: var(--ink);
+}
+
+.nav a:hover svg {
+    animation: icon-shake 0.5s ease-in-out;
+}
+
+/* A quick little shake, like rattling a present */
+@keyframes icon-shake {
+    0%,
+    100% {
+        transform: rotate(0) scale(1);
+    }
+    15% {
+        transform: rotate(-14deg) scale(1.12);
+    }
+    30% {
+        transform: rotate(12deg) scale(1.12);
+    }
+    45% {
+        transform: rotate(-9deg) scale(1.08);
+    }
+    60% {
+        transform: rotate(6deg) scale(1.04);
+    }
+    75% {
+        transform: rotate(-3deg) scale(1);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .nav a:hover svg,
+    .menu-item:hover svg {
+        animation: none;
+    }
 }
 
 .nav a.active {
-    background: var(--accent-soft);
     color: var(--accent-text);
 }
 
-.nav a.nav-cta {
-    color: var(--accent-text);
+.nav a.active::after {
+    transform: scaleX(1);
 }
 
 .user-menu {
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    margin-left: auto;
 }
 
 .user-name {
-    font-weight: 500;
+    font-weight: 400;
 }
 
+/* Narrower screens: ordinary side padding */
 .main {
-    max-width: 1100px;
-    margin: 0 auto;
-    padding: 2rem 1rem 4rem;
+    padding: 3rem clamp(1rem, 3vw, 2.5rem) 4rem;
+}
+
+/* Wide screens: inset on both sides by the space in front of the menu, so the content's left edge
+   lines up with the menu (and stays centred, since the right side gets the same) */
+@media (min-width: 1024px) {
+    .main {
+        padding-inline: var(--content-inset);
+    }
 }
 
 .page-narrow {
@@ -256,7 +379,7 @@ img {
     background: var(--surface);
     color: var(--ink);
     font: inherit;
-    font-weight: 700;
+    font-weight: 600;
     text-decoration: none;
     cursor: pointer;
     transition: background-color 0.15s, border-color 0.15s, box-shadow 0.15s, transform 0.1s;
@@ -302,6 +425,15 @@ a:focus-visible {
     background: var(--surface);
 }
 
+/* Text ghost buttons (e.g. "Avbryt") get a clearer border; icon buttons stay borderless-looking */
+.btn-ghost:not(.btn-icon) {
+    border-color: #dcbcad;
+}
+
+.btn-ghost:not(.btn-icon):hover {
+    border-color: #c39784;
+}
+
 .btn-danger-ghost {
     background: transparent;
     color: var(--danger);
@@ -337,7 +469,7 @@ a:focus-visible {
 
 .field > span,
 .fieldset legend {
-    font-weight: 700;
+    font-weight: 600;
     font-size: 0.9rem;
 }
 
@@ -403,6 +535,17 @@ select {
 
 .fieldset legend {
     padding: 0 0.25rem;
+}
+
+/* A fieldset without the box – just the legend as a label, like an ordinary field */
+.fieldset.fieldset-plain {
+    border: none;
+    padding: 0;
+    background: none;
+}
+
+.fieldset.fieldset-plain legend {
+    padding: 0;
 }
 
 .checks {
@@ -482,7 +625,7 @@ select {
 .alert {
     border-radius: var(--radius-small);
     padding: 0.85rem 1.1rem;
-    font-weight: 600;
+    font-weight: 500;
     margin: 0 0 1rem;
     display: flex;
     justify-content: space-between;
@@ -503,23 +646,77 @@ select {
 
 .loading {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: 0.5rem;
-    color: var(--muted);
+    padding: 3rem 1rem;
 }
 
+/* Gift in the middle with a spinning rainbow ring around it */
 .spinner {
-    width: 1rem;
-    height: 1rem;
-    border: 2px solid var(--line);
-    border-top-color: var(--accent);
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 72px;
+    height: 72px;
+}
+
+.spinner-ring {
+    position: absolute;
     border-radius: 50%;
-    animation: spin 0.8s linear infinite;
+    inset: 0;
+    background: conic-gradient(
+        from 0deg,
+        transparent 0deg,
+        var(--yellow) 60deg,
+        var(--orange) 130deg,
+        var(--coral) 190deg,
+        var(--rose) 260deg,
+        var(--lavender) 330deg,
+        transparent 360deg
+    );
+    /* Cut out the middle so only a ring is left */
+    -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 6px), #000 calc(100% - 5px));
+    mask: radial-gradient(farthest-side, transparent calc(100% - 6px), #000 calc(100% - 5px));
+    animation: spin 1s linear infinite;
+}
+
+.spinner-gift {
+    color: var(--accent-strong);
+    animation: gift-wiggle 1.2s ease-in-out infinite;
 }
 
 @keyframes spin {
     to {
         transform: rotate(360deg);
+    }
+}
+
+@keyframes gift-wiggle {
+    0%,
+    100% {
+        transform: rotate(0) scale(1);
+    }
+    20% {
+        transform: rotate(-12deg) scale(1.08);
+    }
+    40% {
+        transform: rotate(10deg) scale(1.08);
+    }
+    60% {
+        transform: rotate(-6deg) scale(1.02);
+    }
+    80% {
+        transform: rotate(0) scale(1);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .spinner-ring {
+        animation-duration: 3s;
+    }
+
+    .spinner-gift {
+        animation: none;
     }
 }
 
@@ -542,7 +739,7 @@ select {
 .badge {
     display: inline-block;
     font-size: 0.75rem;
-    font-weight: 700;
+    font-weight: 600;
     padding: 0.2rem 0.65rem;
     border-radius: 999px;
     background: var(--surface-soft);
@@ -620,7 +817,7 @@ select {
 
 }
 .card-recipient{
-    font-weight: 500;
+    font-weight: 400;
     font-size: 0.8rem !important;
     text-transform: uppercase;
     letter-spacing: 1px;
@@ -632,39 +829,31 @@ select {
     display: grid;
     place-items: center;
     padding: 1rem;
-    background:
-        radial-gradient(circle, rgba(236, 91, 120, 0.35) 3px, transparent 4px) 0 0 / 56px 56px,
-        radial-gradient(circle, rgba(246, 166, 35, 0.35) 3px, transparent 4px) 28px 28px / 56px 56px,
-        radial-gradient(circle, rgba(196, 155, 226, 0.4) 2px, transparent 3px) 14px 42px / 56px 56px,
-        radial-gradient(circle at 15% 10%, var(--accent-soft), transparent 45%),
-        radial-gradient(circle at 85% 90%, var(--blue-soft), transparent 45%),
-        var(--bg);
+    background: var(--backdrop);
+    background-attachment: fixed;
 }
 
 .auth-card {
     position: relative;
     overflow: hidden;
     width: 100%;
-    max-width: 400px;
+    max-width: 500px;
     background: var(--surface);
     border-radius: 24px;
-    box-shadow: var(--shadow-lift);
+    box-shadow: 0 2px 6px rgba(91, 36, 24, 0.08), 0 24px 56px rgba(85, 40, 124, 0.28);
     padding: 2.25rem 2rem 2rem;
-}
-
-.auth-card::before {
-    content: "";
-    position: absolute;
-    inset: 0 0 auto;
-    height: 6px;
-    background: var(--ribbon);
 }
 
 .auth-logo {
     font-family: var(--font-display);
-    font-weight: 700;
+    font-weight: 600;
     font-size: 1.25rem;
     margin: 0 0 1.5rem;
+    text-align: center;
+}
+
+.auth-card h1 {
+    margin-bottom: 1.5rem;
 }
 
 .auth-switch {
@@ -679,7 +868,7 @@ select {
 }
 
 .link-username {
-    font-weight: 800;
+    font-weight: 600;
     font-size: 1.1rem;
     margin: 0 0 1.25rem;
 }
@@ -815,7 +1004,7 @@ select {
 }
 
 .list-date {
-    font-weight: 500;
+    font-weight: 400;
     margin: 0;
 }
 
@@ -852,6 +1041,17 @@ select {
     position: relative;
 }
 
+/* The menu buttons (hamburger, cog, "…"): turn rose on hover and while the menu is open */
+.menu > .btn-icon {
+    transition: background-color 0.15s, color 0.15s;
+}
+
+.menu > .btn-icon:hover,
+.menu > .btn-icon[aria-expanded="true"] {
+    background: var(--accent-soft);
+    color: var(--accent-strong);
+}
+
 /* position: fixed – top/left are set by SettingsMenu, so the menu stays inside the window */
 .menu-list {
     position: fixed;
@@ -868,6 +1068,7 @@ select {
 }
 
 .menu-item {
+    position: relative;
     display: flex;
     align-items: center;
     gap: 0.6rem;
@@ -877,17 +1078,46 @@ select {
     border-radius: 10px;
     background: none;
     font: inherit;
-    font-weight: 600;
+    font-weight: 500;
     color: var(--ink);
     text-align: left;
     text-decoration: none;
     cursor: pointer;
 }
 
+/* Same feel as the main menu: rose icons that shake on hover, and a short rounded bar
+   (here on the left) that slides in for hover, keyboard focus and the page you're on */
+.menu-item svg {
+    flex-shrink: 0;
+    color: var(--accent);
+}
+
+.menu-item::before {
+    content: "";
+    position: absolute;
+    left: 0.15rem;
+    top: 0.55rem;
+    bottom: 0.55rem;
+    width: 3px;
+    border-radius: 3px;
+    background: var(--accent);
+    transform: scaleY(0);
+    transition: transform 0.2s ease;
+}
+
 .menu-item:hover,
 .menu-item:focus-visible {
-    background: var(--surface-soft);
     outline: none;
+}
+
+.menu-item:hover::before,
+.menu-item:focus-visible::before,
+.menu-item.active::before {
+    transform: scaleY(1);
+}
+
+.menu-item:hover svg {
+    animation: icon-shake 0.5s ease-in-out;
 }
 
 .menu-item:disabled {
@@ -903,17 +1133,17 @@ select {
 
 /* The page you're on (NavLink sets .active) */
 .menu-item.active {
-    font-weight: 800;
+    font-weight: 600;
     color: var(--accent-text);
 }
 
-.menu-item-danger {
+.menu-item-danger,
+.menu-item-danger svg {
     color: var(--danger);
 }
 
-.menu-item-danger:hover,
-.menu-item-danger:focus-visible {
-    background: var(--danger-soft);
+.menu-item-danger::before {
+    background: var(--danger);
 }
 
 /* ---------- Wishes ---------- */
@@ -985,7 +1215,7 @@ select {
 }
 
 .wish-title {
-    font-weight: 800;
+    font-weight: 600;
     font-size: 1.05rem;
     /* One line, then an ellipsis – the full title is in the modal */
     white-space: nowrap;
@@ -1108,7 +1338,7 @@ select {
 }
 
 .price {
-    font-weight: 600;
+    font-weight: 500;
     white-space: nowrap;
 }
 
@@ -1116,7 +1346,7 @@ select {
     display: inline-flex;
     align-items: center;
     gap: 0.25rem;
-    font-weight: 500;
+    font-weight: 400;
     width: fit-content;
 }
 
@@ -1148,7 +1378,7 @@ select {
 
 .reserved-by-me {
     color: var(--green);
-    font-weight: 500;
+    font-weight: 400;
 }
 
 .image-preview {
@@ -1209,12 +1439,12 @@ select {
     text-transform: uppercase;
     letter-spacing: 0.04em;
     color: var(--muted);
-    font-weight: 700;
+    font-weight: 600;
     background: #fef8f3;
 }
 
 .table tfoot td {
-    font-weight: 600;
+    font-weight: 500;
     border-bottom: 0;
 }
 
@@ -1229,7 +1459,7 @@ select {
 
 .history summary {
     cursor: pointer;
-    font-weight: 500;
+    font-weight: 400;
     margin-bottom: 0.75rem;
 }
 
@@ -1244,12 +1474,21 @@ select {
         flex-basis: 100%;
     }
 
+    .nav {
+        margin-left: 0;
+    }
+
+    .nav a {
+        flex: 1;
+        padding-inline: 0.5rem;
+    }
+
     .user-menu {
         margin-left: auto;
     }
 
     .main {
-        padding-top: 1.25rem;
+        padding-top: 2rem;
     }
 
     .list-head {
@@ -1291,12 +1530,12 @@ select {
 }
 
 .table .share {
-    font-weight: 600;
+    font-weight: 500;
 }
 
 /* ---------- Wish form: link + "Hämta uppgifter" ---------- */
 .field > label {
-    font-weight: 600;
+    font-weight: 500;
     font-size: 0.9rem;
 }
 
@@ -1330,7 +1569,7 @@ select {
     align-items: center;
     gap: 0.5rem;
     margin: 0.5rem 0;
-    font-weight: 600;
+    font-weight: 500;
 }
 
 .days-badge {
@@ -1345,7 +1584,7 @@ select {
     background: var(--accent);
     color: var(--accent-ink);
     font-size: 0.95rem;
-    font-weight: 700;
+    font-weight: 600;
     line-height: 1;
     font-variant-numeric: tabular-nums;
 }
@@ -1449,7 +1688,7 @@ select {
 
 .event-kicker {
     font-size: 0.75rem;
-    font-weight: 800;
+    font-weight: 600;
     letter-spacing: 0.08em;
     text-transform: uppercase;
     opacity: 0.85;
@@ -1459,7 +1698,7 @@ select {
     display: inline-flex;
     align-items: center;
     gap: 0.35rem;
-    font-weight: 600;
+    font-weight: 500;
 }
 
 .event-when {
@@ -1469,7 +1708,7 @@ select {
     border-radius: 999px;
     background: rgba(255, 255, 255, 0.2);
     font-size: 0.85rem;
-    font-weight: 800;
+    font-weight: 600;
 }
 
 .event-recipients {
@@ -1545,7 +1784,7 @@ select {
 .event-note {
     border-color: var(--blue-soft);
     color: var(--blue);
-    font-weight: 600;
+    font-weight: 500;
 }
 
 /* "Totalt för mig" next to the section heading */
@@ -1591,7 +1830,7 @@ button.event-edit {
 }
 
 .santa-label {
-    font-weight: 700;
+    font-weight: 600;
     color: var(--muted);
 }
 
@@ -1620,7 +1859,7 @@ button.event-edit {
     flex: 1;
     min-width: 0;
     font-size: 1.35rem;
-    font-weight: 800;
+    font-weight: 600;
     overflow-wrap: anywhere;
 }
 
@@ -1793,6 +2032,90 @@ button.event-edit {
     gap: 1rem;
 }
 
+/* The 14 profile icons in two even rows of 7 (wraps freely on very small screens) */
+.avatar-choices.avatar-choices-icons {
+    display: grid;
+    grid-template-columns: repeat(7, auto);
+    justify-content: start;
+}
+
+@media (max-width: 420px) {
+    .avatar-choices.avatar-choices-icons {
+        display: flex;
+    }
+}
+
+/* More air between the profile form's groups, and a little extra before the buttons */
+.profile-form {
+    gap: 1.75rem;
+}
+
+.profile-form .form-actions {
+    margin-top: 0.5rem;
+}
+
+/* Profile page: the form takes 2/3 on the left, the profile card 1/3 on the right */
+.profile-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+    gap: 3rem;
+    align-items: start;
+}
+
+.profile-aside-label {
+    margin: 0 0 0.5rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+
+/* Shaped like a (slightly low) business card: square corners, avatar beside the name,
+   vertically centred, lifted off the page with a layered shadow */
+.profile-card {
+    width: 100%;
+    max-width: 340px;
+    aspect-ratio: 2 / 1;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.25rem 1.5rem;
+    background: var(--surface);
+    border-radius: 2px;
+    box-shadow:
+        0 1px 1px rgba(91, 36, 24, 0.06),
+        0 4px 8px rgba(91, 36, 24, 0.06),
+        0 16px 32px rgba(85, 40, 124, 0.14);
+}
+
+.profile-card-text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    max-width: 100%;
+}
+
+/* Small screens: the card on top, centred */
+@media (max-width: 720px) {
+    .profile-layout {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 1.5rem;
+    }
+
+    .profile-aside {
+        order: -1;
+        justify-self: center;
+        width: min(100%, 340px);
+    }
+}
+
+.profile-card-name {
+    font-size: 1.2rem;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+
 .avatar-choices {
     display: flex;
     gap: 0.6rem;
@@ -1872,7 +2195,7 @@ button.event-edit {
 .breadcrumbs a {
     color: var(--muted);
     text-decoration: none;
-    font-weight: 500;
+    font-weight: 400;
 }
 
 .breadcrumbs a:hover {
@@ -1882,7 +2205,7 @@ button.event-edit {
 
 .breadcrumbs [aria-current="page"] {
     color: var(--ink);
-    font-weight: 600;
+    font-weight: 500;
 }
 
 .breadcrumbs-sep {
@@ -1964,7 +2287,7 @@ button.event-edit {
     border: none;
     background: none;
     font: inherit;
-    font-weight: 700;
+    font-weight: 600;
     color: inherit;
     text-decoration: underline;
     text-decoration-color: var(--accent);
@@ -2023,7 +2346,7 @@ button.event-edit {
 
 .person-name {
     font-size: 1.35rem;
-    font-weight: 800;
+    font-weight: 600;
 }
 
 .person-edit {
@@ -2068,7 +2391,7 @@ button.event-edit {
     padding: 0.3rem 0.75rem;
     border-radius: 999px;
     font-size: 0.875rem;
-    font-weight: 700;
+    font-weight: 600;
 }
 
 .chip-like {
@@ -2117,7 +2440,7 @@ button.event-edit {
     display: inline-flex;
     align-items: center;
     gap: 0.45rem;
-    font-weight: 600;
+    font-weight: 500;
     min-width: 0;
 }
 
@@ -2190,7 +2513,7 @@ button.event-edit {
 }
 
 .santa-nudge-title {
-    font-weight: 800;
+    font-weight: 600;
     font-size: 1.05rem;
 }
 
@@ -2205,7 +2528,7 @@ button.event-edit {
     border-radius: 999px;
     background: var(--accent-soft);
     color: var(--accent-text);
-    font-weight: 700;
+    font-weight: 600;
     font-size: 0.9rem;
     text-decoration: none;
     transition: background-color 0.15s;
@@ -2222,7 +2545,7 @@ button.event-edit {
 
 /* A username next to a name: bold, in the quieter text colour (no "@") */
 .username {
-    font-weight: 800;
+    font-weight: 600;
     color: var(--muted);
 }
 
@@ -2233,7 +2556,7 @@ button.event-edit {
     border: none;
     background: none;
     font: inherit;
-    font-weight: 800;
+    font-weight: 600;
     color: inherit;
     text-decoration: underline;
     text-decoration-thickness: 2px;

@@ -36,10 +36,10 @@ export const AVATAR_ICONS = {
 
 export const AVATAR_COLORS = {
     pink: { label: "Rosa", value: "#ec5b78" },
-    orange: { label: "Orange", value: "#f47e6c" }, // coral, from the moodboard
-    green: { label: "Grön", value: "#5cb86a" },
-    purple: { label: "Lila", value: "#b385d9" },
-    blue: { label: "Blå", value: "#6aa6dc" },
+    orange: { label: "Orange", value: "#fda72d", ink: "#5b2418" }, // dark icon – white is hard to see on orange
+    green: { label: "Grön", value: "#73ba72" },
+    purple: { label: "Lila", value: "#c49be2" },
+    blue: { label: "Blå", value: "#74aee0" },
 };
 
 export const DEFAULT_ICON = "user";

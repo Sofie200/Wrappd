@@ -1,10 +1,16 @@
 // Small shared pieces for loading, errors and empty states
+import { Gift } from "lucide-react";
 
 export function Loading({ text = "Laddar…" }) {
     return (
-        <p className="loading" role="status">
-            <span className="spinner" aria-hidden="true" /> {text}
-        </p>
+        <div className="loading" role="status">
+            <span className="spinner" aria-hidden="true">
+                <span className="spinner-ring" />
+                <Gift className="spinner-gift" size={26} strokeWidth={2} />
+            </span>
+            {/* Only for screen readers */}
+            <span className="visually-hidden">{text}</span>
+        </div>
     );
 }
 

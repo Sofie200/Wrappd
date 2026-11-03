@@ -1,15 +1,12 @@
-import { useState } from "react";
 import { Link, NavLink, Outlet } from "react-router-dom";
-import { Baby, Gift, Heart, ListChecks, LogOut, Menu, Plus, TreePine, UserPen, Users } from "lucide-react";
+import { Baby, Gift, Heart, House, ListChecks, LogOut, Menu, Plus, TreePine, UserPen, Users } from "lucide-react";
 import { useAuth } from "../context/AuthContext.jsx";
 import { APP_NAME } from "../config.js";
 import Avatar from "./Avatar.jsx";
-import ProfileModal from "./ProfileModal.jsx";
 import SettingsMenu from "./SettingsMenu.jsx";
 
 export default function Layout() {
     const { user, logout } = useAuth();
-    const [editingProfile, setEditingProfile] = useState(false);
 
     return (
         <div className="app">
@@ -21,7 +18,7 @@ export default function Layout() {
 
                     <nav className="nav" aria-label="Huvudmeny">
                         <NavLink to="/" end>
-                            Översikt
+                            <House size={16} aria-hidden="true" /> Översikt
                         </NavLink>
                         <NavLink to="/lists/new" className="nav-cta">
                             <Plus size={16} aria-hidden="true" /> Ny lista
@@ -49,9 +46,9 @@ export default function Layout() {
                             buttonClassName="profile-button"
                             trigger={<Avatar icon={user.avatarIcon} color={user.avatarColor} />}
                         >
-                            <button type="button" className="menu-item" role="menuitem" onClick={() => setEditingProfile(true)}>
+                            <NavLink to="/profile" className="menu-item" role="menuitem">
                                 <UserPen size={16} aria-hidden="true" /> Redigera profil
-                            </button>
+                            </NavLink>
                             <NavLink to={`/people/${user.id}/edit`} className="menu-item" role="menuitem">
                                 <Heart size={16} aria-hidden="true" /> Min önskeprofil
                             </NavLink>
@@ -67,11 +64,11 @@ export default function Layout() {
                 </div>
             </header>
 
-            {editingProfile && <ProfileModal onClose={() => setEditingProfile(false)} />}
-
-            <main className="main">
-                <Outlet />
-            </main>
+            <div className="app-sheet">
+                <main className="main">
+                    <Outlet />
+                </main>
+            </div>
         </div>
     );
 }
