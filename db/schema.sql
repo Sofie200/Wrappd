@@ -129,13 +129,15 @@ CREATE INDEX wishes_user_idx ON wishes (user_id);
 --  - reserved on a wish (wish_id): its own copy of the title, its own price (total, for all copies)
 --    and a comment – everything else is read from the wish, or
 --  - bought outside the wish list (wish_id NULL): its own title, description, link and image, and
---    either linked to a list (list_id) or given a recipient in free text and a date.
+--    linked to a list (list_id), to a Secret Santa (santa_id – recipient and date come from the draw),
+--    or given a recipient in free text and a date.
 --    These are never shown on the list – only to the people who share the gift.
 -- One person can be in at most one gift per wish – checked in gift-routes.js.
 CREATE TABLE gifts (
     id          SERIAL PRIMARY KEY,
     wish_id     INT REFERENCES wishes(id) ON DELETE CASCADE,
     list_id     INT REFERENCES lists(id) ON DELETE CASCADE,
+    santa_id    INT, -- REFERENCES secret_santas – the foreign key is added after that table, below
     created_by  INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     quantity    INT NOT NULL CHECK (quantity BETWEEN 1 AND 99),
     title       TEXT NOT NULL,
@@ -150,10 +152,11 @@ CREATE TABLE gifts (
     created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
     CONSTRAINT gifts_wish_or_free CHECK (
-        (wish_id IS NOT NULL AND list_id IS NULL AND recipient IS NULL AND gift_date IS NULL
+        (wish_id IS NOT NULL AND list_id IS NULL AND santa_id IS NULL AND recipient IS NULL AND gift_date IS NULL
             AND description IS NULL AND url IS NULL AND image_url IS NULL)
-        OR (wish_id IS NULL AND list_id IS NOT NULL AND recipient IS NULL AND gift_date IS NULL)
-        OR (wish_id IS NULL AND list_id IS NULL AND recipient IS NOT NULL AND gift_date IS NOT NULL)
+        OR (wish_id IS NULL AND list_id IS NOT NULL AND santa_id IS NULL AND recipient IS NULL AND gift_date IS NULL)
+        OR (wish_id IS NULL AND list_id IS NULL AND santa_id IS NOT NULL AND recipient IS NULL AND gift_date IS NULL)
+        OR (wish_id IS NULL AND list_id IS NULL AND santa_id IS NULL AND recipient IS NOT NULL AND gift_date IS NOT NULL)
     )
 );
 CREATE INDEX gifts_wish_idx ON gifts (wish_id);
@@ -190,3 +193,7 @@ CREATE TABLE secret_santa_pairs (
     CHECK (giver_id <> receiver_id)
 );
 CREATE INDEX secret_santa_pairs_giver_idx ON secret_santa_pairs (giver_id);
+
+-- A gift can belong to a Secret Santa (see gifts above). Deleted together with the draw.
+ALTER TABLE gifts ADD CONSTRAINT gifts_santa_fk FOREIGN KEY (santa_id) REFERENCES secret_santas(id) ON DELETE CASCADE;
+CREATE INDEX gifts_santa_idx ON gifts (santa_id);

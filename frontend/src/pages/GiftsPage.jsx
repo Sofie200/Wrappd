@@ -24,7 +24,7 @@ export default function GiftsPage() {
                     <Gift size={28} aria-hidden="true" /> Gåvor
                 </h1>
                 <Link to="/gifts/new" className="btn btn-primary">
-                    <Plus size={16} aria-hidden="true" /> Lägg till gåva
+                    <Plus size={16} aria-hidden="true" /> Lägg till egen gåva
                 </Link>
             </div>
 

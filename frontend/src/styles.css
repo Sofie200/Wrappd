@@ -368,6 +368,12 @@ img {
     margin-bottom: 1rem;
 }
 
+/* A small button right next to the heading instead of out on the right */
+.section-head.section-head-start {
+    justify-content: flex-start;
+    gap: 0.75rem;
+}
+
 .section > h2 {
     margin-bottom: 1rem;
 }
@@ -1058,6 +1064,12 @@ select {
     line-height: 0;
 }
 
+/* Icon buttons ("…", the cog, the hamburger): no border, not even on hover – just the background */
+.btn.btn-icon,
+.btn.btn-icon:hover {
+    border-color: transparent;
+}
+
 .menu {
     position: relative;
 }
@@ -1621,9 +1633,13 @@ select {
     gap: 1.25rem;
 }
 
+:root {
+    --event-panel-width: 300px; /* the coloured panel – also the width of the private list cards, so they line up */
+}
+
 .event {
     display: grid;
-    grid-template-columns: minmax(220px, 300px) 1fr;
+    grid-template-columns: var(--event-panel-width) 1fr;
     background: var(--surface);
     border: 1px solid var(--line);
     border-radius: var(--radius);
@@ -1735,7 +1751,7 @@ select {
     letter-spacing: 0.08em;
 }
 
-/* Lists to me (my own): a lavender gradient. Gifts without a list: brown. Past events: muted brown. */
+/* Lists to me (my own): a lavender gradient. Past events: muted brown. */
 .event-to-me .event-info {
     --event-bg: linear-gradient(135deg, #9466c2, #6c3d95);
     --tab-bg: #57307a;
@@ -1760,10 +1776,60 @@ select {
     outline-color: var(--ink);
 }
 
+/* Gifts without a list (and from wish profiles): a green gradient – dark enough for white text */
 .event-no-list .event-info {
-    --event-bg: var(--ink);
-    --tab-bg: #2a0f09;
-    --badge-ink: var(--ink);
+    --event-bg: linear-gradient(135deg, #4a9657, #2c6e39);
+    --tab-bg: #235a2e;
+    --badge-ink: #2c6e39;
+}
+
+/* A private list on the overview: the same panel, inverted – white with rose details, and no gifts column */
+.event.event-light {
+    grid-template-columns: 1fr;
+}
+
+.event-light .event-info {
+    --event-bg: var(--surface);
+    --tab-bg: #f9cbd5; /* light rose details – softer than the coloured cards */
+    --tab-ink: var(--accent-text);
+    --badge-ink: var(--accent-text);
+    color: var(--ink);
+    border-radius: calc(var(--radius) - 1px);
+}
+
+.event-light .date-badge {
+    color: #fbd6df; /* the badge's fill */
+}
+
+.event-light .event-stats svg {
+    color: var(--accent);
+}
+
+.event-light .event-edit {
+    background: var(--accent-soft);
+    color: var(--accent-strong);
+}
+
+.event-light .event-edit:hover {
+    background: var(--accent-strong);
+    color: #fff;
+}
+
+.event-light .event-link {
+    background: var(--accent-soft);
+    border-color: var(--accent-soft);
+    color: var(--accent-text);
+}
+
+.event-light .event-link:hover {
+    background: #fbd0da;
+    border-color: #fbd0da;
+}
+
+.private-lists {
+    /* Same width as the panels above, and the same gap as between the events */
+    grid-template-columns: repeat(auto-fill, var(--event-panel-width));
+    gap: 1.25rem;
 }
 
 .event-archived .event-info {
@@ -1809,6 +1875,11 @@ select {
 .event-recipients {
     font-size: 0.9rem;
     opacity: 0.9;
+}
+
+/* Lines of details right under each other (e.g. group and budget) sit closer than the panel's gap */
+.event-recipients + .event-recipients {
+    margin-top: -0.35rem;
 }
 
 /* "5 önskningar · 2 reserverade" */
@@ -1879,8 +1950,16 @@ select {
 
 /* My gifts */
 .event-gifts {
+    display: flex;
+    flex-direction: column;
     padding: 1.25rem 1.5rem;
     min-width: 0; /* lets the table scroll instead of widening the row */
+}
+
+/* An empty state under a heading fills the rest of the column, not its whole height */
+.event-gifts-head ~ .event-empty {
+    flex: 1;
+    height: auto;
 }
 
 .event-gifts-head {
@@ -1919,6 +1998,7 @@ select {
 }
 
 .event-empty p {
+    font-size: 0.9rem;
     margin: 0;
 }
 
@@ -1958,50 +2038,44 @@ button.event-edit {
 }
 
 /* ---------- Secret Santa: who I got, hidden behind an eye ---------- */
+/* On the coloured panel, under the event's details */
 .santa-secret {
-    height: 100%;
     display: flex;
     flex-direction: column;
-    justify-content: center;
-    gap: 0.6rem;
+    align-items: flex-start;
+    gap: 0.15rem;
+    width: 100%;
+    margin-top: 0.75rem;
 }
 
 .santa-secret p {
     margin: 0;
 }
 
-.santa-label {
-    font-weight: 600;
-    color: var(--muted);
-}
 
-.santa-reveal {
+/* "Du ska ge en gåva till" with the eye right after it */
+.santa-label-row {
     display: flex;
     align-items: center;
-    gap: 0.9rem;
-    padding: 0.9rem 1rem;
-    border-radius: var(--radius-small);
-    background: var(--surface-soft);
+    gap: 0.4rem;
 }
 
-.santa-mystery {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    flex: none;
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
-    background: var(--line);
-    color: var(--muted);
+.santa-label {
+    font-size: 0.85rem;
+    font-weight: 600;
 }
 
 .santa-name {
-    flex: 1;
-    min-width: 0;
-    font-size: 1.35rem;
+    max-width: 100%;
+    font-size: 1.05rem;
     font-weight: 600;
     overflow-wrap: anywhere;
+}
+
+/* Click the name to show or hide it. Pulled up a little – the round eye makes the row above taller. */
+.santa-name {
+    margin-top: -0.25rem;
+    cursor: pointer;
 }
 
 /* Masked: a blurred bar instead of the name */
@@ -2011,14 +2085,22 @@ button.event-edit {
     user-select: none;
 }
 
-.santa-eye {
+/* The eye after "Du ska ge en gåva till": a small round button with a faint light background.
+   .icon-btn comes later in the file, so the double class is needed to win over its size, corners and hover. */
+.icon-btn.santa-eye {
     flex: none;
-    width: 2.6rem;
-    height: 2.6rem;
+    width: 28px;
+    height: 28px;
     border-radius: 50%;
-    background: var(--surface);
+    background: rgba(255, 255, 255, 0.4);
     color: var(--ink);
-    box-shadow: var(--shadow);
+    transform: translateY(-2px); /* level with the text */
+    transition: background-color 0.15s;
+}
+
+.icon-btn.santa-eye:hover {
+    background: rgba(255, 255, 255, 0.75);
+    color: var(--ink);
 }
 
 .history .events {
@@ -2028,6 +2110,10 @@ button.event-edit {
 /* Stacked on small screens: the event on top, my gifts below */
 @media (max-width: 720px) {
     .event {
+        grid-template-columns: 1fr;
+    }
+
+    .private-lists {
         grid-template-columns: 1fr;
     }
 
@@ -2058,6 +2144,23 @@ button.event-edit {
     width: 1%;
 }
 
+/* .table td sets text-align: left, so the menu needs a more specific rule to sit on the right.
+   As narrow as possible: almost no padding, and a smaller "…" button. */
+.table .row-actions {
+    text-align: right;
+    padding-left: 1rem;
+    padding-right: 0.35rem;
+}
+
+.row-actions .btn-icon {
+    padding: 0.3rem;
+}
+
+.row-actions .menu {
+    display: flex;
+    justify-content: flex-end;
+}
+
 .icon-btn {
     display: inline-flex;
     align-items: center;
@@ -2074,6 +2177,15 @@ button.event-edit {
 
 .icon-btn + .icon-btn {
     margin-left: 0.15rem;
+}
+
+/* In table rows (edit / delete): narrower buttons, right next to each other */
+.row-actions .icon-btn {
+    width: 1.6rem;
+}
+
+.row-actions .icon-btn + .icon-btn {
+    margin-left: 0;
 }
 
 .icon-btn:hover {
@@ -2320,6 +2432,12 @@ button.event-edit {
 
 .avatar-stack .avatar + .avatar {
     margin-left: -6px;
+}
+
+/* Who shares a gift, right after its name in the gift table */
+.gift-people {
+    margin-left: 0.4rem;
+    vertical-align: middle;
 }
 
 /* ---------- Breadcrumbs ---------- */
@@ -2676,11 +2794,6 @@ button.event-edit {
     background: #fbd0da;
 }
 
-/* "Se önskeprofilen" under who I got in a Secret Santa */
-.santa-profile-btn {
-    align-self: flex-start;
-}
-
 /* A username next to a name: bold, in the quieter text colour (no "@") */
 .username {
     font-weight: 600;
@@ -2697,9 +2810,16 @@ button.event-edit {
     font-weight: 600;
     color: inherit;
     text-decoration: underline;
-    text-decoration-thickness: 2px;
-    text-underline-offset: 0.2em;
+    /* Same as ordinary text links: thin at rest, a little thicker on hover */
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.15em;
     cursor: pointer;
+    transition: text-decoration-thickness 0.15s ease, text-underline-offset 0.15s ease;
+}
+
+.text-link:hover {
+    text-decoration-thickness: 2px;
+    text-underline-offset: 0.25em;
 }
 
 .text-link:hover {

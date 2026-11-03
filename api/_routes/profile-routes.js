@@ -42,7 +42,8 @@ router.get("/", async (req, res) => {
 
         // Gifts I share – on wishes, and bought outside the wish list. price is the total;
         // myShare is my custom amount, or the price split equally.
-        // A gift outside the list without a list has its own recipient and date.
+        // A gift outside the list without a list has its own recipient and date – or, linked to a Secret Santa,
+        // the draw's date and who I give to (I'm the only member, so nobody else learns who that is).
         pool.query(
             `SELECT g.id, g.title, g.quantity, g.price, g.comment, g.split,
                     g.wish_id IS NULL AS "offList",
@@ -52,18 +53,28 @@ router.get("/", async (req, res) => {
                     (SELECT string_agg(u.name, ', ' ORDER BY u.name) FROM gift_members o
                      JOIN users u ON u.id = o.user_id
                      WHERE o.gift_id = g.id AND o.user_id <> $1) AS "sharedWith",
+                    -- Everyone in the gift (me too), with profile icons – shown as avatars when it's shared
+                    (SELECT json_agg(json_build_object('id', u.id, 'name', u.name,
+                                                       'avatarIcon', u.avatar_icon, 'avatarColor', u.avatar_color)
+                                     ORDER BY u.name)
+                     FROM gift_members o JOIN users u ON u.id = o.user_id
+                     WHERE o.gift_id = g.id) AS people,
                     w.id AS "wishId", COALESCE(w.image_url, g.image_url) AS "imageUrl",
                     l.id AS "listId", l.title AS "listTitle",
                     wo.id AS "personId",
-                    COALESCE(l.end_date, g.gift_date) AS "endDate",
+                    ss.id AS "santaId", ss.title AS "santaTitle",
+                    COALESCE(l.end_date, g.gift_date, ss.event_date) AS "endDate",
                     -- A gift from a wish profile has no date, so it stays current until it's removed
-                    COALESCE(COALESCE(l.end_date, g.gift_date) < ${TODAY}, false) AS archived,
-                    COALESCE(${RECIPIENTS}, g.recipient, wo.name) AS recipients
+                    COALESCE(COALESCE(l.end_date, g.gift_date, ss.event_date) < ${TODAY}, false) AS archived,
+                    COALESCE(${RECIPIENTS}, g.recipient, wo.name, sr.name) AS recipients
              FROM gift_members me
              JOIN gifts g ON g.id = me.gift_id
              LEFT JOIN wishes w ON w.id = g.wish_id
              LEFT JOIN users wo ON wo.id = w.user_id
              LEFT JOIN lists l ON l.id = COALESCE(w.list_id, g.list_id)
+             LEFT JOIN secret_santas ss ON ss.id = g.santa_id
+             LEFT JOIN secret_santa_pairs sp ON sp.santa_id = g.santa_id AND sp.giver_id = $1
+             LEFT JOIN users sr ON sr.id = sp.receiver_id
              WHERE me.user_id = $1
              ORDER BY "endDate" DESC, l.title, g.title`,
             [me]
@@ -86,6 +97,12 @@ router.get("/", async (req, res) => {
             `SELECT s.id, s.title, s.event_date AS "date", s.budget, g.name AS "groupName",
                     s.created_by = $1 AS "isCreator",
                     (SELECT count(*)::int FROM secret_santa_pairs WHERE santa_id = s.id) AS "participantCount",
+                    -- Who takes part (everyone gives once) – never who gives to whom
+                    (SELECT json_agg(json_build_object('id', u.id, 'name', u.name,
+                                                       'avatarIcon', u.avatar_icon, 'avatarColor', u.avatar_color)
+                                     ORDER BY u.name)
+                     FROM secret_santa_pairs p JOIN users u ON u.id = p.giver_id
+                     WHERE p.santa_id = s.id) AS participants,
                     (SELECT json_build_object('id', u.id, 'name', u.name,
                                               'avatarIcon', u.avatar_icon, 'avatarColor', u.avatar_color)
                      FROM secret_santa_pairs p JOIN users u ON u.id = p.receiver_id

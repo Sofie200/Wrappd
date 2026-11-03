@@ -2,13 +2,14 @@
 // Two kinds:
 //  - On a wish (wish_id): created by reserving the wish. Title and price are copied from the wish.
 //  - Outside the wish list (wish_id NULL): created here, with its own title, description, link and image.
-//    Linked to a list (list_id), or to a recipient in free text and a date. NEVER shown on the list.
+//    Linked to a list (list_id), to a Secret Santa I'm a giver in (santa_id – recipient and date come
+//    from the draw), or to a recipient in free text and a date. NEVER shown on the list.
 // Rules:
 //  - Everyone who shares a gift has the same rights to it. Others don't see it at all
 //    (a gift on a wish only shows as "Reserverad av …" on the list).
 //  - A gift can be shared with adults in its list's groups – never the list's recipients, never children.
 //    A gift on a wish profile (a wish without a list) can be shared with adults in the person's groups.
-//    A gift without a list or a wish can't be shared.
+//    A gift without a list or a wish can't be shared (also not a Secret Santa gift – only the giver knows who it's for).
 //  - Gifts on wishes: quantity and undo are locked after the event; price, comment and split are not.
 //    One person can be in at most one gift per wish.
 //  - Gifts outside the list: everything can always be changed, also the list, and they can always be deleted.
@@ -29,15 +30,16 @@ const router = Router();
 async function loadGift(db, giftId, userId, { lock = false } = {}) {
     const { rows: [gift] } = await db.query(
         `SELECT g.id, g.wish_id, g.quantity, g.title, g.price, g.comment, g.split,
-                g.list_id AS own_list_id, g.recipient, g.gift_date, g.description, g.url, g.image_url,
+                g.list_id AS own_list_id, g.santa_id, g.recipient, g.gift_date, g.description, g.url, g.image_url,
                 g.wish_id IS NULL AS is_free,
                 COALESCE(w.list_id, g.list_id) AS list_id,
                 w.user_id AS wish_owner_id,
                 w.quantity AS wish_quantity,
-                COALESCE(l.end_date, g.gift_date) < ${TODAY} AS archived
+                COALESCE(l.end_date, g.gift_date, ss.event_date) < ${TODAY} AS archived
          FROM gifts g
          LEFT JOIN wishes w ON w.id = g.wish_id
          LEFT JOIN lists l ON l.id = COALESCE(w.list_id, g.list_id)
+         LEFT JOIN secret_santas ss ON ss.id = g.santa_id
          WHERE g.id = $1
            AND EXISTS (SELECT 1 FROM gift_members WHERE gift_id = g.id AND user_id = $2)
          ${lock ? "FOR UPDATE OF g" : ""}`,
@@ -90,8 +92,32 @@ async function requireLinkableList(db, listId, userId) {
     if (access.isRecipient) throw new HttpError(403, "Du kan inte koppla en gåva till en lista till dig själv");
 }
 
-/* --- GET /api/gifts/lists → { data } – the lists a gift outside the wish list can be linked to --- */
+// ...or to a Secret Santa where I'm a giver. 404 otherwise – others don't learn it exists.
+async function requireMySanta(db, santaId, userId) {
+    const { rowCount } = await db.query(
+        "SELECT 1 FROM secret_santa_pairs WHERE santa_id = $1 AND giver_id = $2",
+        [santaId, userId]
+    );
+    if (rowCount === 0) throw new HttpError(404, "Secret Santa finns inte");
+}
+
+// The Secret Santas a gift can be linked to: the ones I give in – who I give to, the date and the title
+async function mySantas(db, userId) {
+    const { rows } = await db.query(
+        `SELECT s.id, s.title, s.event_date AS "date", s.event_date < ${TODAY} AS archived, u.name AS receiver
+         FROM secret_santa_pairs p
+         JOIN secret_santas s ON s.id = p.santa_id
+         JOIN users u ON u.id = p.receiver_id
+         WHERE p.giver_id = $1
+         ORDER BY archived, s.event_date, s.title`,
+        [userId]
+    );
+    return rows;
+}
+
+/* --- GET /api/gifts/lists → { data, santas } – the lists and Secret Santas a gift outside the wish list can be linked to --- */
 router.get("/lists", async (req, res) => {
+    const santas = await mySantas(pool, req.user.id);
     const { rows } = await pool.query(
         `SELECT l.id, l.title, l.end_date AS "endDate", l.end_date < ${TODAY} AS archived,
                 (SELECT string_agg(u.name, ', ' ORDER BY u.name) FROM list_recipients lr
@@ -105,7 +131,7 @@ router.get("/lists", async (req, res) => {
          ORDER BY archived, l.end_date, l.title`,
         [req.user.id]
     );
-    res.json({ data: rows });
+    res.json({ data: rows, santas });
 });
 
 /* --- GET /api/gifts/:id → { gift, wish, list, person, members, candidates } (member) --- */
@@ -114,7 +140,7 @@ router.get("/:id", async (req, res) => {
     const giftId = parseId(req.params.id);
     const gift = await loadGift(pool, giftId, req.user.id);
 
-    const [wish, list, person, members, others, candidates] = await Promise.all([
+    const [wish, list, person, members, others, candidates, santa] = await Promise.all([
         gift.wish_id
             ? pool.query(
                   `SELECT id, title, description, price, url, image_url AS "imageUrl", quantity FROM wishes WHERE id = $1`,
@@ -147,6 +173,17 @@ router.get("/:id", async (req, res) => {
               )
             : { rows: [{ taken: 0 }] },
         shareCandidates(pool, { listId: gift.list_id, wishId: gift.wish_id, giftId, ownerId: gift.wish_owner_id }),
+        // The Secret Santa it belongs to, with who I give to – only if I'm still the giver
+        gift.santa_id
+            ? pool.query(
+                  `SELECT s.id, s.title, s.event_date AS "date", u.name AS receiver
+                   FROM secret_santas s
+                   JOIN secret_santa_pairs p ON p.santa_id = s.id AND p.giver_id = $2
+                   JOIN users u ON u.id = p.receiver_id
+                   WHERE s.id = $1`,
+                  [gift.santa_id, req.user.id]
+              )
+            : { rows: [null] },
     ]);
 
     res.json({
@@ -165,21 +202,24 @@ router.get("/:id", async (req, res) => {
             url: gift.url,
             imageUrl: gift.image_url,
             listId: gift.own_list_id,
+            santaId: gift.santa_id,
             recipient: gift.recipient,
             giftDate: gift.gift_date,
         },
         wish: wish.rows[0],
         list: list.rows[0],
         person: person.rows[0],
+        santa: santa.rows[0] ?? null,
         members: members.rows,
         candidates,
     });
 });
 
-// A gift outside the list: a title, and a list OR a recipient and a date
+// A gift outside the list: a title, and a list OR a Secret Santa OR a recipient and a date
 function checkFreeGift(body) {
     if (!body.title) throw new HttpError(400, "Ange en titel");
-    if (!body.listId) {
+    if (body.listId && body.santaId) throw new HttpError(400, "Välj en lista eller en Secret Santa – inte båda");
+    if (!body.listId && !body.santaId) {
         if (!body.recipient) throw new HttpError(400, "Välj en lista, eller skriv vem gåvan är till");
         if (!body.giftDate) throw new HttpError(400, "Ange ett datum för gåvan");
     }
@@ -215,19 +255,22 @@ router.post("/", receiveImage, async (req, res) => {
     const body = parse(GiftBody, { ...req.body, members: [{ userId: req.user.id }], split: "equal" });
     checkFreeGift(body);
     if (body.listId) await requireLinkableList(pool, body.listId, req.user.id);
+    if (body.santaId) await requireMySanta(pool, body.santaId, req.user.id);
+    const freeText = !body.listId && !body.santaId; // recipient and date only without a list or a Secret Santa
 
     const imageUrl = await uploadNewGiftImage(req.file, body.imageFromUrl);
     try {
         const id = await withTransaction(async (db) => {
             const { rows: [gift] } = await db.query(
                 `INSERT INTO gifts (created_by, quantity, title, price, comment, description, url, image_url,
-                                    list_id, recipient, gift_date)
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id`,
+                                    list_id, santa_id, recipient, gift_date)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING id`,
                 [
                     req.user.id, body.quantity, body.title, body.price, body.comment, body.description, body.url, imageUrl,
                     body.listId,
-                    body.listId ? null : body.recipient,
-                    body.listId ? null : body.giftDate,
+                    body.santaId,
+                    freeText ? body.recipient : null,
+                    freeText ? body.giftDate : null,
                 ]
             );
             await db.query("INSERT INTO gift_members (gift_id, user_id) VALUES ($1, $2)", [gift.id, req.user.id]);
@@ -242,7 +285,7 @@ router.post("/", receiveImage, async (req, res) => {
 
 /* --- PUT /api/gifts/:id  (JSON or multipart) – change the gift (member) ---
    All gifts:     { quantity, price, comment, split, members: [{ userId, amount }] }
-   Outside list:  + { title, description, url, listId | (recipient, giftDate), image / imageFromUrl / removeImage } */
+   Outside list:  + { title, description, url, listId | santaId | (recipient, giftDate), image / imageFromUrl / removeImage } */
 router.put("/:id", receiveImage, async (req, res) => {
     const giftId = parseId(req.params.id);
     const body = parse(GiftBody, req.body ?? {});
@@ -253,6 +296,7 @@ router.put("/:id", receiveImage, async (req, res) => {
     if (before.is_free) {
         checkFreeGift(body);
         if (body.listId && body.listId !== before.own_list_id) await requireLinkableList(pool, body.listId, req.user.id);
+        if (body.santaId && body.santaId !== before.santa_id) await requireMySanta(pool, body.santaId, req.user.id);
         if (!body.listId && userIds.length > 1) throw new HttpError(400, "En gåva utan lista kan inte delas. Välj en lista, eller ta bort de andra.");
     }
 
@@ -303,15 +347,17 @@ router.put("/:id", receiveImage, async (req, res) => {
             if (gift.is_free) {
                 const imageUrl = newImageUrl ?? (body.removeImage ? null : gift.image_url);
                 if (gift.image_url && gift.image_url !== imageUrl) oldImageUrl = gift.image_url;
+                const santaId = listId ? null : body.santaId;
+                const freeText = !listId && !santaId;
                 await db.query(
                     `UPDATE gifts SET quantity = $1, price = $2, comment = $3, split = $4,
                             title = $5, description = $6, url = $7, image_url = $8,
-                            list_id = $9, recipient = $10, gift_date = $11, updated_at = now()
-                     WHERE id = $12`,
+                            list_id = $9, santa_id = $10, recipient = $11, gift_date = $12, updated_at = now()
+                     WHERE id = $13`,
                     [
                         body.quantity, body.price, body.comment, body.split,
                         body.title, body.description, body.url, imageUrl,
-                        listId, listId ? null : body.recipient, listId ? null : body.giftDate,
+                        listId, santaId, freeText ? body.recipient : null, freeText ? body.giftDate : null,
                         giftId,
                     ]
                 );

@@ -1,22 +1,30 @@
-// The rows on the overview and the gifts page: one event (a list, a wish profile, or gifts without
-// a list) with its details on the left in a contrasting colour, and my gifts for it on the right.
+// The rows on the overview and the gifts page: one event (a list, a Secret Santa, a wish profile, or gifts
+// without a list) with its details on the left in a contrasting colour, and my gifts for it on the right.
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, Gift, Pencil, Plus, ScrollText, Sparkles, Trash2 } from "lucide-react";
+import { ArrowRight, Ellipsis, Gift, HatGlasses, Pencil, Plus, ScrollText, Sparkles, Trash2 } from "lucide-react";
 import { api } from "../api.js";
 import { ErrorMessage } from "./Feedback.jsx";
 import Modal from "./Modal.jsx";
 import PersonLink from "./PersonLink.jsx";
+import SettingsMenu from "./SettingsMenu.jsx";
 import { GiftEditor } from "../pages/GiftPage.jsx";
-import { formatPrice } from "../format.js";
+import { formatPrice, joinNames } from "../format.js";
+import Avatar from "./Avatar.jsx";
 import DateBadge from "./DateBadge.jsx";
 
 export const sumShares = (rows) => rows.reduce((sum, g) => sum + Math.round((g.myShare ?? 0) * 100), 0) / 100;
+// The gifts' total prices added up (null when none of them has a price)
+const sumPrices = (rows) =>
+    rows.some((g) => g.price !== null)
+        ? rows.reduce((sum, g) => sum + Math.round((Number(g.price) || 0) * 100), 0) / 100
+        : null;
 
 // One event per wish list, with my gifts for it. `lists` are the public, coming lists in my groups
 // (mine and others') – they're shown even when I haven't bought anything yet. Gifts for a list that
-// isn't among them, gifts from someone's wish profile (one event per person, without a date), and
-// gifts without a list (grouped by recipient and date) get an event of their own.
+// isn't among them, gifts for a Secret Santa (one event per draw), gifts from someone's wish profile
+// (one event per person, without a date), and gifts without a list (grouped by recipient and date)
+// get an event of their own.
 export function buildEvents(lists, gifts, { newestFirst = false } = {}) {
     const events = new Map();
     for (const list of lists) {
@@ -36,13 +44,20 @@ export function buildEvents(lists, gifts, { newestFirst = false } = {}) {
         });
     }
     for (const g of gifts) {
-        const key = g.listId ? `list:${g.listId}` : g.personId ? `person:${g.personId}` : `off:${g.recipients}|${g.endDate}`;
+        const key = g.listId
+            ? `list:${g.listId}`
+            : g.santaId
+              ? `santa:${g.santaId}`
+              : g.personId
+                ? `person:${g.personId}`
+                : `off:${g.recipients}|${g.endDate}`;
         if (!events.has(key)) {
             events.set(key, {
                 key,
                 listId: g.listId,
-                personId: g.listId ? null : g.personId,
-                title: g.listTitle,
+                santaId: g.listId ? null : g.santaId,
+                personId: g.listId || g.santaId ? null : g.personId,
+                title: g.listTitle ?? g.santaTitle,
                 endDate: g.endDate,
                 recipients: g.recipients,
                 isRecipient: false,
@@ -61,8 +76,8 @@ export function buildEvents(lists, gifts, { newestFirst = false } = {}) {
 export const dateOrder = (iso) => (iso ? new Date(iso).getTime() : Infinity);
 
 // The gifts for one event: the gift's total price, and my share of it.
-// Edit and delete as icons at the end of each row.
-function GiftTable({ rows, onChanged }) {
+// Edit and delete as icons at the end of each row. Also used on the Secret Santa card.
+export function GiftTable({ rows, onChanged, totalLabel = "Totalt" }) {
     const [editing, setEditing] = useState(null); // the gift being edited in the modal
     const [busyId, setBusyId] = useState(null);
     const [error, setError] = useState(null);
@@ -105,35 +120,38 @@ function GiftTable({ rows, onChanged }) {
                             <tr key={g.id}>
                                 <td>
                                     {g.title}
-                                    {g.offList && <span className="muted small"> · utanför listan</span>}
-                                    {g.sharedWith && <div className="muted small">Delas med {g.sharedWith}</div>}
+                                    {g.offList && g.listId && <span className="muted small"> · utanför listan</span>}
+                                    {/* Shared: everyone's avatars next to the name, like on a reservation */}
+                                    {g.people?.length > 1 && (
+                                        <span className="avatar-stack gift-people" title={`Delas av ${joinNames(g.people.map((p) => p.name))}`}>
+                                            {g.people.map((p) => (
+                                                <Avatar key={p.id} icon={p.avatarIcon} color={p.avatarColor} size={22} />
+                                            ))}
+                                            <span className="visually-hidden">Delas av {joinNames(g.people.map((p) => p.name))}</span>
+                                        </span>
+                                    )}
                                 </td>
                                 <td className="num col-optional">{g.quantity}</td>
                                 <td className="num col-optional">{g.price === null ? "–" : formatPrice(g.price)}</td>
                                 <td className="num share">{g.myShare === null ? "–" : formatPrice(g.myShare)}</td>
                                 <td className="row-actions">
-                                    <button
-                                        type="button"
-                                        className="icon-btn"
-                                        onClick={() => setEditing(g)}
-                                        aria-label={`Redigera ${g.title}`}
-                                        title="Redigera"
-                                    >
-                                        <Pencil size={16} aria-hidden="true" />
-                                    </button>
-                                    {/* A reservation can't be undone after the event – a gift outside the list always can */}
-                                    {(g.offList || !g.archived) && (
-                                        <button
-                                            type="button"
-                                            className="icon-btn icon-btn-danger"
-                                            onClick={() => remove(g)}
-                                            disabled={busyId === g.id}
-                                            aria-label={`Ta bort ${g.title}`}
-                                            title="Ta bort"
-                                        >
-                                            <Trash2 size={16} aria-hidden="true" />
+                                    <SettingsMenu label={`Alternativ för ${g.title}`} icon={Ellipsis}>
+                                        <button type="button" className="menu-item" role="menuitem" onClick={() => setEditing(g)}>
+                                            <Pencil size={16} aria-hidden="true" /> Redigera
                                         </button>
-                                    )}
+                                        {/* A reservation can't be undone after the event – a gift outside the list always can */}
+                                        {(g.offList || !g.archived) && (
+                                            <button
+                                                type="button"
+                                                className="menu-item menu-item-danger"
+                                                role="menuitem"
+                                                onClick={() => remove(g)}
+                                                disabled={busyId === g.id}
+                                            >
+                                                <Trash2 size={16} aria-hidden="true" /> {g.offList ? "Ta bort" : "Ångra reservation"}
+                                            </button>
+                                        )}
+                                    </SettingsMenu>
                                 </td>
                             </tr>
                         ))}
@@ -141,9 +159,9 @@ function GiftTable({ rows, onChanged }) {
                     <tfoot>
                         <tr>
                             {/* Separate cells, so the row still lines up when Antal and Pris are hidden on mobile */}
-                            <td>Min del för kalaset</td>
+                            <td>{totalLabel}</td>
                             <td className="col-optional" />
-                            <td className="col-optional" />
+                            <td className="num col-optional">{sumPrices(rows) === null ? "–" : formatPrice(sumPrices(rows))}</td>
                             <td className="num share">{formatPrice(sumShares(rows))}</td>
                             <td />
                         </tr>
@@ -168,10 +186,19 @@ function GiftTable({ rows, onChanged }) {
 
 // One event: the list's details on the left (in a contrasting colour), my gifts for it on the right
 export function EventRow({ event, archived = false, onChanged }) {
-    const { listId, personId, title, endDate, recipients, isRecipient, isAdmin, canOpen, gifts, wishCount, reservedCount } =
+    const { listId, santaId, personId, title, endDate, recipients, isRecipient, isAdmin, canOpen, gifts, wishCount, reservedCount } =
         event;
-    const variant = archived ? " event-archived" : isRecipient ? " event-to-me" : !listId ? " event-no-list" : "";
-    const kicker = listId ? "Önskelista" : personId ? "Önskeprofil" : "Gåva utanför lista";
+    const variant = archived
+        ? " event-archived"
+        : isRecipient
+          ? " event-to-me"
+          : santaId
+            ? " event-santa"
+            : !listId
+              ? " event-no-list"
+              : "";
+    const kicker = listId ? "Önskelista" : santaId ? "Secret Santa" : personId ? "Önskeprofil" : "Gåva utanför lista";
+    const KickerIcon = listId ? ScrollText : santaId ? HatGlasses : null;
 
     return (
         <div className={`event-group${variant}`}>
@@ -198,9 +225,9 @@ export function EventRow({ event, archived = false, onChanged }) {
                         {endDate && <DateBadge iso={endDate} />}
                         <div className="event-title">
                             <p className="event-kicker">
-                                {listId && <ScrollText size={14} aria-hidden="true" />} {kicker}
+                                {KickerIcon && <KickerIcon size={14} aria-hidden="true" />} {kicker}
                             </p>
-                            <h3>{listId ? title : `Till ${recipients}`}</h3>
+                            <h3>{listId || santaId ? title : `Till ${recipients}`}</h3>
                         </div>
                     </div>
                     {wishCount !== undefined && (
@@ -237,27 +264,52 @@ export function EventRow({ event, archived = false, onChanged }) {
                         <p className="event-note">
                             🎁 Listan är till dig, så vad andra har köpt är en överraskning.
                         </p>
-                    ) : gifts.length > 0 ? (
+                    ) : (
                         <>
+                            {/* Always the same head: "Mina inköp" on the left, the button on the right */}
                             <div className="event-gifts-head">
                                 <h4>
-                                    Mina inköp <span className="muted small">({gifts.length})</span>
+                                    Mina inköp {gifts.length > 0 && <span className="muted small">({gifts.length})</span>}
                                 </h4>
                                 {listId && !archived && (
                                     <Link to={`/gifts/new?list=${listId}`} className="btn btn-small btn-ghost">
-                                        <Plus size={16} aria-hidden="true" /> Gåva utanför listan
+                                        <Plus size={16} aria-hidden="true" /> Lägg till egen gåva
+                                    </Link>
+                                )}
+                                {santaId && !archived && (
+                                    <Link to={`/gifts/new?santa=${santaId}`} className="btn btn-small btn-ghost">
+                                        <Plus size={16} aria-hidden="true" /> Lägg till egen gåva
                                     </Link>
                                 )}
                             </div>
-                            <GiftTable rows={gifts} onChanged={onChanged} />
+                            {gifts.length > 0 ? (
+                                <GiftTable rows={gifts} onChanged={onChanged} />
+                            ) : (
+                                <div className="event-empty">
+                                    <p>
+                                        Du har inte registrerat några köp än 🙁
+                                        {listId && !archived && (
+                                            <>
+                                                <br />
+                                                Reservera något från{" "}
+                                                {canOpen ? (
+                                                    <Link to={`/lists/${listId}`} className="text-link">
+                                                        listan
+                                                    </Link>
+                                                ) : (
+                                                    "listan"
+                                                )}{" "}
+                                                eller lägg till en{" "}
+                                                <Link to={`/gifts/new?list=${listId}`} className="text-link">
+                                                    egen post
+                                                </Link>
+                                                .
+                                            </>
+                                        )}
+                                    </p>
+                                </div>
+                            )}
                         </>
-                    ) : (
-                        <div className="event-empty">
-                            <p>Du har inte köpt något till det här än.</p>
-                            <Link to={`/gifts/new?list=${listId}`} className="btn btn-small btn-ghost">
-                                <Plus size={16} aria-hidden="true" /> Gåva utanför listan
-                            </Link>
-                        </div>
                     )}
                 </div>
             </article>

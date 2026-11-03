@@ -1,27 +1,36 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, Eye, EyeOff, Gift, Heart, Plus, Trash2, HatGlasses } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, HatGlasses, Heart, Lock, Pencil, Plus, Sparkles, Trash2 } from "lucide-react";
 import { api } from "../api.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useFetch } from "../hooks/useFetch.js";
 import { Empty, ErrorMessage, Loading } from "../components/Feedback.jsx";
 import Avatar from "../components/Avatar.jsx";
-import ListCard from "../components/ListCard.jsx";
+import Modal from "../components/Modal.jsx";
 import PersonLink from "../components/PersonLink.jsx";
-import { buildEvents, dateOrder, EventRow } from "../components/EventRow.jsx";
+import { buildEvents, dateOrder, EventRow, GiftTable } from "../components/EventRow.jsx";
 import { formatPrice } from "../format.js";
 import DateBadge from "../components/DateBadge.jsx";
 
 // A Secret Santa among the events. Who I give to is hidden until I press the eye –
-// someone might be looking at the screen.
-function SantaRow({ santa, onChanged }) {
+// someone might be looking at the screen. Below it: my gifts for it – the ones linked to the draw,
+// and what I've reserved on the receiver's wish profile.
+function SantaRow({ santa, gifts = [], onChanged }) {
+    const { user } = useAuth();
     const [shown, setShown] = useState(false);
+    const [showParticipants, setShowParticipants] = useState(false);
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState(null);
     const { receiver } = santa;
 
     async function remove() {
-        if (!window.confirm(`Ta bort "${santa.title}"? Lottningen försvinner för alla och kan inte återskapas.`)) return;
+        if (
+            !window.confirm(
+                `Ta bort "${santa.title}"? Lottningen försvinner för alla och kan inte återskapas. Gåvor som deltagarna har kopplat till den tas också bort.`
+            )
+        ) {
+            return;
+        }
         setBusy(true);
         setError(null);
         try {
@@ -58,27 +67,18 @@ function SantaRow({ santa, onChanged }) {
                     </div>
                 </div>
                 <p className="event-recipients">
-                    {santa.groupName} · {santa.participantCount} deltagare
+                    {santa.groupName} ·{" "}
+                    <button type="button" className="text-link" onClick={() => setShowParticipants(true)}>
+                        {santa.participantCount} deltagare
+                    </button>
                 </p>
-                {santa.budget !== null && <p className="event-recipients">Budget: {formatPrice(santa.budget)}</p>}
-            </div>
+                {santa.budget !== null && <p className="event-recipients">Budget: <strong>{formatPrice(santa.budget)}</strong></p>}
 
-            <div className="event-gifts">
-                <ErrorMessage message={error} />
-                {receiver ? (
+                {/* Who I got – hidden until I press the eye */}
+                {receiver && (
                     <div className="santa-secret">
-                        <p className="santa-label">Du ska ge en gåva till</p>
-                        <div className="santa-reveal">
-                            {shown ? (
-                                <Avatar icon={receiver.avatarIcon} color={receiver.avatarColor} size={48} />
-                            ) : (
-                                <span className="santa-mystery" aria-hidden="true">
-                                    <Gift size={24} />
-                                </span>
-                            )}
-                            <span className={`santa-name${shown ? "" : " santa-name-hidden"}`} aria-live="polite">
-                                {shown ? receiver.name : "Dolt"}
-                            </span>
+                        <div className="santa-label-row">
+                            <p className="santa-label">Du ska ge en gåva till</p>
                             <button
                                 type="button"
                                 className="icon-btn santa-eye"
@@ -87,22 +87,131 @@ function SantaRow({ santa, onChanged }) {
                                 aria-label={shown ? "Dölj vem du fått" : "Visa vem du fått"}
                                 title={shown ? "Dölj" : "Visa"}
                             >
-                                {shown ? <EyeOff size={20} aria-hidden="true" /> : <Eye size={20} aria-hidden="true" />}
+                                {shown ? <EyeOff size={15} aria-hidden="true" /> : <Eye size={15} aria-hidden="true" />}
                             </button>
                         </div>
-                        {/* Opens the profile without revealing the name here – the modal shows it, on purpose */}
-                        <PersonLink person={receiver} className="btn btn-small santa-profile-btn" title="Se vad hen önskar sig">
-                            <Heart size={16} aria-hidden="true" /> Se önskeprofilen
-                        </PersonLink>
-                        <p className="muted small">Ingen annan kan se vem du har fått – och du ser inte vem som har fått dig.</p>
+                        {/* The same placeholder for everyone while hidden, so the blur doesn't hint at the name's length */}
+                        {/* Clicking the name shows/hides it too (the eye is the button for keyboard and screen readers) */}
+                        <span
+                            className={`santa-name${shown ? "" : " santa-name-hidden"}`}
+                            aria-live="polite"
+                            onClick={() => setShown(!shown)}
+                            title={shown ? "Dölj" : "Visa"}
+                        >
+                            {shown ? receiver.name : "Hemlis"}
+                        </span>
                     </div>
+                )}
+
+                {/* Bottom right, like "Se lista" on the other cards. Opens the profile without revealing
+                    the name here – the modal shows it, on purpose. */}
+                {receiver && (
+                    <div className="event-foot">
+                        <PersonLink person={receiver} className="btn btn-small event-link" title="Se vad hen önskar sig">
+                            Se önskeprofil <ArrowRight size={16} aria-hidden="true" />
+                        </PersonLink>
+                    </div>
+                )}
+            </div>
+
+            {/* Right side: only my gifts for it */}
+            <div className="event-gifts">
+                <ErrorMessage message={error} />
+                {receiver ? (
+                    <>
+                        <div className="event-gifts-head">
+                            <h4>
+                                Mina inköp {gifts.length > 0 && <span className="muted small">({gifts.length})</span>}
+                            </h4>
+                            <Link to={`/gifts/new?santa=${santa.id}`} className="btn btn-small btn-ghost">
+                                <Plus size={16} aria-hidden="true" /> Lägg till egen gåva
+                            </Link>
+                        </div>
+                        {gifts.length > 0 ? (
+                            <GiftTable rows={gifts} onChanged={onChanged} totalLabel="Totalt" />
+                        ) : (
+                            <div className="event-empty">
+                                <p>
+                                    Du har inte registrerat några köp än 🙁
+                                    <br />
+                                    {/* Own title, so the tooltip doesn't give away who it is */}
+                                    Reservera något från{" "}
+                                    <PersonLink person={receiver} className="text-link" title="Se vad hen önskar sig">
+                                        önskeprofilen
+                                    </PersonLink>{" "}
+                                    eller lägg till en{" "}
+                                    <Link to={`/gifts/new?santa=${santa.id}`} className="text-link">
+                                        egen post
+                                    </Link>
+                                    .
+                                </p>
+                            </div>
+                        )}
+                    </>
                 ) : (
                     <p className="event-note">
                         Du har lottat den här men är inte med själv. Ingen, inte heller du, kan se vem som fick vem.
                     </p>
                 )}
             </div>
+            {/* Everyone who takes part – never who gives to whom */}
+            {showParticipants && (
+                <Modal title={`Deltagare i ${santa.title}`} onClose={() => setShowParticipants(false)}>
+                    <ul className="member-list">
+                        {(santa.participants ?? []).map((p) => (
+                            <li key={p.id}>
+                                <span className="member-name">
+                                    <Avatar icon={p.avatarIcon} color={p.avatarColor} size={32} />
+                                    {p.name}
+                                    {p.id === user.id && <span className="muted"> (du)</span>}
+                                </span>
+                            </li>
+                        ))}
+                    </ul>
+                    <p className="muted small">Alla ger en gåva och får en. Ingen kan se vem som har fått vem.</p>
+                </Modal>
+            )}
         </article>
+    );
+}
+
+// One of my private (not yet published) lists: the same look as the event panels, but inverted –
+// white with rose details. Only the panel, since nobody can buy anything before it's published.
+function PrivateListCard({ list }) {
+    return (
+        <div className="event-group">
+            {list.recipients && (
+                <p className="event-to">
+                    Till: <span className="event-for">{list.recipients}</span>
+                </p>
+            )}
+            <article className="event event-light">
+                <div className="event-info">
+                    <Link to={`/lists/${list.id}/edit`} className="event-edit" aria-label={`Redigera ${list.title}`} title="Redigera listan">
+                        <Pencil size={16} aria-hidden="true" />
+                    </Link>
+                    <div className="event-head">
+                        <DateBadge iso={list.endDate} />
+                        <div className="event-title">
+                            <p className="event-kicker">
+                                <Lock size={14} aria-hidden="true" /> Privat lista
+                            </p>
+                            <h3>{list.title}</h3>
+                        </div>
+                    </div>
+                    <p className="event-stats">
+                        <span>
+                            <Sparkles size={14} aria-hidden="true" /> {list.wishCount} {list.wishCount === 1 ? "önskning" : "önskningar"}
+                        </span>
+                    </p>
+                    <div className="event-foot">
+                        <Link to={`/lists/${list.id}`} className="btn btn-small event-link">
+                            Se lista <ArrowRight size={16} aria-hidden="true" />
+                        </Link>
+                    </div>
+                </div>
+            </article>
+        </div>
     );
 }
 
@@ -118,16 +227,31 @@ export default function OverviewPage() {
     const santaNeedsProfile = profileEmpty && santas.some((santa) => santa.receiver);
     // Published lists are among the events above – here only my coming lists that aren't published yet
     const privateLists = adminLists.filter((list) => !list.archived && !list.isPublic);
-    const archivedCount = adminLists.filter((list) => list.archived).length;
+
+    // My gifts for each Secret Santa I give in: the ones linked to it, and what I've reserved on the
+    // receiver's wish profile. They're shown on the Santa card, not as events of their own.
+    const santaGifts = new Map();
+    for (const santa of santas) {
+        if (!santa.receiver) continue;
+        santaGifts.set(
+            santa.id,
+            gifts.current.filter(
+                (g) => g.santaId === santa.id || (!g.listId && !g.santaId && g.personId === santa.receiver.id)
+            )
+        );
+    }
+    const onSantaCards = new Set([...santaGifts.values()].flat().map((g) => g.id));
 
     // Secret Santas always first (soonest first), then lists and other events by date
     const events = [
         ...santas
             .map((santa) => ({ key: `santa:${santa.id}`, santa, date: santa.date }))
             .sort((a, b) => dateOrder(a.date) - dateOrder(b.date)),
-        ...buildEvents(upcoming, gifts.current).map((event) => ({ ...event, date: event.endDate })),
+        ...buildEvents(upcoming, gifts.current.filter((g) => !onSantaCards.has(g.id))).map((event) => ({
+            ...event,
+            date: event.endDate,
+        })),
     ];
-    const history = buildEvents([], gifts.history, { newestFirst: true });
 
     return (
         <div className="page">
@@ -161,23 +285,12 @@ export default function OverviewPage() {
                     <div className="events">
                         {events.map((event) =>
                             event.santa ? (
-                                <SantaRow key={event.key} santa={event.santa} onChanged={reload} />
+                                <SantaRow key={event.key} santa={event.santa} gifts={santaGifts.get(event.santa.id)} onChanged={reload} />
                             ) : (
                                 <EventRow key={event.key} event={event} onChanged={reload} />
                             )
                         )}
                     </div>
-                )}
-
-                {history.length > 0 && (
-                    <details className="history">
-                        <summary>Tidigare inköp ({gifts.history.length})</summary>
-                        <div className="events">
-                            {history.map((event) => (
-                                <EventRow key={event.key} event={event} archived onChanged={reload} />
-                            ))}
-                        </div>
-                    </details>
                 )}
             </section>
 
@@ -186,27 +299,11 @@ export default function OverviewPage() {
                 <section className="section">
                     <div className="section-head">
                         <h2>Mina privata listor</h2>
-                        <div className="actions">
-                            <Link to="/lists/new" className="btn btn-small">
-                                <Plus size={16} aria-hidden="true" /> Ny lista
-                            </Link>
-                            <Link to="/archive" className="btn btn-small btn-ghost">
-                                Arkiv{archivedCount > 0 && ` (${archivedCount})`}
-                            </Link>
-                        </div>
                     </div>
                     {/* Lists whose date has passed are in the archive */}
-                    <div className="cards">
+                    <div className="cards private-lists">
                         {privateLists.map((list) => (
-                            <ListCard
-                                key={list.id}
-                                list={{ ...list, isAdmin: true }}
-                                extra={
-                                    <p className="muted small">
-                                        {list.wishCount} {list.wishCount === 1 ? "önskning" : "önskningar"}
-                                    </p>
-                                }
-                            />
+                            <PrivateListCard key={list.id} list={list} />
                         ))}
                     </div>
                 </section>

@@ -31,6 +31,7 @@ const FreeFields = z.object({
     imageFromUrl: WishBody.shape.imageFromUrl,
     removeImage: WishBody.shape.removeImage,
     listId: optionalId,
+    santaId: optionalId,
     recipient: z.string().trim().max(100, "Mottagaren får vara högst 100 tecken").optional().transform((v) => v || null),
     giftDate: z
         .string()

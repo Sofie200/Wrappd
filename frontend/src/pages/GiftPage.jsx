@@ -12,18 +12,19 @@ import { ArrowLeft, ArrowUpRight } from "lucide-react";
 
 // /gifts/:id – a gift ("gåva"), and /gifts/new – a new gift bought outside the wish list.
 //  - A gift on a wish: quantity, price, comment, who shares and how. After the event: price, comment and split.
-//  - A gift outside the wish list: also title, description, link, image, and a list OR a recipient and a date.
-//    Everything can always be changed. Never shown on the list. Can only be shared when it has a list.
+//  - A gift outside the wish list: also title, description, link, image, and a list OR a Secret Santa I give in
+//    OR a recipient and a date. Everything can always be changed. Never shown on the list.
+//    Can only be shared when it has a list.
 export default function GiftPage() {
     const { id } = useParams();
     const [searchParams] = useSearchParams();
-    return <GiftEditor id={id} presetListId={searchParams.get("list") ?? ""} />;
+    return <GiftEditor id={id} presetListId={searchParams.get("list") ?? ""} presetSantaId={searchParams.get("santa") ?? ""} />;
 }
 
 // The gift editor itself – used by the page, and in a modal (e.g. from the overview).
 // With `onDone` it runs in modal mode: no page chrome, and onDone() is called after
 // a save or a delete instead of navigating.
-export function GiftEditor({ id, presetListId = "", onDone }) {
+export function GiftEditor({ id, presetListId = "", presetSantaId = "", onDone }) {
     const isNew = id === "new";
     const gift = useFetch(isNew ? null : `/gifts/${id}`);
     const isFree = isNew || gift.data?.gift.kind === "free";
@@ -39,7 +40,9 @@ export function GiftEditor({ id, presetListId = "", onDone }) {
             key={isNew ? "new" : JSON.stringify(gift.data)}
             data={isNew ? null : gift.data}
             lists={lists.data?.data ?? []}
+            santas={lists.data?.santas ?? []}
             presetListId={presetListId}
+            presetSantaId={presetSantaId}
             onDone={onDone}
             justSaved={justSaved}
             onSaved={() => {
@@ -51,7 +54,7 @@ export function GiftEditor({ id, presetListId = "", onDone }) {
     );
 }
 
-function GiftForm({ data, lists, presetListId, justSaved, onSaved, onEdit, onDone }) {
+function GiftForm({ data, lists, santas, presetListId, presetSantaId, justSaved, onSaved, onEdit, onDone }) {
     const { user } = useAuth();
     const navigate = useNavigate();
     const isNew = !data;
@@ -71,6 +74,7 @@ function GiftForm({ data, lists, presetListId, justSaved, onSaved, onEdit, onDon
         description: gift?.description ?? "",
         url: gift?.url ?? "",
         listId: isNew ? (lists.some((l) => String(l.id) === presetListId) ? presetListId : "") : savedListId,
+        santaId: isNew ? (santas.some((x) => String(x.id) === presetSantaId) ? presetSantaId : "") : String(gift?.santaId ?? ""),
         recipient: gift?.recipient ?? "",
         giftDate: gift?.giftDate ?? "",
     });
@@ -133,6 +137,7 @@ function GiftForm({ data, lists, presetListId, justSaved, onSaved, onEdit, onDon
             return;
         }
         const others = leaving.filter((m) => m.id !== user.id);
+        const freeText = form.listId === "" && form.santaId === ""; // recipient and date only without a list or a Secret Santa
         if (isFree && form.listId === "" && others.length > 0 &&
             !window.confirm(`En gåva utan lista kan inte delas. ${others.map((m) => m.name).join(", ")} tas bort från gåvan. Fortsätta?`)) {
             return;
@@ -145,8 +150,8 @@ function GiftForm({ data, lists, presetListId, justSaved, onSaved, onEdit, onDon
         formData.append("split", members.length > 1 || form.split === "equal" ? form.split : "equal");
         formData.append("members", JSON.stringify(members.length > 1 ? members : members.map((m) => ({ ...m, amount: null }))));
         if (isFree) {
-            for (const key of ["title", "description", "url", "listId"]) formData.append(key, form[key]);
-            if (form.listId === "") {
+            for (const key of ["title", "description", "url", "listId", "santaId"]) formData.append(key, form[key]);
+            if (freeText) {
                 formData.append("recipient", form.recipient);
                 formData.append("giftDate", form.giftDate);
             }
@@ -186,7 +191,13 @@ function GiftForm({ data, lists, presetListId, justSaved, onSaved, onEdit, onDon
         }
     }
 
-    const { wish, list, person } = data ?? {};
+    const { wish, list, person, santa } = data ?? {};
+    // What the gift is linked to, as one value for the select: "list:5", "santa:3" or "" (neither)
+    const link = form.santaId ? `santa:${form.santaId}` : form.listId ? `list:${form.listId}` : "";
+    function changeLink(e) {
+        const [kind, linkId = ""] = e.target.value.split(":");
+        change({ listId: kind === "list" ? linkId : "", santaId: kind === "santa" ? linkId : "" });
+    }
     // If the gift's list is no longer among the ones I can pick (e.g. I left the group), keep it as an option
     const listOptions = list && isFree && !lists.some((l) => l.id === list.id) ? [{ ...list, archived: false }, ...lists] : lists;
     const quantityOptions = gift && !isFree ? Array.from({ length: Math.max(gift.maxQuantity, gift.quantity) }, (_, i) => i + 1) : [];
@@ -197,9 +208,11 @@ function GiftForm({ data, lists, presetListId, justSaved, onSaved, onEdit, onDon
                 <p className="muted">
                     {list
                         ? `Gåva till ${list.recipients} · ${formatDate(list.endDate)}`
-                        : person
-                          ? `Gåva till ${person.name} · från önskeprofilen`
-                          : `Till ${gift.recipient} · ${formatDate(gift.giftDate)}`}
+                        : santa
+                          ? `Secret Santa: ${santa.title} · ${formatDate(santa.date)}`
+                          : person
+                            ? `Gåva till ${person.name} · från önskeprofilen`
+                            : `Till ${gift.recipient} · ${formatDate(gift.giftDate)}`}
                     {isFree && " · utanför önskelistan"}
                 </p>
             )}
@@ -252,19 +265,36 @@ function GiftForm({ data, lists, presetListId, justSaved, onSaved, onEdit, onDon
                         <ImageField image={image} onError={setError} />
 
                         <label className="field">
-                            <span>Önskelista</span>
-                            <select value={form.listId} onChange={set("listId")} disabled={busy}>
+                            <span>Kopplad till</span>
+                            <select value={link} onChange={changeLink} disabled={busy}>
                                 <option value="">Ingen lista</option>
-                                {listOptions.map((l) => (
-                                    <option key={l.id} value={l.id}>
-                                        {l.title} – till {l.recipients} ({formatShortDate(l.endDate)}){l.archived ? " · arkiverad" : ""}
-                                    </option>
-                                ))}
+                                {listOptions.length > 0 && (
+                                    <optgroup label="Önskelistor">
+                                        {listOptions.map((l) => (
+                                            <option key={l.id} value={`list:${l.id}`}>
+                                                {l.title} – till {l.recipients} ({formatShortDate(l.endDate)}){l.archived ? " · arkiverad" : ""}
+                                            </option>
+                                        ))}
+                                    </optgroup>
+                                )}
+                                {santas.length > 0 && (
+                                    <optgroup label="Secret Santa">
+                                        {santas.map((x) => (
+                                            <option key={x.id} value={`santa:${x.id}`}>
+                                                {x.title} ({formatShortDate(x.date)}){x.archived ? " · passerad" : ""}
+                                            </option>
+                                        ))}
+                                    </optgroup>
+                                )}
                             </select>
-                            <small>Gåvan kopplas till listan men syns inte där. Raderas listan raderas gåvan också.</small>
+                            <small>
+                                {form.santaId
+                                    ? "Gåvan hamnar på Secret Santa-kortet. Bara du ser den. Tas lottningen bort tas gåvan också bort."
+                                    : "Gåvan kopplas till listan men syns inte där. Raderas listan raderas gåvan också."}
+                            </small>
                         </label>
 
-                        {form.listId === "" && (
+                        {form.listId === "" && form.santaId === "" && (
                             <div className="field-row">
                                 <label className="field">
                                     <span>Till vem?</span>
@@ -380,7 +410,9 @@ function GiftForm({ data, lists, presetListId, justSaved, onSaved, onEdit, onDon
                     </>
                 ) : (
                     <p className="small muted">
-                        {form.listId === ""
+                        {form.santaId !== ""
+                            ? "En Secret Santa-gåva kan inte delas – bara du vet vem den är till."
+                            : form.listId === ""
                             ? "En gåva utan lista kan inte delas med andra. Välj en lista för att kunna dela den."
                             : isNew
                               ? "När gåvan är sparad kan du dela den med andra i listans grupper."

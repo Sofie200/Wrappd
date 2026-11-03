@@ -168,7 +168,7 @@ export default function ListPage() {
                         {/* A gift bought outside the list – only those who share it ever see it */}
                         {me.seesReservations && (
                             <Link to={`/gifts/new?list=${list.id}`} className="btn btn-small btn-ghost">
-                                <Plus size={16} aria-hidden="true" /> Gåva utanför listan
+                                <Plus size={16} aria-hidden="true" /> Lägg till egen gåva
                             </Link>
                         )}
                     </div>
