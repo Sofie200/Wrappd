@@ -4,8 +4,8 @@ import { AVATAR_COLORS, AVATAR_ICONS, DEFAULT_COLOR, DEFAULT_ICON } from "../pro
 // Children always have the baby icon, in yellow or orange – picked from their id, so it never
 // changes and can't be chosen. (Children can't log in, so they never see the profile modal.)
 const CHILD_COLORS = [
-    { background: "#f6c945", color: "#632519" }, // yellow – dark icon, white would be hard to see
-    { background: "#f08c1a", color: "#ffffff" }, // orange
+    { background: "#fcc95b", color: "#5b2418" }, // yellow – dark icon, white would be hard to see
+    { background: "#f6a623", color: "#5b2418" }, // orange – dark icon too
 ];
 
 // A round profile icon. Decorative – the surrounding element has the label.

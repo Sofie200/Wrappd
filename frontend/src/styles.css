@@ -1,33 +1,51 @@
-@import url('https://fonts.googleapis.com/css2?family=Google+Sans:ital,opsz,wght@0,17..18,400..700;1,17..18,400..700&display=swap');
-
 /* ---------- Tokens ---------- */
+/* Colours from the moodboard: cream base, rose as the main colour, coral, orange, yellow and lavender
+   as companions, and a warm dark brown for text. */
 :root {
-    --bg: #feeddc;
+    --cream: #fdf3eb;
+    --rose: #ec5b78;
+    --rose-deep: #cf3a5e;
+    --coral: #f47e6c;
+    --orange: #f6a623;
+    --yellow: #fcc95b;
+    --lavender: #c49be2;
+
+    --bg: var(--cream);
     --surface: #ffffff;
-    --surface-soft: #feeddc;
-    --ink: #632519;
-    --muted: #7a6f68;
-    --line: #e6ddd2;
-    --accent: #ec556f;
+    --surface-soft: #fdeee4;
+    --ink: #5b2418;
+    --muted: #7d625a;
+    --line: #f3e2d7;
+
+    /* Rose: --accent for icons, borders and focus; --accent-strong behind white text (4.75:1);
+       --accent-text for pink text and links on light backgrounds */
+    --accent: var(--rose);
+    --accent-strong: var(--rose-deep);
+    --accent-text: #c0325a;
     --accent-ink: #ffffff;
-    --accent-soft: #fea82e;
-    --green: #74ba73;
-    --green-soft: #fdc366;
-    --blue-soft: #cc9cd2;
-    --blue: #aa72c2;
+    --accent-soft: #fde4ea;
+
+    --green: #2f7a3d;
+    --green-soft: #e4f4e5;
+    --yellow-ink: #8a5300;
+    --yellow-soft: #fff0cc;
+    --blue: #7b4aa3; /* lavender text */
+    --blue-soft: #f2e7fa;
     --danger: #b3261e;
     --danger-soft: #fbe5e3;
 
-    --radius: 14px;
-    --radius-small: 8px;
-    --shadow: 0 1px 2px rgba(42, 36, 33, 0.06), 0 4px 16px rgba(42, 36, 33, 0.06);
-    --shadow-harsh: 6px 6px 0 #fea3ac;
-    --font: "Google Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
-    --font-display: "Google Sans",
-        system-ui,
-        -apple-system,
-        "Segoe UI",
-        sans-serif;
+    --radius: 18px;
+    --radius-small: 12px;
+    --shadow: 0 1px 2px rgba(91, 36, 24, 0.05), 0 8px 24px rgba(236, 91, 120, 0.08);
+    --shadow-lift: 0 2px 4px rgba(91, 36, 24, 0.06), 0 14px 32px rgba(236, 91, 120, 0.16);
+    --shadow-button: 0 6px 16px rgba(207, 58, 94, 0.28);
+    /* The ribbon: a band of the moodboard's colours */
+    --ribbon: linear-gradient(90deg, var(--rose), var(--coral) 35%, var(--orange) 65%, var(--lavender));
+    /* Pink candy stripes, like the wrapping paper */
+    --stripes: repeating-linear-gradient(-45deg, var(--rose) 0 10px, #f28aa0 10px 20px);
+
+    --font: "Nunito", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --font-display: var(--font);
 }
 
 *,
@@ -50,6 +68,8 @@ h1,
 h2,
 h3 {
     font-family: var(--font-display);
+    font-weight: 800;
+    letter-spacing: -0.01em;
     line-height: 1.2;
     margin: 0 0 0.5rem;
 }
@@ -67,7 +87,8 @@ h3 {
 }
 
 a {
-    color: var(--accent);
+    color: var(--accent-text);
+    text-underline-offset: 0.15em;
 }
 
 img {
@@ -89,10 +110,18 @@ img {
 }
 .header {
     background: var(--surface);
-    border-bottom: 1px solid var(--line);
+    box-shadow: 0 4px 20px rgba(236, 91, 120, 0.08);
     position: sticky;
     top: 0;
     z-index: 10;
+}
+
+/* A thin ribbon under the header */
+.header::after {
+    content: "";
+    display: block;
+    height: 4px;
+    background: var(--ribbon);
 }
 
 .header-inner {
@@ -126,9 +155,10 @@ img {
     gap: 0.3rem;
     color: var(--ink);
     text-decoration: none;
-    padding: 0.4rem 0.75rem;
+    padding: 0.45rem 0.9rem;
     border-radius: 999px;
-    font-weight: 500;
+    font-weight: 700;
+    transition: background-color 0.15s, color 0.15s;
 }
 
 .nav a:hover {
@@ -137,11 +167,11 @@ img {
 
 .nav a.active {
     background: var(--accent-soft);
-    color: var(--accent-ink);
+    color: var(--accent-text);
 }
 
 .nav a.nav-cta {
-    color: var(--accent);
+    color: var(--accent-text);
 }
 
 .user-menu {
@@ -202,7 +232,8 @@ img {
     background: var(--surface);
     border: 1px solid var(--line);
     border-radius: var(--radius);
-    padding: 1.25rem;
+    box-shadow: var(--shadow);
+    padding: 1.5rem;
     margin-bottom: 1.5rem;
 }
 
@@ -218,21 +249,26 @@ img {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 0.4rem;
-    padding: 0.6rem 1.1rem;
+    gap: 0.45rem;
+    padding: 0.65rem 1.3rem;
     border-radius: 999px;
-    border: 1px solid var(--line);
+    border: 1.5px solid var(--line);
     background: var(--surface);
     color: var(--ink);
     font: inherit;
-    font-weight: 500;
+    font-weight: 700;
     text-decoration: none;
     cursor: pointer;
-    transition: background-color 0.15s, border-color 0.15s;
+    transition: background-color 0.15s, border-color 0.15s, box-shadow 0.15s, transform 0.1s;
 }
 
 .btn:hover {
     background: var(--surface-soft);
+    border-color: #ecd3c6;
+}
+
+.btn:active:not(:disabled) {
+    transform: translateY(1px);
 }
 
 .btn:disabled {
@@ -241,26 +277,29 @@ img {
 }
 
 .btn:focus-visible,
-input:focus-visible,
-textarea:focus-visible,
-select:focus-visible,
 a:focus-visible {
-    outline: 2px solid var(--accent);
+    outline: 3px solid var(--accent);
     outline-offset: 2px;
 }
 
 .btn-primary {
-    background: var(--accent);
-    border-color: var(--accent);
+    background: var(--accent-strong);
+    border-color: var(--accent-strong);
     color: var(--accent-ink);
+    box-shadow: var(--shadow-button);
 }
 
 .btn-primary:hover {
-    background: #962e3e;
+    background: #b52f51;
+    border-color: #b52f51;
 }
 
 .btn-ghost {
     background: transparent;
+}
+
+.btn-ghost:hover {
+    background: var(--surface);
 }
 
 .btn-danger-ghost {
@@ -274,7 +313,7 @@ a:focus-visible {
 }
 
 .btn-small {
-    padding: 0.35rem 0.8rem;
+    padding: 0.4rem 0.95rem;
     font-size: 0.875rem;
 }
 
@@ -298,7 +337,7 @@ a:focus-visible {
 
 .field > span,
 .fieldset legend {
-    font-weight: 600;
+    font-weight: 700;
     font-size: 0.9rem;
 }
 
@@ -317,11 +356,25 @@ textarea,
 select {
     font: inherit;
     color: inherit;
-    padding: 0.6rem 0.75rem;
-    border: 1px solid var(--line);
+    padding: 0.65rem 0.9rem;
+    border: 1.5px solid #efd9cc;
     border-radius: var(--radius-small);
     background: var(--surface);
     width: 100%;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 4px rgba(236, 91, 120, 0.18);
+}
+
+input::placeholder,
+textarea::placeholder {
+    color: #a88f86;
 }
 
 input[type="checkbox"],
@@ -336,7 +389,8 @@ input[type="file"] {
 
 select {
     width: auto;
-    padding: 0.35rem 0.5rem;
+    padding: 0.45rem 0.75rem;
+    border-radius: 999px;
 }
 
 .fieldset {
@@ -427,7 +481,8 @@ select {
 /* ---------- Feedback ---------- */
 .alert {
     border-radius: var(--radius-small);
-    padding: 0.75rem 1rem;
+    padding: 0.85rem 1.1rem;
+    font-weight: 600;
     margin: 0 0 1rem;
     display: flex;
     justify-content: space-between;
@@ -471,9 +526,9 @@ select {
 .empty {
     color: var(--muted);
     background: var(--surface);
-    border: 1px dashed var(--line);
+    border: 2px dashed #f5c9d3;
     border-radius: var(--radius);
-    padding: 1.25rem;
+    padding: 1.5rem;
     margin: 0;
 }
 
@@ -487,8 +542,8 @@ select {
 .badge {
     display: inline-block;
     font-size: 0.75rem;
-    font-weight: 600;
-    padding: 0.15rem 0.55rem;
+    font-weight: 700;
+    padding: 0.2rem 0.65rem;
     border-radius: 999px;
     background: var(--surface-soft);
     color: var(--muted);
@@ -502,7 +557,7 @@ select {
 
 .badge-gift {
     background: var(--accent-soft);
-    color: var(--accent-ink);
+    color: var(--accent-text);
 }
 
 .badge-public {
@@ -524,9 +579,10 @@ select {
 
 .card {
     background: var(--surface);
-    border: 2px solid var(--accent);
-    box-shadow: var(--shadow-harsh);
-    padding: 1.1rem 1.25rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 1.25rem 1.35rem;
     color: inherit;
     text-decoration: none;
     display: flex;
@@ -544,7 +600,8 @@ select {
 }
 
 .card-link:hover {
-    transform: translateY(-4px);
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-lift);
 }
 
 .card-top {
@@ -575,16 +632,32 @@ select {
     display: grid;
     place-items: center;
     padding: 1rem;
-    background: radial-gradient(circle at 20% 10%, var(--accent-soft), transparent 50%), var(--bg);
+    background:
+        radial-gradient(circle, rgba(236, 91, 120, 0.35) 3px, transparent 4px) 0 0 / 56px 56px,
+        radial-gradient(circle, rgba(246, 166, 35, 0.35) 3px, transparent 4px) 28px 28px / 56px 56px,
+        radial-gradient(circle, rgba(196, 155, 226, 0.4) 2px, transparent 3px) 14px 42px / 56px 56px,
+        radial-gradient(circle at 15% 10%, var(--accent-soft), transparent 45%),
+        radial-gradient(circle at 85% 90%, var(--blue-soft), transparent 45%),
+        var(--bg);
 }
 
 .auth-card {
+    position: relative;
+    overflow: hidden;
     width: 100%;
     max-width: 400px;
     background: var(--surface);
-    border-radius: var(--radius);
-    box-shadow: var(--shadow);
-    padding: 2rem;
+    border-radius: 24px;
+    box-shadow: var(--shadow-lift);
+    padding: 2.25rem 2rem 2rem;
+}
+
+.auth-card::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto;
+    height: 6px;
+    background: var(--ribbon);
 }
 
 .auth-logo {
@@ -614,7 +687,7 @@ select {
 /* ---------- User links ---------- */
 .link-box {
     background: var(--green-soft);
-    border: 1px solid #b9d8c6;
+    border: 1px solid #bfe3c3;
     border-radius: var(--radius);
     padding: 1rem 1.25rem;
     margin-bottom: 1rem;
@@ -656,6 +729,7 @@ select {
     background: var(--surface);
     border: 1px solid var(--line);
     border-radius: var(--radius);
+    box-shadow: var(--shadow);
 }
 
 .member-list li {
@@ -717,11 +791,23 @@ select {
 
 /* ---------- List ---------- */
 .list-head {
+    position: relative;
+    overflow: hidden;
     background: var(--surface);
     border: 1px solid var(--line);
     border-radius: var(--radius);
-    padding: 1.5rem;
+    box-shadow: var(--shadow);
+    padding: 2rem 1.75rem 1.75rem;
     margin-bottom: 1.5rem;
+}
+
+/* Candy stripes along the top of the list, like wrapping paper */
+.list-head::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto;
+    height: 10px;
+    background: var(--stripes);
 }
 
 .list-head h1 {
@@ -774,11 +860,11 @@ select {
     max-width: calc(100vw - 16px);
     display: flex;
     flex-direction: column;
-    padding: 0.35rem;
+    padding: 0.4rem;
     background: var(--surface);
     border: 1px solid var(--line);
-    border-radius: var(--radius-small);
-    box-shadow: var(--shadow);
+    border-radius: 16px;
+    box-shadow: var(--shadow-lift);
 }
 
 .menu-item {
@@ -786,11 +872,12 @@ select {
     align-items: center;
     gap: 0.6rem;
     width: 100%;
-    padding: 0.55rem 0.75rem;
+    padding: 0.6rem 0.8rem;
     border: none;
-    border-radius: 6px;
+    border-radius: 10px;
     background: none;
     font: inherit;
+    font-weight: 600;
     color: var(--ink);
     text-align: left;
     text-decoration: none;
@@ -816,8 +903,8 @@ select {
 
 /* The page you're on (NavLink sets .active) */
 .menu-item.active {
-    font-weight: 600;
-    color: var(--accent);
+    font-weight: 800;
+    color: var(--accent-text);
 }
 
 .menu-item-danger {
@@ -854,12 +941,14 @@ select {
     display: flex;
     align-items: center;
     gap: 1rem;
-    transition: border-color 0.15s, box-shadow 0.15s;
+    box-shadow: var(--shadow);
+    transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
 }
 
 .wish:hover {
-    border-color: var(--accent);
-    box-shadow: var(--shadow);
+    border-color: #f5b3c1;
+    box-shadow: var(--shadow-lift);
+    transform: translateY(-2px);
 }
 
 .wish:focus-visible {
@@ -896,7 +985,7 @@ select {
 }
 
 .wish-title {
-    font-weight: 600;
+    font-weight: 800;
     font-size: 1.05rem;
     /* One line, then an ellipsis – the full title is in the modal */
     white-space: nowrap;
@@ -917,29 +1006,30 @@ select {
 }
 
 .badge-partial {
-    background: var(--green-soft);
-    color: var(--ink);
+    background: var(--yellow-soft);
+    color: var(--yellow-ink);
 }
 
 /* ---------- Modal (native <dialog>) ---------- */
 .modal {
     border: none;
     padding: 0;
-    border-radius: var(--radius);
+    border-radius: 24px;
     background: var(--surface);
     color: var(--ink);
     width: min(560px, calc(100% - 2rem));
     max-height: calc(100dvh - 2rem);
     overflow-y: auto;
-    box-shadow: var(--shadow);
+    box-shadow: var(--shadow-lift);
 }
 
 .modal::backdrop {
-    background: rgba(42, 36, 33, 0.45);
+    background: rgba(91, 36, 24, 0.35);
+    backdrop-filter: blur(3px);
 }
 
 .modal-inner {
-    padding: 1.25rem 1.5rem 1.5rem;
+    padding: 1.5rem 1.75rem 1.75rem;
 }
 
 .modal-head {
@@ -971,7 +1061,8 @@ select {
 }
 
 .modal-close:hover {
-    background: var(--line);
+    background: var(--accent-soft);
+    color: var(--accent-text);
 }
 
 .modal-close:focus-visible {
@@ -1098,6 +1189,7 @@ select {
     background: var(--surface);
     border: 1px solid var(--line);
     border-radius: var(--radius);
+    box-shadow: var(--shadow);
 }
 
 .table {
@@ -1117,7 +1209,8 @@ select {
     text-transform: uppercase;
     letter-spacing: 0.04em;
     color: var(--muted);
-    font-weight: 600;
+    font-weight: 700;
+    background: #fef8f3;
 }
 
 .table tfoot td {
@@ -1258,7 +1351,7 @@ select {
 }
 
 .days-left-today {
-    color: var(--accent);
+    color: var(--accent-text);
 }
 
 /* ---------- Overview: my gifts grouped by event ---------- */
@@ -1292,11 +1385,12 @@ select {
     display: flex;
     justify-content: space-between;
     margin: 0;
-    padding: 0.85rem 1rem;
+    padding: 0.85rem 1.25rem;
     background: var(--surface);
     border: 1px solid var(--line);
-    border-radius: var(--radius-small);
-    font-weight: 600;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    font-weight: 800;
 }
 
 /* An event I'm invited to but haven't bought anything for yet */
@@ -1307,8 +1401,8 @@ select {
     gap: 0.75rem 1rem;
     flex-wrap: wrap;
     padding: 1rem 1.25rem;
-    border: 2px dashed var(--line);
-    border-radius: var(--radius-small);
+    border: 2px dashed #f5c9d3;
+    border-radius: var(--radius);
     background: var(--surface);
 }
 
@@ -1522,7 +1616,7 @@ select {
 }
 
 .breadcrumbs a:hover {
-    color: var(--accent);
+    color: var(--accent-text);
     text-decoration: underline;
 }
 

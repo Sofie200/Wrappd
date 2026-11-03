@@ -35,11 +35,11 @@ export const AVATAR_ICONS = {
 };
 
 export const AVATAR_COLORS = {
-    pink: { label: "Rosa", value: "#ec556f" },
-    orange: { label: "Orange", value: "#f08c1a" },
-    green: { label: "Grön", value: "#5aa859" },
-    purple: { label: "Lila", value: "#aa72c2" },
-    blue: { label: "Blå", value: "#4a8fc7" },
+    pink: { label: "Rosa", value: "#ec5b78" },
+    orange: { label: "Orange", value: "#f47e6c" }, // coral, from the moodboard
+    green: { label: "Grön", value: "#5cb86a" },
+    purple: { label: "Lila", value: "#b385d9" },
+    blue: { label: "Blå", value: "#6aa6dc" },
 };
 
 export const DEFAULT_ICON = "user";
