@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Shuffle, TreePine } from "lucide-react";
+import { Shuffle, HatGlasses } from "lucide-react";
 import { api } from "../api.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useFetch } from "../hooks/useFetch.js";
@@ -64,7 +64,7 @@ export default function SantaFormPage() {
     return (
         <div className="page page-narrow">
             <h1 className="title-with-icon">
-                <TreePine size={28} aria-hidden="true" /> Ny Secret Santa
+                <HatGlasses size={28} aria-hidden="true" /> Ny Secret Santa
             </h1>
             <p className="muted">
                 Alla som är med lottas till någon annan. Var och en ser bara vem de själva ska ge till – inte ens du

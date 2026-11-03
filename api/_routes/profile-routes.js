@@ -18,6 +18,13 @@ router.get("/", async (req, res) => {
                     EXISTS (SELECT 1 FROM list_admins WHERE list_id = l.id AND user_id = $1) AS "isAdmin",
                     EXISTS (SELECT 1 FROM list_recipients WHERE list_id = l.id AND user_id = $1) AS "isRecipient",
                     ${RECIPIENTS} AS recipients,
+                    (SELECT count(*)::int FROM wishes WHERE list_id = l.id) AS "wishCount",
+                    -- Fully reserved wishes – never for lists to me (that's a surprise)
+                    CASE WHEN EXISTS (SELECT 1 FROM list_recipients WHERE list_id = l.id AND user_id = $1) THEN NULL
+                         ELSE (SELECT count(*)::int FROM wishes w
+                               WHERE w.list_id = l.id
+                                 AND (SELECT COALESCE(sum(gi.quantity), 0) FROM gifts gi WHERE gi.wish_id = w.id) >= w.quantity)
+                    END AS "reservedCount",
                     (SELECT string_agg(g.name, ', ' ORDER BY g.name)
                      FROM list_groups lg
                      JOIN groups g ON g.id = lg.group_id

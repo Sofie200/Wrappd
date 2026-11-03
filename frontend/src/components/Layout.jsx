@@ -1,5 +1,5 @@
 import { Link, NavLink, Outlet } from "react-router-dom";
-import { Baby, Gift, Heart, House, ListChecks, LogOut, Menu, Plus, TreePine, UserPen, Users } from "lucide-react";
+import { Baby, Gift, Heart, House, ScrollText, LogOut, Menu, HatGlasses, UserPen, Users } from "lucide-react";
 import { useAuth } from "../context/AuthContext.jsx";
 import { APP_NAME } from "../config.js";
 import Avatar from "./Avatar.jsx";
@@ -21,10 +21,10 @@ export default function Layout() {
                             <House size={16} aria-hidden="true" /> Översikt
                         </NavLink>
                         <NavLink to="/lists/new" className="nav-cta">
-                            <Plus size={16} aria-hidden="true" /> Ny lista
+                            <ScrollText size={16} aria-hidden="true" /> Ny lista
                         </NavLink>
                         <NavLink to="/santa/new" className="nav-cta">
-                            <TreePine size={16} aria-hidden="true" /> Secret Santa
+                            <HatGlasses size={16} aria-hidden="true" /> Secret Santa
                         </NavLink>
                     </nav>
 
@@ -34,7 +34,7 @@ export default function Layout() {
                                 <Users size={16} aria-hidden="true" /> Grupper
                             </NavLink>
                             <NavLink to="/lists" end className="menu-item" role="menuitem">
-                                <ListChecks size={16} aria-hidden="true" /> Listor
+                                <ScrollText size={16} aria-hidden="true" /> Listor
                             </NavLink>
                             <NavLink to="/gifts" end className="menu-item" role="menuitem">
                                 <Gift size={16} aria-hidden="true" /> Gåvor

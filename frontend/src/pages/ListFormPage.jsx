@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { ScrollText } from "lucide-react";
 import { api } from "../api.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useFetch } from "../hooks/useFetch.js";
@@ -79,7 +80,9 @@ export default function ListFormPage() {
     if (!isEdit && myGroups.data.data.length === 0) {
         return (
             <div className="page">
-                <h1>Ny lista</h1>
+                <h1 className="title-with-icon">
+                    <ScrollText size={28} aria-hidden="true" /> Ny lista
+                </h1>
                 <Empty>
                     En lista hör till en eller flera grupper. <Link to="/groups">Skapa eller gå med i en grupp</Link> först.
                 </Empty>
@@ -155,7 +158,9 @@ export default function ListFormPage() {
 
     return (
         <div className="page page-narrow">
-            <h1>{isEdit ? "Redigera lista" : "Ny lista"}</h1>
+            <h1 className="title-with-icon">
+                <ScrollText size={28} aria-hidden="true" /> {isEdit ? "Redigera lista" : "Ny lista"}
+            </h1>
             {!isEdit && <p className="muted">Listan är privat tills du publicerar den. Bara listans admins ser den innan dess.</p>}
 
             <form onSubmit={handleSubmit} className="form">

@@ -168,14 +168,17 @@ img {
     margin: 0 var(--panel-inset) var(--sheet-gap);
     background: var(--sheet);
     border-radius: 0 0 28px 28px;
-    box-shadow: 0 2px 6px rgba(91, 36, 24, 0.08), 0 24px 56px rgba(85, 40, 124, 0.22);
+    /* Nothing inside (e.g. the full-width intro band) can spill out onto the backdrop */
+    overflow: clip;
 }
 
 .header {
     /* Same side gap as the sheet, so header and sheet read as one panel on the backdrop */
     margin: 0 var(--panel-inset);
     background: var(--surface);
-    box-shadow: 0 4px 20px rgba(236, 91, 120, 0.08);
+    /* Negative spread keeps the shadow below the header, not out to the sides over the backdrop.
+       (Not clip-path – that would also cut off the dropdown menus.) */
+    box-shadow: 0 12px 16px -12px rgba(236, 91, 120, 0.25);
     position: sticky;
     top: 0;
     z-index: 10;
@@ -300,17 +303,35 @@ img {
     font-weight: 400;
 }
 
-/* Narrower screens: ordinary side padding */
+/* Narrower screens: ordinary side padding. The paddings are variables so full-width bands
+   (like .page-intro) can reach out to the sheet's edges. */
 .main {
-    padding: 3rem clamp(1rem, 3vw, 2.5rem) 4rem;
+    --main-pad-top: 3rem;
+    --main-pad-x: clamp(1rem, 3vw, 2.5rem);
+    padding: var(--main-pad-top) var(--main-pad-x) 4rem;
 }
 
 /* Wide screens: inset on both sides by the space in front of the menu, so the content's left edge
    lines up with the menu (and stays centred, since the right side gets the same) */
 @media (min-width: 1024px) {
     .main {
-        padding-inline: var(--content-inset);
+        --main-pad-x: var(--content-inset);
     }
+}
+
+/* A tinted band across the whole sheet at the top of a page, with a zigzag bottom edge
+   like the cut edge of wrapping paper. The content inside stays lined up with the rest of the page. */
+.page-intro {
+    --zigzag: 22px; /* width of one tooth; the teeth are half as tall */
+    margin: calc(-1 * var(--main-pad-top)) calc(-1 * var(--main-pad-x)) 0;
+    padding: var(--main-pad-top) var(--main-pad-x) calc(4.5rem + var(--zigzag) / 2);
+    background: #fbd6df; /* light rose, a step darker than --accent-soft */
+    -webkit-mask: conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) 50% / var(--zigzag) 100%;
+    mask: conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) 50% / var(--zigzag) 100%;
+}
+
+.page-intro h1 {
+    margin-bottom: 0;
 }
 
 .page-narrow {
@@ -1488,7 +1509,7 @@ select {
     }
 
     .main {
-        padding-top: 2rem;
+        --main-pad-top: 2rem;
     }
 
     .list-head {
@@ -1607,21 +1628,23 @@ select {
     border: 1px solid var(--line);
     border-radius: var(--radius);
     box-shadow: var(--shadow);
-    overflow: hidden;
+    /* Not overflow: hidden – the vertical label sticks out on the left. The panel rounds its own corners. */
 }
 
-/* The event: white text on rose, with faint wrapping-paper stripes */
+/* The event: white text on a rose gradient (wish lists). --tab-bg is the label's darker shade. */
 .event-info {
-    --event-bg: var(--accent-strong);
+    --event-bg: linear-gradient(135deg, #e44f70, var(--rose-deep));
+    --tab-bg: #a92b4b;
+    --tab-ink: #fff;
+    border-radius: calc(var(--radius) - 1px) 0 0 calc(var(--radius) - 1px);
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    gap: 0.3rem;
-    padding: 1.4rem 1.5rem;
+    gap: 0.5rem;
+    padding: 1.1rem 0.9rem 0.9rem 2.35rem; /* left: room for the vertical label; right/bottom: same as the edit icon's inset */
+    min-height: 9.5rem; /* tall enough for the longest vertical label */
     color: #fff;
-    background:
-        repeating-linear-gradient(-45deg, rgba(255, 255, 255, 0.07) 0 12px, transparent 12px 24px),
-        var(--event-bg);
+    background: var(--event-bg);
 }
 
 .event-info {
@@ -1654,31 +1677,105 @@ select {
 }
 
 /* Room for the icon next to a long title */
-.event-info:has(.event-edit) h3 {
+.event-info:has(.event-edit) .event-head {
     padding-right: 2.25rem;
 }
 
-/* Lists to me: lavender. Gifts without a list: brown. Past events: muted brown. */
-.event-to-me .event-info {
-    --event-bg: #7b4aa3;
+/* Date badge + kicker and title side by side */
+.event-head {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
 }
 
-/* Secret Santa: Christmas green */
+.event-title {
+    min-width: 0;
+}
+
+/* ---------- Date badge: "8 / NOV" on a filled wavy-edged circle ---------- */
+.date-badge {
+    --badge-size: 58px;
+    position: relative;
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: var(--badge-size);
+    height: var(--badge-size);
+    /* Pull the badge left by the empty space around lucide's shape, so its edge lines up with the text below */
+    margin-left: calc(var(--badge-size) * -0.09);
+    color: #fff; /* the shape's fill */
+}
+
+.date-badge-shape {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.date-badge-text {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    line-height: 1;
+    color: var(--badge-ink, var(--rose-deep));
+}
+
+.date-badge-day {
+    font-size: 1.3rem;
+    font-weight: 600;
+}
+
+.date-badge-month {
+    margin-top: 0.1rem;
+    font-size: 0.62rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+}
+
+/* Lists to me (my own): a lavender gradient. Gifts without a list: brown. Past events: muted brown. */
+.event-to-me .event-info {
+    --event-bg: linear-gradient(135deg, #9466c2, #6c3d95);
+    --tab-bg: #57307a;
+    --badge-ink: #6c3d95;
+}
+
+/* Secret Santa: a warm yellow-to-orange panel with dark text (white would be hard to read on it) */
 .event-santa .event-info {
-    --event-bg: #2f6e43;
+    --event-bg: linear-gradient(135deg, var(--yellow), var(--orange));
+    --tab-bg: #e58e0c;
+    --tab-ink: var(--ink);
+    --badge-ink: var(--yellow-ink);
+    color: var(--ink);
+}
+
+.event-santa .event-edit {
+    background: rgba(255, 255, 255, 0.5);
+    color: var(--ink);
+}
+
+.event-santa .event-edit:focus-visible {
+    outline-color: var(--ink);
 }
 
 .event-no-list .event-info {
     --event-bg: var(--ink);
+    --tab-bg: #2a0f09;
+    --badge-ink: var(--ink);
 }
 
 .event-archived .event-info {
     --event-bg: var(--muted);
+    --tab-bg: #493833;
+    --badge-ink: var(--muted);
 }
 
 .event-info h3 {
     margin: 0;
-    font-size: 1.4rem;
+    font-size: 1.2rem;
+    line-height: 1.2;
     overflow-wrap: anywhere;
 }
 
@@ -1686,34 +1783,48 @@ select {
     margin: 0;
 }
 
+/* The label ("Önskelista", "Secret Santa" …) runs vertically in the panel's top-left corner, as a tab
+   in a darker shade that sticks out past the card's edge */
 .event-kicker {
-    font-size: 0.75rem;
-    font-weight: 600;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    opacity: 0.85;
-}
-
-.event-date {
-    display: inline-flex;
+    position: absolute;
+    left: -0.55rem;
+    top: 0;
+    display: flex;
     align-items: center;
     gap: 0.35rem;
-    font-weight: 500;
-}
-
-.event-when {
-    display: inline-block;
-    margin-top: 0.25rem !important;
-    padding: 0.15rem 0.7rem;
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.2);
-    font-size: 0.85rem;
+    padding: 0.7rem 0.3rem;
+    border-radius: 6px;
+    background: var(--tab-bg);
+    color: var(--tab-ink);
+    box-shadow: 0 2px 6px rgba(63, 25, 17, 0.18);
+    writing-mode: vertical-rl;
+    transform: rotate(180deg); /* reads bottom to top */
+    white-space: nowrap;
+    font-size: 0.68rem;
     font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
 }
 
 .event-recipients {
     font-size: 0.9rem;
     opacity: 0.9;
+}
+
+/* "5 önskningar · 2 reserverade" */
+.event-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 0.9rem;
+    font-size: 0.85rem;
+    font-weight: 500;
+    opacity: 0.9;
+}
+
+.event-stats span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
 }
 
 /* "Se önskelistan": a white pill on the coloured panel */
@@ -1724,7 +1835,37 @@ select {
 }
 
 .event-info .event-link {
-    margin-top: 0.9rem;
+    margin: 0 0 0 auto; /* right-aligned in the bottom row */
+}
+
+/* Bottom row of the panel: "Se lista", on the right */
+.event-foot {
+    display: flex;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    width: 100%;
+    margin-top: auto; /* always at the bottom of the panel */
+    padding-top: 0.35rem;
+}
+
+/* "Till: Sigrid", as a small label above the card */
+.event-to {
+    display: flex;
+    align-items: center;
+    gap: 0.2rem;
+    margin: 0 0 0.2rem;
+    color: var(--muted);
+    font-weight: 500;
+    font-size: 0.78rem;
+    opacity: 0.95;
+}
+
+/* Who the list is for: the name, a little stronger than "Till:" */
+.event-for {
+    color: var(--ink);
+    font-weight: 600;
+    overflow-wrap: anywhere;
 }
 
 .event-link:hover {
@@ -1813,7 +1954,7 @@ button.event-edit {
 }
 
 .event-kicker svg {
-    vertical-align: -2px;
+    transform: rotate(90deg); /* turn the icon with the text */
 }
 
 /* ---------- Secret Santa: who I got, hidden behind an eye ---------- */
@@ -1891,7 +2032,8 @@ button.event-edit {
     }
 
     .event-info {
-        padding: 1.2rem 1.25rem;
+        padding: 1.2rem 0.9rem 0.9rem 2.35rem;
+        border-radius: calc(var(--radius) - 1px) calc(var(--radius) - 1px) 0 0;
     }
 
     .event-gifts {
@@ -2490,21 +2632,17 @@ button.event-edit {
     align-items: center;
     gap: 1rem;
     flex-wrap: wrap;
-    margin: 1.5rem 0 0;
-    padding: 1rem 1.25rem;
-    border: 1.5px solid #bfe3c3;
-    border-radius: var(--radius);
-    background: var(--green-soft);
-    color: var(--green);
-    box-shadow: var(--shadow);
+    margin: 2.25rem 0 0;
 }
 
 .santa-nudge > svg {
     flex: none;
+    color: var(--ink);
 }
 
+/* Only as wide as the text, so the button sits right after it */
 .santa-nudge > div {
-    flex: 1;
+    flex: 0 1 auto;
     min-width: 200px;
 }
 

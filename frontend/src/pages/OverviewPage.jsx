@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, CalendarDays, Eye, EyeOff, Gift, Heart, Plus, Trash2, TreePine } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, Gift, Heart, Plus, Trash2, HatGlasses } from "lucide-react";
 import { api } from "../api.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useFetch } from "../hooks/useFetch.js";
@@ -9,7 +9,8 @@ import Avatar from "../components/Avatar.jsx";
 import ListCard from "../components/ListCard.jsx";
 import PersonLink from "../components/PersonLink.jsx";
 import { buildEvents, dateOrder, EventRow } from "../components/EventRow.jsx";
-import { formatDate, formatPrice, relativeDays } from "../format.js";
+import { formatPrice } from "../format.js";
+import DateBadge from "../components/DateBadge.jsx";
 
 // A Secret Santa among the events. Who I give to is hidden until I press the eye –
 // someone might be looking at the screen.
@@ -47,14 +48,15 @@ function SantaRow({ santa, onChanged }) {
                         <Trash2 size={16} aria-hidden="true" />
                     </button>
                 )}
-                <p className="event-kicker">
-                    <TreePine size={14} aria-hidden="true" /> Secret Santa
-                </p>
-                <h3>{santa.title}</h3>
-                <p className="event-date">
-                    <CalendarDays size={16} aria-hidden="true" /> {formatDate(santa.date)}
-                </p>
-                <p className="event-when">{relativeDays(santa.date)}</p>
+                <div className="event-head">
+                    <DateBadge iso={santa.date} />
+                    <div className="event-title">
+                        <p className="event-kicker">
+                            <HatGlasses size={14} aria-hidden="true" /> Secret Santa
+                        </p>
+                        <h3>{santa.title}</h3>
+                    </div>
+                </div>
                 <p className="event-recipients">
                     {santa.groupName} · {santa.participantCount} deltagare
                 </p>
@@ -118,29 +120,33 @@ export default function OverviewPage() {
     const privateLists = adminLists.filter((list) => !list.archived && !list.isPublic);
     const archivedCount = adminLists.filter((list) => list.archived).length;
 
-    // Lists and Secret Santas together, soonest first
+    // Secret Santas always first (soonest first), then lists and other events by date
     const events = [
+        ...santas
+            .map((santa) => ({ key: `santa:${santa.id}`, santa, date: santa.date }))
+            .sort((a, b) => dateOrder(a.date) - dateOrder(b.date)),
         ...buildEvents(upcoming, gifts.current).map((event) => ({ ...event, date: event.endDate })),
-        ...santas.map((santa) => ({ key: `santa:${santa.id}`, santa, date: santa.date })),
-    ].sort((a, b) => dateOrder(a.date) - dateOrder(b.date));
+    ];
     const history = buildEvents([], gifts.history, { newestFirst: true });
 
     return (
         <div className="page">
-            <h1>Hej {user.name}!</h1>
+            <header className="page-intro">
+                <h1>Hej {user.name}!</h1>
 
-            {santaNeedsProfile && (
-                <div className="santa-nudge" role="status">
-                    <TreePine size={28} aria-hidden="true" />
-                    <div>
-                        <p className="santa-nudge-title">Du är med i en Secret Santa!</p>
-                        <p>Fyll i din önskeprofil, så vet den som har fått dig vad du gillar.</p>
+                {santaNeedsProfile && (
+                    <div className="santa-nudge" role="status">
+                        <HatGlasses size={28} aria-hidden="true" />
+                        <div>
+                            <p className="santa-nudge-title">Du är med i en Secret Santa!</p>
+                            <p>Fyll i din önskeprofil, så vet den som har fått dig vad du gillar.</p>
+                        </div>
+                        <Link to={`/people/${user.id}/edit`} className="btn btn-small btn-primary">
+                            <Heart size={16} aria-hidden="true" /> Min önskeprofil <ArrowRight size={16} aria-hidden="true" />
+                        </Link>
                     </div>
-                    <Link to={`/people/${user.id}/edit`} className="btn btn-small btn-primary">
-                        Fyll i önskeprofil <ArrowRight size={16} aria-hidden="true" />
-                    </Link>
-                </div>
-            )}
+                )}
+            </header>
 
             <section className="section">
                 <div className="section-head">

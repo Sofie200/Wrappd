@@ -2,13 +2,14 @@
 // a list) with its details on the left in a contrasting colour, and my gifts for it on the right.
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, CalendarDays, Pencil, Plus, Trash2 } from "lucide-react";
+import { ArrowRight, Gift, Pencil, Plus, ScrollText, Sparkles, Trash2 } from "lucide-react";
 import { api } from "../api.js";
 import { ErrorMessage } from "./Feedback.jsx";
 import Modal from "./Modal.jsx";
 import PersonLink from "./PersonLink.jsx";
 import { GiftEditor } from "../pages/GiftPage.jsx";
-import { formatDate, formatPrice, relativeDays } from "../format.js";
+import { formatPrice } from "../format.js";
+import DateBadge from "./DateBadge.jsx";
 
 export const sumShares = (rows) => rows.reduce((sum, g) => sum + Math.round((g.myShare ?? 0) * 100), 0) / 100;
 
@@ -27,6 +28,8 @@ export function buildEvents(lists, gifts, { newestFirst = false } = {}) {
             recipients: list.recipients,
             isRecipient: list.isRecipient,
             isAdmin: list.isAdmin,
+            wishCount: list.wishCount,
+            reservedCount: list.reservedCount, // null on lists to me
             // Lists TO me can only be opened by their admins
             canOpen: !list.isRecipient || list.isAdmin,
             gifts: [],
@@ -165,75 +168,99 @@ function GiftTable({ rows, onChanged }) {
 
 // One event: the list's details on the left (in a contrasting colour), my gifts for it on the right
 export function EventRow({ event, archived = false, onChanged }) {
-    const { listId, personId, title, endDate, recipients, isRecipient, isAdmin, canOpen, gifts } = event;
+    const { listId, personId, title, endDate, recipients, isRecipient, isAdmin, canOpen, gifts, wishCount, reservedCount } =
+        event;
     const variant = archived ? " event-archived" : isRecipient ? " event-to-me" : !listId ? " event-no-list" : "";
     const kicker = listId ? "Önskelista" : personId ? "Önskeprofil" : "Gåva utanför lista";
 
     return (
-        <article className={`event${variant}`}>
-            <div className="event-info">
-                {/* My list: edit it straight from here */}
-                {listId && isAdmin && !archived && (
-                    <Link
-                        to={`/lists/${listId}/edit`}
-                        className="event-edit"
-                        aria-label={`Redigera ${title}`}
-                        title="Redigera listan"
-                    >
-                        <Pencil size={16} aria-hidden="true" />
-                    </Link>
-                )}
-                <p className="event-kicker">{kicker}</p>
-                <h3>{listId ? title : `Till ${recipients}`}</h3>
-                {endDate && (
-                    <p className="event-date">
-                        <CalendarDays size={16} aria-hidden="true" /> {formatDate(endDate)}
-                    </p>
-                )}
-                {endDate && !archived && <p className="event-when">{relativeDays(endDate)}</p>}
-                {listId && recipients && <p className="event-recipients">Till {isRecipient ? "dig" : recipients}</p>}
-                {listId && canOpen && (
-                    <Link to={`/lists/${listId}`} className="btn btn-small event-link">
-                        Se önskelistan <ArrowRight size={16} aria-hidden="true" />
-                    </Link>
-                )}
-                {personId && (
-                    <span className="event-link-wrap">
-                        <PersonLink person={{ id: personId, name: recipients }}>
-                            Se önskeprofilen <ArrowRight size={16} aria-hidden="true" />
-                        </PersonLink>
-                    </span>
-                )}
-            </div>
-
-            <div className="event-gifts">
-                {isRecipient ? (
-                    <p className="event-note">
-                        🎁 Listan är till dig, så vad andra har köpt är en överraskning.
-                    </p>
-                ) : gifts.length > 0 ? (
-                    <>
-                        <div className="event-gifts-head">
-                            <h4>
-                                Mina inköp <span className="muted small">({gifts.length})</span>
-                            </h4>
-                            {listId && !archived && (
-                                <Link to={`/gifts/new?list=${listId}`} className="btn btn-small btn-ghost">
-                                    <Plus size={16} aria-hidden="true" /> Gåva utanför listan
-                                </Link>
-                            )}
-                        </div>
-                        <GiftTable rows={gifts} onChanged={onChanged} />
-                    </>
-                ) : (
-                    <div className="event-empty">
-                        <p>Du har inte köpt något till det här än.</p>
-                        <Link to={`/gifts/new?list=${listId}`} className="btn btn-small btn-ghost">
-                            <Plus size={16} aria-hidden="true" /> Gåva utanför listan
+        <div className={`event-group${variant}`}>
+            {/* Who it's for, as a label above the card */}
+            {listId && recipients && (
+                <p className="event-to">
+                    Till: <span className="event-for">{recipients}</span>
+                </p>
+            )}
+            <article className={`event${variant}`}>
+                <div className="event-info">
+                    {/* My list: edit it straight from here */}
+                    {listId && isAdmin && !archived && (
+                        <Link
+                            to={`/lists/${listId}/edit`}
+                            className="event-edit"
+                            aria-label={`Redigera ${title}`}
+                            title="Redigera listan"
+                        >
+                            <Pencil size={16} aria-hidden="true" />
                         </Link>
+                    )}
+                    <div className="event-head">
+                        {endDate && <DateBadge iso={endDate} />}
+                        <div className="event-title">
+                            <p className="event-kicker">
+                                {listId && <ScrollText size={14} aria-hidden="true" />} {kicker}
+                            </p>
+                            <h3>{listId ? title : `Till ${recipients}`}</h3>
+                        </div>
                     </div>
-                )}
-            </div>
-        </article>
+                    {wishCount !== undefined && (
+                        <p className="event-stats">
+                            <span>
+                                <Sparkles size={14} aria-hidden="true" /> {wishCount} {wishCount === 1 ? "önskning" : "önskningar"}
+                            </span>
+                            {reservedCount !== null && (
+                                <span>
+                                    <Gift size={14} aria-hidden="true" /> {reservedCount} reserverade
+                                </span>
+                            )}
+                        </p>
+                    )}
+                    {/* Bottom row: the button, on the right */}
+                    {listId && canOpen && (
+                        <div className="event-foot">
+                            <Link to={`/lists/${listId}`} className="btn btn-small event-link">
+                                Se lista <ArrowRight size={16} aria-hidden="true" />
+                            </Link>
+                        </div>
+                    )}
+                    {personId && (
+                        <span className="event-link-wrap">
+                            <PersonLink person={{ id: personId, name: recipients }}>
+                                Se önskeprofilen <ArrowRight size={16} aria-hidden="true" />
+                            </PersonLink>
+                        </span>
+                    )}
+                </div>
+
+                <div className="event-gifts">
+                    {isRecipient ? (
+                        <p className="event-note">
+                            🎁 Listan är till dig, så vad andra har köpt är en överraskning.
+                        </p>
+                    ) : gifts.length > 0 ? (
+                        <>
+                            <div className="event-gifts-head">
+                                <h4>
+                                    Mina inköp <span className="muted small">({gifts.length})</span>
+                                </h4>
+                                {listId && !archived && (
+                                    <Link to={`/gifts/new?list=${listId}`} className="btn btn-small btn-ghost">
+                                        <Plus size={16} aria-hidden="true" /> Gåva utanför listan
+                                    </Link>
+                                )}
+                            </div>
+                            <GiftTable rows={gifts} onChanged={onChanged} />
+                        </>
+                    ) : (
+                        <div className="event-empty">
+                            <p>Du har inte köpt något till det här än.</p>
+                            <Link to={`/gifts/new?list=${listId}`} className="btn btn-small btn-ghost">
+                                <Plus size={16} aria-hidden="true" /> Gåva utanför listan
+                            </Link>
+                        </div>
+                    )}
+                </div>
+            </article>
+        </div>
     );
 }

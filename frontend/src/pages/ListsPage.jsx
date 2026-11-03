@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Archive, ListChecks, Plus } from "lucide-react";
+import { Archive, ScrollText, Plus } from "lucide-react";
 import { useFetch } from "../hooks/useFetch.js";
 import { Empty, ErrorMessage, Loading } from "../components/Feedback.jsx";
 import ListCard from "../components/ListCard.jsx";
@@ -20,7 +20,7 @@ export default function ListsPage() {
         <div className="page">
             <div className="page-head">
                 <h1 className="title-with-icon">
-                    <ListChecks size={28} aria-hidden="true" /> Listor
+                    <ScrollText size={28} aria-hidden="true" /> Listor
                 </h1>
                 <div className="actions">
                     <Link to="/lists/new" className="btn btn-primary">
