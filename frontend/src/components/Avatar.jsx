@@ -18,8 +18,7 @@ export default function Avatar({ icon, color, isChild = false, id = 0, size = 36
         style = CHILD_COLORS[Math.abs(Number(id)) % CHILD_COLORS.length];
     } else {
         Icon = (AVATAR_ICONS[icon] ?? AVATAR_ICONS[DEFAULT_ICON]).Icon;
-        const { value, ink } = AVATAR_COLORS[color] ?? AVATAR_COLORS[DEFAULT_COLOR];
-        style = { background: value, ...(ink && { color: ink }) };
+        style = { background: (AVATAR_COLORS[color] ?? AVATAR_COLORS[DEFAULT_COLOR]).value };
     }
 
     return (

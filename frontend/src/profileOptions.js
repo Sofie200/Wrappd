@@ -36,7 +36,7 @@ export const AVATAR_ICONS = {
 
 export const AVATAR_COLORS = {
     pink: { label: "Rosa", value: "#ec5b78" },
-    orange: { label: "Orange", value: "#fda72d", ink: "#5b2418" }, // dark icon – white is hard to see on orange
+    orange: { label: "Orange", value: "#fda72d" },
     green: { label: "Grön", value: "#73ba72" },
     purple: { label: "Lila", value: "#c49be2" },
     blue: { label: "Blå", value: "#74aee0" },
