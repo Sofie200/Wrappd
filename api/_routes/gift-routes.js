@@ -86,10 +86,12 @@ async function shareCandidates(db, { listId, wishId = null, giftId = null, owner
     return rows;
 }
 
-// A gift outside the list may be linked to a list I can see and am not a recipient of – also archived ones
+// A gift outside the list may be linked to a published list I can see and am not a recipient of –
+// also archived ones. Not to a private list: nobody can buy for it before it's published.
 async function requireLinkableList(db, listId, userId) {
     const access = await getListAccess(db, listId, userId); // 404 if I can't see it
     if (access.isRecipient) throw new HttpError(403, "Du kan inte koppla en gåva till en lista till dig själv");
+    if (!access.list.is_public) throw new HttpError(403, "Listan är inte publicerad än – då kan du inte koppla gåvor till den");
 }
 
 // ...or to a Secret Santa where I'm a giver. 404 otherwise – others don't learn it exists.
@@ -124,10 +126,11 @@ router.get("/lists", async (req, res) => {
                  JOIN users u ON u.id = lr.user_id WHERE lr.list_id = l.id) AS recipients
          FROM lists l
          WHERE NOT EXISTS (SELECT 1 FROM list_recipients WHERE list_id = l.id AND user_id = $1)
+           AND l.is_public -- only published lists
            AND (EXISTS (SELECT 1 FROM list_admins WHERE list_id = l.id AND user_id = $1)
-                OR (l.is_public AND EXISTS (SELECT 1 FROM list_groups lg
-                                            JOIN group_members gm ON gm.group_id = lg.group_id
-                                            WHERE lg.list_id = l.id AND gm.user_id = $1)))
+                OR EXISTS (SELECT 1 FROM list_groups lg
+                           JOIN group_members gm ON gm.group_id = lg.group_id
+                           WHERE lg.list_id = l.id AND gm.user_id = $1))
          ORDER BY archived, l.end_date, l.title`,
         [req.user.id]
     );

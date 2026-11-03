@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, Eye, EyeOff, HatGlasses, Heart, Lock, Pencil, Plus, Sparkles, Trash2 } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, Gift, HatGlasses, Heart, Lock, Pencil, Sparkles, Trash2 } from "lucide-react";
 import { api } from "../api.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useFetch } from "../hooks/useFetch.js";
@@ -129,7 +129,7 @@ function SantaRow({ santa, gifts = [], onChanged }) {
                                     Mina inköp {gifts.length > 0 && <span className="muted small">({gifts.length})</span>}
                                 </h4>
                                 <Link to={`/gifts/new?santa=${santa.id}`} className="btn btn-small btn-ghost">
-                                    <Plus size={16} aria-hidden="true" /> Lägg till egen gåva
+                                    <Gift size={16} aria-hidden="true" /> Lägg till egen gåva
                                 </Link>
                             </div>
                             {gifts.length > 0 ? (
@@ -193,7 +193,7 @@ function PrivateListCard({ list }) {
             )}
             <article className="event event-light">
                 <div className="event-info">
-                    <Link to={`/lists/${list.id}/edit`} className="event-edit" aria-label={`Redigera ${list.title}`} title="Redigera listan">
+                    <Link to={`/lists/${list.id}`} className="event-edit" aria-label={`Öppna ${list.title}`} title="Öppna listan">
                         <Pencil size={16} aria-hidden="true" />
                     </Link>
                     <div className="event-head">
@@ -210,11 +210,6 @@ function PrivateListCard({ list }) {
                             <Sparkles size={14} aria-hidden="true" /> {list.wishCount} {list.wishCount === 1 ? "önskning" : "önskningar"}
                         </span>
                     </p>
-                    <div className="event-foot">
-                        <Link to={`/lists/${list.id}`} className="btn btn-small event-link">
-                            Se lista <ArrowRight size={16} aria-hidden="true" />
-                        </Link>
-                    </div>
                 </div>
             </article>
         </div>

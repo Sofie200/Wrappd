@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Gift, Plus } from "lucide-react";
+import { Gift } from "lucide-react";
 import { useFetch } from "../hooks/useFetch.js";
 import { Empty, ErrorMessage, Loading } from "../components/Feedback.jsx";
 import { buildEvents, EventRow, sumShares } from "../components/EventRow.jsx";
@@ -24,7 +24,7 @@ export default function GiftsPage() {
                     <Gift size={28} aria-hidden="true" /> Gåvor
                 </h1>
                 <Link to="/gifts/new" className="btn btn-primary">
-                    <Plus size={16} aria-hidden="true" /> Lägg till egen gåva
+                    <Gift size={16} aria-hidden="true" /> Lägg till egen gåva
                 </Link>
             </div>
 

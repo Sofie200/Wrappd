@@ -2,7 +2,7 @@
 // without a list) with its details on the left in a contrasting colour, and my gifts for it on the right.
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, Ellipsis, Gift, HatGlasses, Pencil, Plus, ScrollText, Sparkles, Trash2 } from "lucide-react";
+import { ArrowRight, Ellipsis, Gift, HatGlasses, Pencil, ScrollText, Sparkles, Trash2 } from "lucide-react";
 import { api } from "../api.js";
 import { ErrorMessage } from "./Feedback.jsx";
 import Modal from "./Modal.jsx";
@@ -186,17 +186,11 @@ export function GiftTable({ rows, onChanged, totalLabel = "Totalt" }) {
 
 // One event: the list's details on the left (in a contrasting colour), my gifts for it on the right
 export function EventRow({ event, archived = false, onChanged }) {
-    const { listId, santaId, personId, title, endDate, recipients, isRecipient, isAdmin, canOpen, gifts, wishCount, reservedCount } =
+    const { listId, santaId, personId, title, endDate, recipients, isRecipient, canOpen, gifts, wishCount, reservedCount } =
         event;
-    const variant = archived
-        ? " event-archived"
-        : isRecipient
-          ? " event-to-me"
-          : santaId
-            ? " event-santa"
-            : !listId
-              ? " event-no-list"
-              : "";
+    // The kind of event decides the colour; past events keep it, toned down (event-archived)
+    const kind = isRecipient ? " event-to-me" : santaId ? " event-santa" : !listId ? " event-no-list" : "";
+    const variant = kind + (archived ? " event-archived" : "");
     const kicker = listId ? "Önskelista" : santaId ? "Secret Santa" : personId ? "Önskeprofil" : "Gåva utanför lista";
     const KickerIcon = listId ? ScrollText : santaId ? HatGlasses : null;
 
@@ -210,17 +204,6 @@ export function EventRow({ event, archived = false, onChanged }) {
             )}
             <article className={`event${variant}`}>
                 <div className="event-info">
-                    {/* My list: edit it straight from here */}
-                    {listId && isAdmin && !archived && (
-                        <Link
-                            to={`/lists/${listId}/edit`}
-                            className="event-edit"
-                            aria-label={`Redigera ${title}`}
-                            title="Redigera listan"
-                        >
-                            <Pencil size={16} aria-hidden="true" />
-                        </Link>
-                    )}
                     <div className="event-head">
                         {endDate && <DateBadge iso={endDate} />}
                         <div className="event-title">
@@ -273,12 +256,12 @@ export function EventRow({ event, archived = false, onChanged }) {
                                 </h4>
                                 {listId && !archived && (
                                     <Link to={`/gifts/new?list=${listId}`} className="btn btn-small btn-ghost">
-                                        <Plus size={16} aria-hidden="true" /> Lägg till egen gåva
+                                        <Gift size={16} aria-hidden="true" /> Lägg till egen gåva
                                     </Link>
                                 )}
                                 {santaId && !archived && (
                                     <Link to={`/gifts/new?santa=${santaId}`} className="btn btn-small btn-ghost">
-                                        <Plus size={16} aria-hidden="true" /> Lägg till egen gåva
+                                        <Gift size={16} aria-hidden="true" /> Lägg till egen gåva
                                     </Link>
                                 )}
                             </div>

@@ -1,10 +1,9 @@
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { Gift, Settings, Sparkles, Trash2 } from "lucide-react";
 import { api } from "../api.js";
 import { useFetch } from "../hooks/useFetch.js";
 import { Empty, ErrorMessage, Loading, Notice } from "../components/Feedback.jsx";
-import SettingsMenu from "../components/SettingsMenu.jsx";
 import WishCard from "../components/WishCard.jsx";
 import WishForm from "../components/WishForm.jsx";
 import { formatDate, relativeDays } from "../format.js";
@@ -75,22 +74,9 @@ export default function ListPage() {
 
     return (
         <div className="page">
-            <header className="list-head">
+            <header className="list-head page-intro">
                 <div>
-                    <div className="badges">
-                        {list.archived && <span className="badge">Arkiverad</span>}
-                        {!list.archived && (list.isPublic ? (
-                            <span className="badge badge-public">Publik</span>
-                        ) : (
-                            <span className="badge badge-private">Privat</span>
-                        ))}
-                        {me.isRecipient && <span className="badge badge-gift">Till dig</span>}
-                    </div>
-                    <h1>{list.title}</h1>
-                    <p className="list-date">
-                        {formatDate(list.endDate)} <span className="muted">· {relativeDays(list.endDate)}</span>
-                    </p>
-                    {list.description && <p className="list-description">{list.description}</p>}
+                    {/* Who it's for, first */}
                     <dl className="list-meta">
                         <div>
                             <dt>Till</dt>
@@ -104,31 +90,41 @@ export default function ListPage() {
                             </dd>
                         </div>
                     </dl>
-                </div>
-
-                {me.isAdmin && (
-                    <div className="actions">
-                        {me.canEdit && !list.isPublic && (
-                            <button type="button" className="btn btn-primary" onClick={publish} disabled={busy}>
-                                Publicera
-                            </button>
+                    <h1>
+                        {list.title}
+                        {/* The status, raised next to the title */}
+                        {list.archived ? (
+                            <span className="badge title-badge">Arkiverad</span>
+                        ) : list.isPublic ? (
+                            <span className="badge badge-public title-badge">Publik</span>
+                        ) : (
+                            <span className="badge badge-private title-badge">Privat</span>
                         )}
-                        <SettingsMenu label="Listans inställningar">
+                    </h1>
+                    <p className="list-date">
+                        {formatDate(list.endDate)} <span className="muted">· {relativeDays(list.endDate)}</span>
+                    </p>
+                    {list.description && <p className="list-description">{list.description}</p>}
+                    {/* Admin: edit and delete, under the description */}
+                    {me.isAdmin && (
+                        <div className="actions list-admin-actions">
                             {me.canEdit && (
-                                <Link to={`/lists/${id}/edit`} className="menu-item" role="menuitem">
-                                    <Pencil size={16} aria-hidden="true" /> Redigera
+                                <Link to={`/lists/${id}/edit`} className="btn btn-small btn-ghost">
+                                    <Settings size={16} aria-hidden="true" /> Inställningar
                                 </Link>
                             )}
-                            <button
-                                type="button"
-                                className="menu-item menu-item-danger"
-                                role="menuitem"
-                                onClick={remove}
-                                disabled={busy}
-                            >
+                            <button type="button" className="btn btn-small btn-danger-ghost" onClick={remove} disabled={busy}>
                                 <Trash2 size={16} aria-hidden="true" /> Ta bort
                             </button>
-                        </SettingsMenu>
+                        </div>
+                    )}
+                </div>
+
+                {me.canEdit && !list.isPublic && (
+                    <div className="actions">
+                        <button type="button" className="btn btn-primary" onClick={publish} disabled={busy}>
+                            Publicera
+                        </button>
                     </div>
                 )}
             </header>
@@ -146,6 +142,7 @@ export default function ListPage() {
                                 <button type="button" className="text-link" onClick={publish} disabled={busy}>
                                     Publicera
                                 </button>
+                                .
                             </>
                         )}
                     </span>
@@ -162,13 +159,13 @@ export default function ListPage() {
                     <div className="actions">
                         {me.canEdit && !adding && (
                             <button type="button" className="btn btn-small" onClick={() => setAdding(true)}>
-                                <Plus size={16} aria-hidden="true" /> Lägg till önskning
+                                <Sparkles size={16} aria-hidden="true" /> Lägg till önskning
                             </button>
                         )}
-                        {/* A gift bought outside the list – only those who share it ever see it */}
-                        {me.seesReservations && (
-                            <Link to={`/gifts/new?list=${list.id}`} className="btn btn-small btn-ghost">
-                                <Plus size={16} aria-hidden="true" /> Lägg till egen gåva
+                        {/* A gift bought outside the list – only those who share it ever see it. Only once it's published. */}
+                        {me.seesReservations && list.isPublic && (
+                            <Link to={`/gifts/new?list=${list.id}`} className="btn btn-small">
+                                <Gift size={16} aria-hidden="true" /> Lägg till egen gåva
                             </Link>
                         )}
                     </div>

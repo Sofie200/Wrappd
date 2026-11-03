@@ -35,15 +35,17 @@ export default function WishCard({ wish, me, listId, onChanged }) {
     }
 
     // Reserving creates a gift – then straight to it, to add a price, comment or people to share with
-    async function reserve() {
+    // quantity: from the row it's always 1, from the modal what's chosen there
+    async function reserve(quantity = qty) {
         setBusy(true);
         setError(null);
         try {
-            const { id } = await api(`/wishes/${wish.id}/gifts`, { method: "POST", body: { quantity: Number(qty) } });
+            const { id } = await api(`/wishes/${wish.id}/gifts`, { method: "POST", body: { quantity: Number(quantity) } });
             navigate(`/gifts/${id}`);
         } catch (err) {
             setError(err.message);
             setBusy(false);
+            setOpen(true); // show the error in the wish (also when reserving straight from the row)
             onChanged();
         }
     }
@@ -101,23 +103,43 @@ export default function WishCard({ wish, me, listId, onChanged }) {
             </span>
         ) : null;
 
+    // "Reservera" straight on the row: when I can reserve, haven't already, and there's some left (1 st –
+    // the quantity can be changed on the gift afterwards)
+    const quickReserve = me.canReserve && !wish.myGiftId && available > 0;
+
     return (
         <>
-            <button
-                type="button"
-                className={`wish${full ? " wish-full" : ""}`}
-                onClick={() => setOpen(true)}
-                aria-haspopup="dialog"
-            >
-                {image("wish-image")}
-                <span className="wish-summary">
-                    <span className="wish-title">{wish.title}</span>
-                    <span className="wish-meta">
-                        {wish.price !== null && <span className="price">{formatPrice(wish.price)}</span>}
-                        {reservedBadge}
+            <div className={`wish-row${quickReserve ? " has-quick" : ""}`}>
+                <button
+                    type="button"
+                    className={`wish${full ? " wish-full" : ""}`}
+                    onClick={() => setOpen(true)}
+                    aria-haspopup="dialog"
+                >
+                    {image("wish-image")}
+                    <span className="wish-summary">
+                        <span className="wish-title">{wish.title}</span>
+                        {wish.price !== null && (
+                            <span className="wish-meta">
+                                <span className="price">{formatPrice(wish.price)}</span>
+                            </span>
+                        )}
                     </span>
-                </span>
-            </button>
+                    {/* Reserved and by whom – out on the right */}
+                    {reservedBadge && <span className="wish-reserved">{reservedBadge}</span>}
+                </button>
+                {quickReserve && (
+                    <button
+                        type="button"
+                        className="btn btn-small btn-primary wish-quick-reserve"
+                        onClick={() => reserve(1)}
+                        disabled={busy}
+                        aria-label={`Reservera ${wish.title}`}
+                    >
+                        {busy ? "Reserverar…" : "Reservera"}
+                    </button>
+                )}
+            </div>
 
             {open && (
                 <Modal title={wish.title} onClose={close}>
@@ -181,7 +203,7 @@ export default function WishCard({ wish, me, listId, onChanged }) {
                                                     ))}
                                                 </select>
                                             )}
-                                            <button type="button" className="btn btn-small btn-primary" onClick={reserve} disabled={busy}>
+                                            <button type="button" className="btn btn-small btn-primary" onClick={() => reserve()} disabled={busy}>
                                                 Reservera
                                             </button>
                                         </>

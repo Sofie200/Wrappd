@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useParams } from "react-router-dom";
-import { Heart, Plus, ThumbsDown, ThumbsUp } from "lucide-react";
+import { Heart, Sparkles, ThumbsDown, ThumbsUp } from "lucide-react";
 import { api } from "../api.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useFetch } from "../hooks/useFetch.js";
@@ -182,7 +182,7 @@ function WishProfileForm({ data, reload }) {
                     </h2>
                     {!adding && wishes.length < MAX_WISHES && (
                         <button type="button" className="btn btn-small" onClick={() => setAdding(true)}>
-                            <Plus size={16} aria-hidden="true" /> Lägg till önskning
+                            <Sparkles size={16} aria-hidden="true" /> Lägg till önskning
                         </button>
                     )}
                 </div>

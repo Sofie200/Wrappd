@@ -161,7 +161,7 @@ export default function ListFormPage() {
             <h1 className="title-with-icon">
                 <ScrollText size={28} aria-hidden="true" /> {isEdit ? "Redigera lista" : "Ny lista"}
             </h1>
-            {!isEdit && <p className="muted">Listan är privat tills du publicerar den. Bara listans admins ser den innan dess.</p>}
+            {!isEdit && <p className="muted form-intro">Listan är privat tills du publicerar den. Bara listans admins ser den innan dess.</p>}
 
             <form onSubmit={handleSubmit} className="form">
                 <label className="field">
@@ -186,7 +186,7 @@ export default function ListFormPage() {
                 </label>
 
                 <label className="field">
-                    <span>Datum för eventet</span>
+                    <span>Datum för firandet</span>
                     <input
                         type="date"
                         value={form.endDate}
@@ -194,7 +194,7 @@ export default function ListFormPage() {
                         onChange={(e) => update("endDate")(e.target.value)}
                         required
                     />
-                    <small>Dagen efter arkiveras listan och går inte längre att ändra eller reservera på.</small>
+                    <small>Dagen efter arkiveras listan och går inte längre att ändra eller reservera önskningar på.</small>
                 </label>
 
                 <fieldset className="fieldset">
@@ -222,35 +222,40 @@ export default function ListFormPage() {
                     </div>
                 </fieldset>
 
-                {candidates.error && <ErrorMessage message={candidates.error} onRetry={candidates.reload} />}
+                {/* Who it's for and the admins come from the groups – shown once at least one group is chosen */}
+                {form.groupIds.length > 0 && (
+                    <>
+                    {candidates.error && <ErrorMessage message={candidates.error} onRetry={candidates.reload} />}
 
-                <PeoplePicker
-                    legend="Vem är listan till?"
-                    hint="Mottagarna ser aldrig vad som är reserverat."
-                    people={people}
-                    selected={form.recipientIds}
-                    onChange={update("recipientIds")}
-                    disabledIds={othersChildren}
-                    disabledHint="Bara barnets föräldrar kan göra listor till barnet"
-                />
+                    <PeoplePicker
+                        legend="Vem är det vi firar?"
+                        hint="Mottagarna ser aldrig vad som är reserverat."
+                        people={people}
+                        selected={form.recipientIds}
+                        onChange={update("recipientIds")}
+                        disabledIds={othersChildren}
+                        disabledHint="Bara barnets föräldrar kan göra listor till barnet"
+                    />
 
-                <PeoplePicker
-                    legend="Admins"
-                    hint={
-                        childRecipients.length > 0
-                            ? "Listor till barn kan bara administreras av barnets föräldrar."
-                            : "Admins kan lägga till önskningar, ändra och publicera listan."
-                    }
-                    people={adminPeople}
-                    selected={form.adminIds}
-                    onChange={update("adminIds")}
-                    lockedIds={isEdit ? [] : [user.id]}
-                    emptyText={
-                        childRecipients.length > 0
-                            ? "Ingen av barnets föräldrar är med i de valda grupperna."
-                            : "Välj en grupp först."
-                    }
-                />
+                    <PeoplePicker
+                        legend="Admins"
+                        hint={
+                            childRecipients.length > 0
+                                ? "Listor till barn kan bara administreras av barnets föräldrar."
+                                : "Admins kan lägga till önskningar, ändra och publicera listan."
+                        }
+                        people={adminPeople}
+                        selected={form.adminIds}
+                        onChange={update("adminIds")}
+                        lockedIds={isEdit ? [] : [user.id]}
+                        emptyText={
+                            childRecipients.length > 0
+                                ? "Ingen av barnets föräldrar är med i de valda grupperna."
+                                : "Välj en grupp först."
+                        }
+                    />
+                    </>
+                )}
 
                 <ErrorMessage message={error} />
 

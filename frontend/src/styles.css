@@ -322,10 +322,11 @@ img {
 /* A tinted band across the whole sheet at the top of a page, with a zigzag bottom edge
    like the cut edge of wrapping paper. The content inside stays lined up with the rest of the page. */
 .page-intro {
+    --intro-bg: #fbd6df; /* light rose, a step darker than --accent-soft */
     --zigzag: 22px; /* width of one tooth; the teeth are half as tall */
     margin: calc(-1 * var(--main-pad-top)) calc(-1 * var(--main-pad-x)) 0;
     padding: var(--main-pad-top) var(--main-pad-x) calc(4.5rem + var(--zigzag) / 2);
-    background: #fbd6df; /* light rose, a step darker than --accent-soft */
+    background: var(--intro-bg);
     -webkit-mask: conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) 50% / var(--zigzag) 100%;
     mask: conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) 50% / var(--zigzag) 100%;
 }
@@ -392,6 +393,25 @@ img {
     gap: 0.5rem;
     flex-wrap: wrap;
     align-items: center;
+}
+
+/* Edit / delete under a list's description */
+.list-admin-actions {
+    margin-top: 1rem;
+}
+
+/* White on the rose band, so they stand out – no border, and the same hover on both */
+.list-admin-actions .btn,
+.list-admin-actions .btn:hover {
+    border-color: transparent;
+}
+
+.list-admin-actions .btn {
+    background: var(--surface);
+}
+
+.list-admin-actions .btn:hover {
+    background: var(--cream);
 }
 
 /* ---------- Buttons ---------- */
@@ -487,6 +507,11 @@ a:focus-visible {
     gap: 1rem;
 }
 
+/* A short description between a page's title and its form */
+.form-intro {
+    margin: 0 0 2rem;
+}
+
 .field {
     display: flex;
     flex-direction: column;
@@ -552,16 +577,24 @@ select {
     border-radius: 999px;
 }
 
+/* Fieldsets sit straight on the page – no box – with extra space around them to set them apart */
 .fieldset {
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-    padding: 1rem 1.25rem;
-    margin: 0;
-    background: var(--surface);
+    border: none;
+    padding: 0;
+    margin: 1rem 0;
+    background: none;
 }
 
 .fieldset legend {
-    padding: 0 0.25rem;
+    padding: 0;
+    margin-bottom: 0.15rem;
+}
+
+/* The hint right under the legend, then a little space before the choices */
+.fieldset > p,
+.fieldset > small {
+    display: block;
+    margin: 0 0 0.6rem;
 }
 
 /* A fieldset without the box – just the legend as a label, like an ordinary field */
@@ -794,6 +827,16 @@ select {
     color: var(--blue);
 }
 
+/* A status badge raised next to a title, like an exponent */
+.title-badge {
+    margin-left: 0.5rem;
+    vertical-align: super;
+    padding: 0.2rem 0.45rem;
+    font-size: 0.7rem;
+    line-height: 1;
+    letter-spacing: 0;
+}
+
 /* ---------- Cards ---------- */
 .cards {
     display: grid;
@@ -1017,6 +1060,20 @@ select {
     margin-bottom: 1.5rem;
 }
 
+/* The list's head as the same rose band with a zigzag edge as the overview's intro */
+.list-head.page-intro {
+    margin: calc(-1 * var(--main-pad-top)) calc(-1 * var(--main-pad-x)) 1.5rem;
+    padding: var(--main-pad-top) var(--main-pad-x) calc(2.5rem + var(--zigzag) / 2);
+    background: var(--intro-bg);
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+}
+
+.list-head.page-intro::before {
+    display: none;
+}
+
 /* Candy stripes along the top of the list, like wrapping paper */
 .list-head::before {
     content: "";
@@ -1030,9 +1087,17 @@ select {
     margin-top: 0.5rem;
 }
 
+/* The date in the rose of the band, so it stands apart from the description */
 .list-date {
-    font-weight: 400;
+    font-weight: 600;
     margin: 0;
+    color: var(--accent-text);
+}
+
+.list-date .muted {
+    color: var(--accent-text);
+    font-weight: 400;
+    opacity: 0.8;
 }
 
 .list-description {
@@ -1040,22 +1105,31 @@ select {
     max-width: 60ch;
 }
 
+/* "Till: Sofie" – at the top of the list's head, on one line */
 .list-meta {
     display: flex;
     gap: 1.5rem;
     flex-wrap: wrap;
-    margin: 1rem 0 0;
+    margin: 0 0 0.75rem;
+}
+
+.list-meta > div {
+    display: flex;
+    align-items: baseline;
+    gap: 0.3rem;
 }
 
 .list-meta dt {
-    font-size: 0.75rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
     color: var(--muted);
+}
+
+.list-meta dt::after {
+    content: ":";
 }
 
 .list-meta dd {
     margin: 0;
+    font-weight: 600;
 }
 
 /* ---------- Cog menu (SettingsMenu) ---------- */
@@ -1245,6 +1319,32 @@ select {
     display: flex;
     flex-direction: column;
     gap: 0.35rem;
+}
+
+.wish-reserved {
+    flex: none;
+    padding-right: 1rem;
+}
+
+/* The row, with "Reservera" laid over its right end (a button can't sit inside the row's own button) */
+.wish-row {
+    position: relative;
+}
+
+.wish-row.has-quick .wish {
+    padding-right: 7.5rem; /* room for the button */
+}
+
+.wish-quick-reserve {
+    position: absolute;
+    top: 50%;
+    right: 1rem;
+    transform: translateY(-50%);
+}
+
+/* Follow the row when it lifts on hover */
+.wish-row:has(.wish:hover) .wish-quick-reserve {
+    transform: translateY(calc(-50% - 2px));
 }
 
 .wish-title {
@@ -1751,7 +1851,7 @@ select {
     letter-spacing: 0.08em;
 }
 
-/* Lists to me (my own): a lavender gradient. Past events: muted brown. */
+/* Lists to me (my own): a lavender gradient. */
 .event-to-me .event-info {
     --event-bg: linear-gradient(135deg, #9466c2, #6c3d95);
     --tab-bg: #57307a;
@@ -1832,10 +1932,10 @@ select {
     gap: 1.25rem;
 }
 
+/* Past events keep their kind's colour, toned down: less saturated and a little faded */
 .event-archived .event-info {
-    --event-bg: var(--muted);
-    --tab-bg: #493833;
-    --badge-ink: var(--muted);
+    filter: saturate(0.45) brightness(1.05);
+    opacity: 0.85;
 }
 
 .event-info h3 {
@@ -2847,4 +2947,105 @@ button.event-edit {
 .check-field > small {
     padding-left: calc(13px + 0.5rem); /* the checkbox's width + the gap in .check */
     font-size: 0.875rem;
+}
+
+/* ---------- People picker: chosen people as chips, and a search field with suggestions ---------- */
+.people-picker {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+.people-chosen {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.person-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.2rem 0.35rem 0.2rem 0.25rem;
+    border-radius: 999px;
+    background: var(--accent-soft);
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+/* No remove button (locked): a little more room on the right instead */
+.person-chip:not(:has(.person-chip-remove)) {
+    padding-right: 0.7rem;
+}
+
+.person-chip-remove {
+    display: inline-grid;
+    place-items: center;
+    width: 1.3rem;
+    height: 1.3rem;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: none;
+    color: var(--accent-text);
+    cursor: pointer;
+}
+
+.person-chip-remove:hover {
+    background: #fbd0da;
+}
+
+.people-search {
+    position: relative;
+}
+
+.people-search input {
+    width: 100%;
+}
+
+.people-suggestions {
+    position: absolute;
+    z-index: 20;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    max-height: 18rem;
+    overflow-y: auto;
+    list-style: none;
+    margin: 0;
+    padding: 0.3rem;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-small);
+    box-shadow: var(--shadow-lift);
+}
+
+.people-suggestion {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 0.45rem 0.6rem;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.people-suggestion.is-active,
+.people-suggestion:hover {
+    background: var(--accent-soft);
+}
+
+.people-suggestion.is-disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: none;
+}
+
+.people-suggestion-empty {
+    padding: 0.45rem 0.6rem;
+    color: var(--muted);
+    font-size: 0.9rem;
 }
