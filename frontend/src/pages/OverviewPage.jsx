@@ -43,135 +43,141 @@ function SantaRow({ santa, gifts = [], onChanged }) {
     }
 
     return (
-        <article className="event event-santa">
-            <div className="event-info">
-                {santa.isCreator && (
-                    <button
-                        type="button"
-                        className="event-edit"
-                        onClick={remove}
-                        disabled={busy}
-                        aria-label={`Ta bort ${santa.title}`}
-                        title="Ta bort lottningen"
-                    >
-                        <Trash2 size={16} aria-hidden="true" />
-                    </button>
-                )}
-                <div className="event-head">
-                    <DateBadge iso={santa.date} />
-                    <div className="event-title">
-                        <p className="event-kicker">
-                            <HatGlasses size={14} aria-hidden="true" /> Secret Santa
-                        </p>
-                        <h3>{santa.title}</h3>
+        <div className="event-group">
+            {/* Same label as the lists – but it never says who */}
+            <p className="event-to">
+                Till: <span className="event-for">Hemlig</span>
+            </p>
+            <article className="event event-santa">
+                <div className="event-info">
+                    {santa.isCreator && (
+                        <button
+                            type="button"
+                            className="event-edit"
+                            onClick={remove}
+                            disabled={busy}
+                            aria-label={`Ta bort ${santa.title}`}
+                            title="Ta bort lottningen"
+                        >
+                            <Trash2 size={16} aria-hidden="true" />
+                        </button>
+                    )}
+                    <div className="event-head">
+                        <DateBadge iso={santa.date} />
+                        <div className="event-title">
+                            <p className="event-kicker">
+                                <HatGlasses size={14} aria-hidden="true" /> Secret Santa
+                            </p>
+                            <h3>{santa.title}</h3>
+                        </div>
                     </div>
-                </div>
-                <p className="event-recipients">
-                    {santa.groupName} ·{" "}
-                    <button type="button" className="text-link" onClick={() => setShowParticipants(true)}>
-                        {santa.participantCount} deltagare
-                    </button>
-                </p>
-                {santa.budget !== null && <p className="event-recipients">Budget: <strong>{formatPrice(santa.budget)}</strong></p>}
+                    <p className="event-recipients">
+                        {santa.groupName} ·{" "}
+                        <button type="button" className="text-link" onClick={() => setShowParticipants(true)}>
+                            {santa.participantCount} deltagare
+                        </button>
+                    </p>
+                    {santa.budget !== null && <p className="event-recipients">Budget: <strong>{formatPrice(santa.budget)}</strong></p>}
 
-                {/* Who I got – hidden until I press the eye */}
-                {receiver && (
-                    <div className="santa-secret">
-                        <div className="santa-label-row">
-                            <p className="santa-label">Du ska ge en gåva till</p>
-                            <button
-                                type="button"
-                                className="icon-btn santa-eye"
+                    {/* Who I got – hidden until I press the eye */}
+                    {receiver && (
+                        <div className="santa-secret">
+                            <div className="santa-label-row">
+                                <p className="santa-label">Du ska ge en gåva till</p>
+                                <button
+                                    type="button"
+                                    className="icon-btn santa-eye"
+                                    onClick={() => setShown(!shown)}
+                                    aria-pressed={shown}
+                                    aria-label={shown ? "Dölj vem du fått" : "Visa vem du fått"}
+                                    title={shown ? "Dölj" : "Visa"}
+                                >
+                                    {shown ? <EyeOff size={15} aria-hidden="true" /> : <Eye size={15} aria-hidden="true" />}
+                                </button>
+                            </div>
+                            {/* The same placeholder for everyone while hidden, so the blur doesn't hint at the name's length */}
+                            {/* Clicking the name shows/hides it too (the eye is the button for keyboard and screen readers) */}
+                            <span
+                                className={`santa-name${shown ? "" : " santa-name-hidden"}`}
+                                aria-live="polite"
                                 onClick={() => setShown(!shown)}
-                                aria-pressed={shown}
-                                aria-label={shown ? "Dölj vem du fått" : "Visa vem du fått"}
                                 title={shown ? "Dölj" : "Visa"}
                             >
-                                {shown ? <EyeOff size={15} aria-hidden="true" /> : <Eye size={15} aria-hidden="true" />}
-                            </button>
+                                {shown ? receiver.name : "Hemlis"}
+                            </span>
                         </div>
-                        {/* The same placeholder for everyone while hidden, so the blur doesn't hint at the name's length */}
-                        {/* Clicking the name shows/hides it too (the eye is the button for keyboard and screen readers) */}
-                        <span
-                            className={`santa-name${shown ? "" : " santa-name-hidden"}`}
-                            aria-live="polite"
-                            onClick={() => setShown(!shown)}
-                            title={shown ? "Dölj" : "Visa"}
-                        >
-                            {shown ? receiver.name : "Hemlis"}
-                        </span>
-                    </div>
-                )}
+                    )}
 
-                {/* Bottom right, like "Se lista" on the other cards. Opens the profile without revealing
-                    the name here – the modal shows it, on purpose. */}
-                {receiver && (
-                    <div className="event-foot">
-                        <PersonLink person={receiver} className="btn btn-small event-link" title="Se vad hen önskar sig">
-                            Se önskeprofil <ArrowRight size={16} aria-hidden="true" />
-                        </PersonLink>
-                    </div>
-                )}
-            </div>
-
-            {/* Right side: only my gifts for it */}
-            <div className="event-gifts">
-                <ErrorMessage message={error} />
-                {receiver ? (
-                    <>
-                        <div className="event-gifts-head">
-                            <h4>
-                                Mina inköp {gifts.length > 0 && <span className="muted small">({gifts.length})</span>}
-                            </h4>
-                            <Link to={`/gifts/new?santa=${santa.id}`} className="btn btn-small btn-ghost">
-                                <Plus size={16} aria-hidden="true" /> Lägg till egen gåva
-                            </Link>
+                    {/* Bottom right, like "Se lista" on the other cards. Opens the profile without revealing
+                        the name here – the modal shows it, on purpose. */}
+                    {receiver && (
+                        <div className="event-foot">
+                            <PersonLink person={receiver} className="btn btn-small event-link" title="Se vad hen önskar sig">
+                                Se önskeprofil <ArrowRight size={16} aria-hidden="true" />
+                            </PersonLink>
                         </div>
-                        {gifts.length > 0 ? (
-                            <GiftTable rows={gifts} onChanged={onChanged} totalLabel="Totalt" />
-                        ) : (
-                            <div className="event-empty">
-                                <p>
-                                    Du har inte registrerat några köp än 🙁
-                                    <br />
-                                    {/* Own title, so the tooltip doesn't give away who it is */}
-                                    Reservera något från{" "}
-                                    <PersonLink person={receiver} className="text-link" title="Se vad hen önskar sig">
-                                        önskeprofilen
-                                    </PersonLink>{" "}
-                                    eller lägg till en{" "}
-                                    <Link to={`/gifts/new?santa=${santa.id}`} className="text-link">
-                                        egen post
-                                    </Link>
-                                    .
-                                </p>
+                    )}
+                </div>
+
+                {/* Right side: only my gifts for it */}
+                <div className="event-gifts">
+                    <ErrorMessage message={error} />
+                    {receiver ? (
+                        <>
+                            <div className="event-gifts-head">
+                                <h4>
+                                    Mina inköp {gifts.length > 0 && <span className="muted small">({gifts.length})</span>}
+                                </h4>
+                                <Link to={`/gifts/new?santa=${santa.id}`} className="btn btn-small btn-ghost">
+                                    <Plus size={16} aria-hidden="true" /> Lägg till egen gåva
+                                </Link>
                             </div>
-                        )}
-                    </>
-                ) : (
-                    <p className="event-note">
-                        Du har lottat den här men är inte med själv. Ingen, inte heller du, kan se vem som fick vem.
-                    </p>
+                            {gifts.length > 0 ? (
+                                <GiftTable rows={gifts} onChanged={onChanged} totalLabel="Totalt" />
+                            ) : (
+                                <div className="event-empty">
+                                    <p>
+                                        Du har inte registrerat några köp än 🙁
+                                        <br />
+                                        {/* Own title, so the tooltip doesn't give away who it is */}
+                                        Reservera något från{" "}
+                                        <PersonLink person={receiver} className="text-link" title="Se vad hen önskar sig">
+                                            önskeprofilen
+                                        </PersonLink>{" "}
+                                        eller lägg till en{" "}
+                                        <Link to={`/gifts/new?santa=${santa.id}`} className="text-link">
+                                            egen post
+                                        </Link>
+                                        .
+                                    </p>
+                                </div>
+                            )}
+                        </>
+                    ) : (
+                        <p className="event-note">
+                            Du har lottat den här men är inte med själv. Ingen, inte heller du, kan se vem som fick vem.
+                        </p>
+                    )}
+                </div>
+                {/* Everyone who takes part – never who gives to whom */}
+                {showParticipants && (
+                    <Modal title={`Deltagare i ${santa.title}`} onClose={() => setShowParticipants(false)}>
+                        <ul className="member-list">
+                            {(santa.participants ?? []).map((p) => (
+                                <li key={p.id}>
+                                    <span className="member-name">
+                                        <Avatar icon={p.avatarIcon} color={p.avatarColor} size={32} />
+                                        {p.name}
+                                        {p.id === user.id && <span className="muted"> (du)</span>}
+                                    </span>
+                                </li>
+                            ))}
+                        </ul>
+                        <p className="muted small">Alla ger en gåva och får en. Ingen kan se vem som har fått vem.</p>
+                    </Modal>
                 )}
-            </div>
-            {/* Everyone who takes part – never who gives to whom */}
-            {showParticipants && (
-                <Modal title={`Deltagare i ${santa.title}`} onClose={() => setShowParticipants(false)}>
-                    <ul className="member-list">
-                        {(santa.participants ?? []).map((p) => (
-                            <li key={p.id}>
-                                <span className="member-name">
-                                    <Avatar icon={p.avatarIcon} color={p.avatarColor} size={32} />
-                                    {p.name}
-                                    {p.id === user.id && <span className="muted"> (du)</span>}
-                                </span>
-                            </li>
-                        ))}
-                    </ul>
-                    <p className="muted small">Alla ger en gåva och får en. Ingen kan se vem som har fått vem.</p>
-                </Modal>
-            )}
-        </article>
+            </article>
+        </div>
     );
 }
 
@@ -242,16 +248,14 @@ export default function OverviewPage() {
     }
     const onSantaCards = new Set([...santaGifts.values()].flat().map((g) => g.id));
 
-    // Secret Santas always first (soonest first), then lists and other events by date
+    // Lists, Secret Santas and other events together, soonest first
     const events = [
-        ...santas
-            .map((santa) => ({ key: `santa:${santa.id}`, santa, date: santa.date }))
-            .sort((a, b) => dateOrder(a.date) - dateOrder(b.date)),
+        ...santas.map((santa) => ({ key: `santa:${santa.id}`, santa, date: santa.date })),
         ...buildEvents(upcoming, gifts.current.filter((g) => !onSantaCards.has(g.id))).map((event) => ({
             ...event,
             date: event.endDate,
         })),
-    ];
+    ].sort((a, b) => dateOrder(a.date) - dateOrder(b.date));
 
     return (
         <div className="page">
