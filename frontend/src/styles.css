@@ -29,8 +29,8 @@
     --green-soft: #e4f4e5;
     --yellow-ink: #8a5300;
     --yellow-soft: #fff0cc;
-    --blue: #7b4aa3; /* lavender text */
-    --blue-soft: #f2e7fa;
+    --blue: #55287c; /* lavender text – 9.4:1 on --blue-soft */
+    --blue-soft: #f6effc;
     --danger: #b3261e;
     --danger-soft: #fbe5e3;
 
@@ -2224,4 +2224,34 @@ button.event-edit {
 .username {
     font-weight: 800;
     color: var(--muted);
+}
+
+/* A button that reads like a link inside text, e.g. "Publicera" in a notice */
+.text-link {
+    display: inline;
+    padding: 0;
+    border: none;
+    background: none;
+    font: inherit;
+    font-weight: 800;
+    color: inherit;
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 0.2em;
+    cursor: pointer;
+}
+
+.text-link:hover {
+    text-decoration-thickness: 3px;
+}
+
+.text-link:disabled {
+    opacity: 0.6;
+    cursor: wait;
+}
+
+.text-link:focus-visible {
+    outline: 3px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 4px;
 }

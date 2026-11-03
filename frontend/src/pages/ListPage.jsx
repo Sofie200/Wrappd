@@ -136,7 +136,20 @@ export default function ListPage() {
             <ErrorMessage message={actionError} />
 
             {!list.isPublic && !list.archived && (
-                <Notice>Listan är privat. Bara listans admins ser den tills någon publicerar den.</Notice>
+                <Notice>
+                    {/* One span, so the link follows the sentence instead of being pushed to the right */}
+                    <span>
+                        Listan är privat. Bara listans admins ser den tills någon publicerar den.
+                        {me.canEdit && (
+                            <>
+                                {" "}
+                                <button type="button" className="text-link" onClick={publish} disabled={busy}>
+                                    Publicera
+                                </button>
+                            </>
+                        )}
+                    </span>
+                </Notice>
             )}
             {me.isRecipient && (
                 <Notice>Listan är till dig, så du ser inte vad som är reserverat – det är en överraskning.</Notice>
