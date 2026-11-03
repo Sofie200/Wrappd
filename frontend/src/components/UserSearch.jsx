@@ -67,7 +67,7 @@ export default function UserSearch({ excludeGroupId, onSelect, busy }) {
                     {results.map((user) => (
                         <li key={user.id}>
                             <span>
-                                {user.name} <span className="muted">@{user.username}</span>
+                                {user.name} <strong className="username">{user.username}</strong>
                                 {user.isActivated === false && <span className="badge badge-private">Ej aktiverad</span>}
                             </span>
                             <button type="button" className="btn btn-small" onClick={() => choose(user)} disabled={busy}>

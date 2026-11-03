@@ -34,7 +34,9 @@ export default function ProfileModal({ onClose }) {
                     <Avatar icon={icon} color={color} size={72} />
                     <div>
                         <strong>{name.trim() || "Ditt namn"}</strong>
-                        <div className="muted small">@{user.username}</div>
+                        <div className="small">
+                            <strong className="username">{user.username}</strong>
+                        </div>
                     </div>
                 </div>
 

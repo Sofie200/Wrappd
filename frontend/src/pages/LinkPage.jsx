@@ -61,7 +61,7 @@ export default function LinkPage() {
                     ? "Välj ett lösenord för ditt konto. Sedan loggar du in med:"
                     : "Välj ett nytt lösenord för kontot:"}
             </p>
-            <p className="link-username">@{data.username}</p>
+            <p className="link-username">{data.username}</p>
 
             <form onSubmit={handleSubmit} className="form">
                 <ErrorMessage message={submitError} />

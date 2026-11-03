@@ -13,6 +13,8 @@ import giftRoutes from "./_routes/gift-routes.js";
 import scrapeRoutes from "./_routes/scrape-routes.js";
 import profileRoutes from "./_routes/profile-routes.js";
 import childrenRoutes from "./_routes/children-routes.js";
+import santaRoutes from "./_routes/santa-routes.js";
+import peopleRoutes from "./_routes/people-routes.js";
 
 const app = express();
 
@@ -33,6 +35,8 @@ app.use("/api/gifts", requireAuth, giftRoutes);
 app.use("/api/scrape", requireAuth, scrapeRoutes);
 app.use("/api/profile", requireAuth, profileRoutes);
 app.use("/api/children", requireAuth, childrenRoutes);
+app.use("/api/santas", requireAuth, santaRoutes);
+app.use("/api/people", requireAuth, peopleRoutes);
 
 app.use((req, res) => {
     res.status(404).json({ error: "Adressen finns inte" });

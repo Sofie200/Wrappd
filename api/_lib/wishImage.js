@@ -2,10 +2,14 @@
 // Either way it ends up as our own copy in Vercel Blob. Returns the new URL, or null if there is no new image.
 import { HttpError } from "./http.js";
 import { downloadImage } from "./productScraper.js";
-import { uploadGiftImage, uploadWishImage } from "../_integrations/storageAdapter.js";
+import { uploadGiftImage, uploadProfileWishImage, uploadWishImage } from "../_integrations/storageAdapter.js";
 
 export function uploadNewWishImage(listId, file, imageFromUrl) {
     return uploadNewImage((image) => uploadWishImage(listId, image), file, imageFromUrl);
+}
+
+export function uploadNewProfileWishImage(userId, file, imageFromUrl) {
+    return uploadNewImage((image) => uploadProfileWishImage(userId, image), file, imageFromUrl);
 }
 
 export function uploadNewGiftImage(file, imageFromUrl) {

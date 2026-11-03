@@ -14,6 +14,7 @@ import Breadcrumbs from "../components/Breadcrumbs.jsx";
 import Modal from "../components/Modal.jsx";
 import GroupSettingsModal from "../components/GroupSettingsModal.jsx";
 import SettingsMenu from "../components/SettingsMenu.jsx";
+import PersonLink from "../components/PersonLink.jsx";
 
 export default function GroupPage() {
     const { id } = useParams();
@@ -171,7 +172,7 @@ export default function GroupPage() {
                                 <li key={member.id}>
                                     <span className="member-name">
                                         <Avatar isChild id={member.id} size={32} />
-                                        {member.name} <span className="badge badge-gift">Barn</span>
+                                        <PersonLink person={member} /> <span className="badge badge-gift">Barn</span>
                                         {member.parents && <span className="muted small"> · Föräldrar: {member.parents}</span>}
                                     </span>
                                 </li>
@@ -182,7 +183,7 @@ export default function GroupPage() {
                             <li key={member.id}>
                                 <span className="member-name">
                                     <Avatar icon={member.avatarIcon} color={member.avatarColor} size={32} />
-                                    {member.name} <span className="muted">@{member.username}</span>
+                                    <PersonLink person={member} /> <strong className="username">{member.username}</strong>
                                     {isMe && <span className="muted"> (du)</span>}
                                     {member.isAdmin && <span className="badge">Admin</span>}
                                     {!member.isActivated && <span className="badge badge-private">Ej aktiverad</span>}

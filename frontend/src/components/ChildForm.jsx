@@ -92,8 +92,13 @@ export default function ChildForm({ child, onSaved, onCancel }) {
                         return (
                             <li key={p.username}>
                                 <span>
-                                    {p.name ?? `@${p.username}`}
-                                    {p.name && <span className="muted"> @{p.username}</span>}
+                                    {p.name ?? <strong className="username">{p.username}</strong>}
+                                    {p.name && (
+                                        <>
+                                            {" "}
+                                            <strong className="username">{p.username}</strong>
+                                        </>
+                                    )}
                                     {isMe && <span className="muted"> (du)</span>}
                                 </span>
                                 {/* When creating I'm always a parent. Later anyone can be removed, as long as one remains. */}

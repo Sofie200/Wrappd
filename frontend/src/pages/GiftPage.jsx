@@ -186,7 +186,7 @@ function GiftForm({ data, lists, presetListId, justSaved, onSaved, onEdit, onDon
         }
     }
 
-    const { wish, list } = data ?? {};
+    const { wish, list, person } = data ?? {};
     // If the gift's list is no longer among the ones I can pick (e.g. I left the group), keep it as an option
     const listOptions = list && isFree && !lists.some((l) => l.id === list.id) ? [{ ...list, archived: false }, ...lists] : lists;
     const quantityOptions = gift && !isFree ? Array.from({ length: Math.max(gift.maxQuantity, gift.quantity) }, (_, i) => i + 1) : [];
@@ -195,7 +195,11 @@ function GiftForm({ data, lists, presetListId, justSaved, onSaved, onEdit, onDon
         <>
             {!isNew && (
                 <p className="muted">
-                    {list ? `Gåva till ${list.recipients} · ${formatDate(list.endDate)}` : `Till ${gift.recipient} · ${formatDate(gift.giftDate)}`}
+                    {list
+                        ? `Gåva till ${list.recipients} · ${formatDate(list.endDate)}`
+                        : person
+                          ? `Gåva till ${person.name} · från önskeprofilen`
+                          : `Till ${gift.recipient} · ${formatDate(gift.giftDate)}`}
                     {isFree && " · utanför önskelistan"}
                 </p>
             )}

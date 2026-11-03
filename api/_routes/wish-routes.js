@@ -2,19 +2,20 @@ import { Router } from "express";
 import { z } from "zod";
 import { pool, withTransaction } from "../_db/pool.js";
 import { HttpError, parse, parseId } from "../_lib/http.js";
-import { getListAccess, requireEditor, requireReserver } from "../_lib/access.js";
+import { getWishAccess, requireEditor, requireReserver } from "../_lib/access.js";
 import { WishBody } from "../_lib/wishSchema.js";
 import { receiveImage } from "../_middleware/imageUpload.js";
 import { removeWishImages } from "../_integrations/storageAdapter.js";
-import { uploadNewWishImage } from "../_lib/wishImage.js";
+import { uploadNewProfileWishImage, uploadNewWishImage } from "../_lib/wishImage.js";
 
 const router = Router();
 
-// The wish's list, and my access to it. 404 if the wish doesn't exist or I can't see its list.
+// The wish, and my access to its list – or to the wish profile it's on.
+// 404 if the wish doesn't exist or I can't see where it is.
 async function loadWish(db, wishId, userId) {
-    const { rows: [wish] } = await db.query("SELECT id, list_id, image_url FROM wishes WHERE id = $1", [wishId]);
+    const { rows: [wish] } = await db.query("SELECT id, list_id, user_id, image_url FROM wishes WHERE id = $1", [wishId]);
     if (!wish) throw new HttpError(404, "Önskningen finns inte");
-    const access = await getListAccess(db, wish.list_id, userId);
+    const access = await getWishAccess(db, wish, userId);
     return { wish, access };
 }
 
@@ -32,7 +33,7 @@ function lockedByGifts(access, what) {
     );
 }
 
-/* --- PATCH /api/wishes/:id  (multipart, same fields as create + removeImage) – edit (list admin) --- */
+/* --- PATCH /api/wishes/:id  (multipart, same fields as create + removeImage) – edit (list admin / profile owner) --- */
 router.patch("/:id", receiveImage, async (req, res) => {
     const wishId = parseId(req.params.id);
     const { wish, access } = await loadWish(pool, wishId, req.user.id);
@@ -44,7 +45,9 @@ router.patch("/:id", receiveImage, async (req, res) => {
 
     // 1. A new image (uploaded file, or a copy of the shop's image) is saved first.
     //    The old one is only deleted once the wish is saved.
-    const newImageUrl = await uploadNewWishImage(wish.list_id, req.file, body.imageFromUrl);
+    const newImageUrl = wish.list_id
+        ? await uploadNewWishImage(wish.list_id, req.file, body.imageFromUrl)
+        : await uploadNewProfileWishImage(wish.user_id, req.file, body.imageFromUrl);
 
     const imageUrl = newImageUrl ?? (body.removeImage ? null : wish.image_url);
 

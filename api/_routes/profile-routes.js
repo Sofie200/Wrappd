@@ -7,11 +7,11 @@ const RECIPIENTS = `(SELECT string_agg(u.name, ', ' ORDER BY u.name)
                      FROM list_recipients lr JOIN users u ON u.id = lr.user_id
                      WHERE lr.list_id = l.id)`;
 
-/* --- GET /api/profile → { upcoming, gifts: { current, history }, adminLists } --- */
+/* --- GET /api/profile → { upcoming, gifts: { current, history }, adminLists, santas, profileEmpty } --- */
 router.get("/", async (req, res) => {
     const me = req.user.id;
 
-    const [upcoming, gifts, adminLists] = await Promise.all([
+    const [upcoming, gifts, adminLists, santas, profile] = await Promise.all([
         // Coming events: public lists in my groups whose end date hasn't passed – also lists to me
         pool.query(
             `SELECT l.id, l.title, l.end_date AS "endDate",
@@ -47,12 +47,15 @@ router.get("/", async (req, res) => {
                      WHERE o.gift_id = g.id AND o.user_id <> $1) AS "sharedWith",
                     w.id AS "wishId", COALESCE(w.image_url, g.image_url) AS "imageUrl",
                     l.id AS "listId", l.title AS "listTitle",
+                    wo.id AS "personId",
                     COALESCE(l.end_date, g.gift_date) AS "endDate",
-                    COALESCE(l.end_date, g.gift_date) < ${TODAY} AS archived,
-                    COALESCE(${RECIPIENTS}, g.recipient) AS recipients
+                    -- A gift from a wish profile has no date, so it stays current until it's removed
+                    COALESCE(COALESCE(l.end_date, g.gift_date) < ${TODAY}, false) AS archived,
+                    COALESCE(${RECIPIENTS}, g.recipient, wo.name) AS recipients
              FROM gift_members me
              JOIN gifts g ON g.id = me.gift_id
              LEFT JOIN wishes w ON w.id = g.wish_id
+             LEFT JOIN users wo ON wo.id = w.user_id
              LEFT JOIN lists l ON l.id = COALESCE(w.list_id, g.list_id)
              WHERE me.user_id = $1
              ORDER BY "endDate" DESC, l.title, g.title`,
@@ -70,6 +73,32 @@ router.get("/", async (req, res) => {
              ORDER BY archived, l.end_date, l.title`,
             [me]
         ),
+
+        // Coming Secret Santas I take part in, or made. receiver = who *I* give to – never anyone else's pair.
+        pool.query(
+            `SELECT s.id, s.title, s.event_date AS "date", s.budget, g.name AS "groupName",
+                    s.created_by = $1 AS "isCreator",
+                    (SELECT count(*)::int FROM secret_santa_pairs WHERE santa_id = s.id) AS "participantCount",
+                    (SELECT json_build_object('id', u.id, 'name', u.name,
+                                              'avatarIcon', u.avatar_icon, 'avatarColor', u.avatar_color)
+                     FROM secret_santa_pairs p JOIN users u ON u.id = p.receiver_id
+                     WHERE p.santa_id = s.id AND p.giver_id = $1) AS receiver
+             FROM secret_santas s
+             JOIN groups g ON g.id = s.group_id
+             WHERE s.event_date >= ${TODAY}
+               AND (s.created_by = $1
+                    OR EXISTS (SELECT 1 FROM secret_santa_pairs WHERE santa_id = s.id AND giver_id = $1))
+             ORDER BY s.event_date, s.title`,
+            [me]
+        ),
+
+        // Have I filled in my wish profile? (Nothing written, no categories and no wishes = empty)
+        pool.query(
+            `SELECT (wish_about IS NULL AND cardinality(likes) = 0 AND cardinality(dislikes) = 0
+                     AND NOT EXISTS (SELECT 1 FROM wishes WHERE user_id = u.id)) AS empty
+             FROM users u WHERE u.id = $1`,
+            [me]
+        ),
     ]);
 
     res.json({
@@ -80,6 +109,8 @@ router.get("/", async (req, res) => {
             history: gifts.rows.filter((g) => g.archived),
         },
         adminLists: adminLists.rows,
+        santas: santas.rows,
+        profileEmpty: profile.rows[0]?.empty ?? false,
     });
 });
 

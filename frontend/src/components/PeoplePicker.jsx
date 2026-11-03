@@ -40,7 +40,7 @@ export default function PeoplePicker({
                                     {person.isChild ? (
                                         <span className="badge badge-gift">Barn</span>
                                     ) : (
-                                        <span className="muted">@{person.username}</span>
+                                        <strong className="username">{person.username}</strong>
                                     )}
                                     {person.isActivated === false && !person.isChild && (
                                         <span className="badge badge-private">Ej aktiverad</span>

@@ -9,7 +9,7 @@ import ChildListsModal from "../components/ChildListsModal.jsx";
 import Avatar from "../components/Avatar.jsx";
 import Modal from "../components/Modal.jsx";
 import SettingsMenu from "../components/SettingsMenu.jsx";
-import { Baby, Ellipsis, Gift, Pencil, Plus, Trash2, Users } from "lucide-react";
+import { ArrowRight, Baby, Ellipsis, Gift, Heart, Pencil, Plus, Trash2, Users } from "lucide-react";
 
 // What disappears when a child is deleted – shown in the confirmation
 function deleteWarning(child) {
@@ -138,6 +138,10 @@ export default function ChildrenPage() {
                                 <p className="muted small">
                                     {child.listCount} {child.listCount === 1 ? "lista" : "listor"}
                                 </p>
+                                <Link to={`/people/${child.id}/edit`} className="child-profile-link">
+                                    <Heart size={16} aria-hidden="true" /> {child.name}s önskeprofil
+                                    <ArrowRight size={16} aria-hidden="true" />
+                                </Link>
                             </div>
                         ))}
                     </div>

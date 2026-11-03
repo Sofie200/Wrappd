@@ -19,6 +19,10 @@ CREATE TABLE users (
     avatar_color  TEXT NOT NULL
                   DEFAULT (ARRAY['pink', 'orange', 'green', 'purple', 'blue'])[floor(random() * 5)::int + 1]
                   CHECK (avatar_color IN ('pink', 'orange', 'green', 'purple', 'blue')),
+    -- Wish profile: free text, and categories liked / not liked (keys in api/_lib/profileSchema.js)
+    wish_about    TEXT,
+    likes         TEXT[] NOT NULL DEFAULT '{}',
+    dislikes      TEXT[] NOT NULL DEFAULT '{}',
     created_by    INT REFERENCES users(id) ON DELETE SET NULL,
     created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
     CONSTRAINT users_adult_has_username CHECK (is_child OR username IS NOT NULL),
@@ -103,9 +107,11 @@ CREATE TABLE list_recipients (
 );
 CREATE INDEX list_recipients_user_idx ON list_recipients (user_id);
 
+-- A wish is on a list, OR on a person's wish profile (user_id) – never both
 CREATE TABLE wishes (
     id          SERIAL PRIMARY KEY,
-    list_id     INT NOT NULL REFERENCES lists(id) ON DELETE CASCADE,
+    list_id     INT REFERENCES lists(id) ON DELETE CASCADE,
+    user_id     INT REFERENCES users(id) ON DELETE CASCADE,
     title       TEXT NOT NULL CHECK (length(trim(title)) > 0),
     description TEXT,
     price       NUMERIC(10, 2) CHECK (price >= 0),
@@ -113,9 +119,11 @@ CREATE TABLE wishes (
     image_url   TEXT,
     quantity    INT NOT NULL DEFAULT 1 CHECK (quantity BETWEEN 1 AND 99),
     created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
-    updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+    updated_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+    CONSTRAINT wishes_list_or_person CHECK ((list_id IS NULL) <> (user_id IS NULL))
 );
 CREATE INDEX wishes_list_idx ON wishes (list_id);
+CREATE INDEX wishes_user_idx ON wishes (user_id);
 
 -- A gift ("gåva" in the UI) is either:
 --  - reserved on a wish (wish_id): its own copy of the title, its own price (total, for all copies)
@@ -160,3 +168,25 @@ CREATE TABLE gift_members (
     PRIMARY KEY (gift_id, user_id)
 );
 CREATE INDEX gift_members_user_idx ON gift_members (user_id);
+
+-- Secret Santa: deltagare i en grupp lottas till varandra. Bara givaren får veta sin mottagare.
+CREATE TABLE secret_santas (
+    id         SERIAL PRIMARY KEY,
+    group_id   INT NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
+    title      TEXT NOT NULL CHECK (length(trim(title)) > 0),
+    event_date DATE NOT NULL,
+    budget     NUMERIC(10, 2) CHECK (budget IS NULL OR budget >= 0),
+    created_by INT REFERENCES users(id) ON DELETE SET NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX secret_santas_group_idx ON secret_santas (group_id);
+
+CREATE TABLE secret_santa_pairs (
+    santa_id    INT NOT NULL REFERENCES secret_santas(id) ON DELETE CASCADE,
+    giver_id    INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    receiver_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    PRIMARY KEY (santa_id, giver_id),
+    UNIQUE (santa_id, receiver_id),
+    CHECK (giver_id <> receiver_id)
+);
+CREATE INDEX secret_santa_pairs_giver_idx ON secret_santa_pairs (giver_id);

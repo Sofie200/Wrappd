@@ -41,13 +41,57 @@ export async function getListAccess(db, listId, userId) {
     };
 }
 
+/**
+ * Loads a person's wish profile and the current user's role in it. 404 if it doesn't exist OR
+ * I may not see it. Same shape as getListAccess, so wishes work the same on lists and profiles.
+ *
+ * Rules:
+ *  - I see my own profile, my children's, and everyone's I share at least one group with.
+ *  - I edit my own and my children's (children can't log in).
+ *  - Everyone but the person themselves can reserve, and sees what is reserved – the person never does.
+ *  - A profile is never archived.
+ */
+export async function getPersonAccess(db, personId, userId) {
+    const { rows: [person] } = await db.query(
+        `SELECT u.id, u.name, u.username, u.is_child, u.avatar_icon, u.avatar_color,
+                u.wish_about, u.likes, u.dislikes,
+                u.id = $2 AS is_self,
+                EXISTS (SELECT 1 FROM child_parents WHERE child_id = u.id AND parent_id = $2) AS is_parent,
+                EXISTS (SELECT 1 FROM group_members a
+                        JOIN group_members b ON b.group_id = a.group_id AND b.user_id = $2
+                        WHERE a.user_id = u.id) AS shares_group
+         FROM users u
+         WHERE u.id = $1`,
+        [personId, userId]
+    );
+
+    const canView = person && (person.is_self || person.is_parent || person.shares_group);
+    if (!canView) throw new HttpError(404, "Personen finns inte");
+
+    const canEdit = person.is_self || person.is_parent;
+    return {
+        person,
+        isAdmin: canEdit,
+        isRecipient: person.is_self,
+        archived: false,
+        canEdit,
+        canReserve: !person.is_self,
+        seesReservations: !person.is_self,
+    };
+}
+
+// A wish is on a list or on a person's profile – the access rules follow from that
+export function getWishAccess(db, wish, userId) {
+    return wish.list_id ? getListAccess(db, wish.list_id, userId) : getPersonAccess(db, wish.user_id, userId);
+}
+
 export function requireEditor(access) {
     if (access.archived) throw new HttpError(403, "Listan är arkiverad och kan inte ändras");
     if (!access.isAdmin) throw new HttpError(403, "Bara listans admins kan göra det här");
 }
 
 export function requireReserver(access) {
-    if (access.isRecipient) throw new HttpError(403, "Du kan inte reservera på en lista till dig själv");
+    if (access.isRecipient) throw new HttpError(403, "Du kan inte reservera något som är till dig själv");
     if (access.archived) throw new HttpError(403, "Listan är arkiverad och kan inte ändras");
 }
 

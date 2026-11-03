@@ -30,7 +30,7 @@ export default function UserLinkBox({ user, link, onClose }) {
             </div>
 
             <p className="small">
-                Skicka länken till {user.name}. Där väljer hen ett lösenord och loggar in som <strong>@{user.username}</strong>.
+                Skicka länken till {user.name}. Där väljer hen ett lösenord och loggar in som <strong>{user.username}</strong>.
             </p>
 
             <div className="link-box-row">

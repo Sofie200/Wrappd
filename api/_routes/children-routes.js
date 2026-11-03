@@ -191,10 +191,11 @@ router.delete("/:id", async (req, res) => {
 
         const { rows: images } = await db.query(
             // Wishes' images, and the images of gifts bought outside those lists (they go with the lists)
-            `SELECT image_url FROM wishes WHERE list_id = ANY($1::int[]) AND image_url IS NOT NULL
+            // – and the images of the child's own wish profile
+            `SELECT image_url FROM wishes WHERE (list_id = ANY($1::int[]) OR user_id = $2) AND image_url IS NOT NULL
              UNION ALL
              SELECT image_url FROM gifts WHERE list_id = ANY($1::int[]) AND image_url IS NOT NULL`,
-            [listIds]
+            [listIds, childId]
         );
 
         // Lists, wishes and gifts go with ON DELETE CASCADE.

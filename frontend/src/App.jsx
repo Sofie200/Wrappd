@@ -13,6 +13,10 @@ import LinkPage from "./pages/LinkPage.jsx";
 import ChildrenPage from "./pages/ChildrenPage.jsx";
 import ArchivePage from "./pages/ArchivePage.jsx";
 import GiftPage from "./pages/GiftPage.jsx";
+import SantaFormPage from "./pages/SantaFormPage.jsx";
+import WishProfilePage from "./pages/WishProfilePage.jsx";
+import ListsPage from "./pages/ListsPage.jsx";
+import GiftsPage from "./pages/GiftsPage.jsx";
 
 export default function App() {
     return (
@@ -36,10 +40,14 @@ export default function App() {
                 <Route path="children" element={<ChildrenPage />} />
                 <Route path="archive" element={<ArchivePage />} />
                 {/* Different keys, so "new" and "edit" never share form state */}
+                <Route path="lists" element={<ListsPage />} />
                 <Route path="lists/new" element={<ListFormPage key="new" />} />
                 <Route path="lists/:id" element={<ListPage />} />
                 <Route path="lists/:id/edit" element={<ListFormPage key="edit" />} />
+                <Route path="gifts" element={<GiftsPage />} />
                 <Route path="gifts/:id" element={<GiftPage />} />
+                <Route path="santa/new" element={<SantaFormPage />} />
+                <Route path="people/:id/edit" element={<WishProfilePage />} />
                 <Route path="*" element={<NotFoundPage />} />
             </Route>
         </Routes>

@@ -7,7 +7,8 @@
 //  - Everyone who shares a gift has the same rights to it. Others don't see it at all
 //    (a gift on a wish only shows as "Reserverad av …" on the list).
 //  - A gift can be shared with adults in its list's groups – never the list's recipients, never children.
-//    A gift without a list can't be shared.
+//    A gift on a wish profile (a wish without a list) can be shared with adults in the person's groups.
+//    A gift without a list or a wish can't be shared.
 //  - Gifts on wishes: quantity and undo are locked after the event; price, comment and split are not.
 //    One person can be in at most one gift per wish.
 //  - Gifts outside the list: everything can always be changed, also the list, and they can always be deleted.
@@ -31,6 +32,7 @@ async function loadGift(db, giftId, userId, { lock = false } = {}) {
                 g.list_id AS own_list_id, g.recipient, g.gift_date, g.description, g.url, g.image_url,
                 g.wish_id IS NULL AS is_free,
                 COALESCE(w.list_id, g.list_id) AS list_id,
+                w.user_id AS wish_owner_id,
                 w.quantity AS wish_quantity,
                 COALESCE(l.end_date, g.gift_date) < ${TODAY} AS archived
          FROM gifts g
@@ -46,8 +48,25 @@ async function loadGift(db, giftId, userId, { lock = false } = {}) {
 }
 
 // Who may share a gift on this list: adults in the list's groups, not recipients,
-// and (for gifts on a wish) not already in ANOTHER gift for the same wish. No list → nobody.
-async function shareCandidates(db, { listId, wishId = null, giftId = null }, onlyIds = null) {
+// and (for gifts on a wish) not already in ANOTHER gift for the same wish.
+// A wish on a person's profile (ownerId): adults in that person's groups, not the person.
+// Neither → nobody.
+async function shareCandidates(db, { listId, wishId = null, giftId = null, ownerId = null }, onlyIds = null) {
+    if (!listId && ownerId) {
+        const { rows } = await db.query(
+            `SELECT DISTINCT u.id, u.name, u.username
+             FROM users u
+             JOIN group_members gm ON gm.user_id = u.id
+             JOIN group_members om ON om.group_id = gm.group_id AND om.user_id = $1
+             WHERE NOT u.is_child AND u.id <> $1
+               AND NOT EXISTS (SELECT 1 FROM gift_members gm2 JOIN gifts g2 ON g2.id = gm2.gift_id
+                               WHERE g2.wish_id = $2 AND g2.id <> COALESCE($3, 0) AND gm2.user_id = u.id)
+               AND ($4::int[] IS NULL OR u.id = ANY($4::int[]))
+             ORDER BY u.name`,
+            [ownerId, wishId, giftId, onlyIds]
+        );
+        return rows;
+    }
     if (!listId) return [];
     const { rows } = await db.query(
         `SELECT DISTINCT u.id, u.name, u.username
@@ -89,12 +108,13 @@ router.get("/lists", async (req, res) => {
     res.json({ data: rows });
 });
 
-/* --- GET /api/gifts/:id → { gift, wish, list, members, candidates } (member) --- */
+/* --- GET /api/gifts/:id → { gift, wish, list, person, members, candidates } (member) --- */
+// person: who it's for, when the wish is on a wish profile instead of a list
 router.get("/:id", async (req, res) => {
     const giftId = parseId(req.params.id);
     const gift = await loadGift(pool, giftId, req.user.id);
 
-    const [wish, list, members, others, candidates] = await Promise.all([
+    const [wish, list, person, members, others, candidates] = await Promise.all([
         gift.wish_id
             ? pool.query(
                   `SELECT id, title, description, price, url, image_url AS "imageUrl", quantity FROM wishes WHERE id = $1`,
@@ -110,6 +130,9 @@ router.get("/:id", async (req, res) => {
                   [gift.list_id]
               )
             : { rows: [null] },
+        gift.wish_owner_id
+            ? pool.query("SELECT id, name FROM users WHERE id = $1", [gift.wish_owner_id])
+            : { rows: [null] },
         pool.query(
             `SELECT u.id, u.name, u.username, gm.amount
              FROM gift_members gm JOIN users u ON u.id = gm.user_id
@@ -123,7 +146,7 @@ router.get("/:id", async (req, res) => {
                   [gift.wish_id, giftId]
               )
             : { rows: [{ taken: 0 }] },
-        shareCandidates(pool, { listId: gift.list_id, wishId: gift.wish_id, giftId }),
+        shareCandidates(pool, { listId: gift.list_id, wishId: gift.wish_id, giftId, ownerId: gift.wish_owner_id }),
     ]);
 
     res.json({
@@ -147,6 +170,7 @@ router.get("/:id", async (req, res) => {
         },
         wish: wish.rows[0],
         list: list.rows[0],
+        person: person.rows[0],
         members: members.rows,
         candidates,
     });
@@ -261,14 +285,17 @@ router.put("/:id", receiveImage, async (req, res) => {
             const listChanged = gift.is_free && listId !== gift.own_list_id;
             const toCheck = listChanged && listId ? userIds : userIds.filter((id) => !currentIds.includes(id));
             if (toCheck.length > 0) {
-                const allowed = (await shareCandidates(db, { listId, wishId: gift.wish_id, giftId }, toCheck)).map((u) => u.id);
+                const ownerId = gift.is_free ? null : gift.wish_owner_id;
+                const allowed = (await shareCandidates(db, { listId, wishId: gift.wish_id, giftId, ownerId }, toCheck)).map((u) => u.id);
                 if (toCheck.some((id) => !allowed.includes(id))) {
                     throw new HttpError(
                         400,
                         listId
                             ? "Du kan bara dela med vuxna i listans grupper som inte är mottagare" +
                                   (gift.wish_id ? " och inte redan är med i en annan gåva för samma önskning" : "")
-                            : "En gåva utan lista kan inte delas"
+                            : ownerId
+                              ? "Du kan bara dela med vuxna i mottagarens grupper som inte redan är med i en annan gåva för samma önskning"
+                              : "En gåva utan lista kan inte delas"
                     );
                 }
             }

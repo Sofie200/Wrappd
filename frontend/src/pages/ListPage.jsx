@@ -8,6 +8,7 @@ import SettingsMenu from "../components/SettingsMenu.jsx";
 import WishCard from "../components/WishCard.jsx";
 import WishForm from "../components/WishForm.jsx";
 import { formatDate, relativeDays } from "../format.js";
+import PersonLink from "../components/PersonLink.jsx";
 
 const names = (people) => people.map((p) => p.name).join(", ");
 
@@ -93,7 +94,14 @@ export default function ListPage() {
                     <dl className="list-meta">
                         <div>
                             <dt>Till</dt>
-                            <dd>{names(recipients)}</dd>
+                            <dd>
+                                {recipients.map((person, i) => (
+                                    <span key={person.id}>
+                                        {i > 0 && ", "}
+                                        <PersonLink person={person} />
+                                    </span>
+                                ))}
+                            </dd>
                         </div>
                     </dl>
                 </div>

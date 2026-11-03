@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, NavLink, Outlet } from "react-router-dom";
-import { Baby, LogOut, Plus, UserPen, Users } from "lucide-react";
+import { Baby, Gift, Heart, ListChecks, LogOut, Menu, Plus, TreePine, UserPen, Users } from "lucide-react";
 import { useAuth } from "../context/AuthContext.jsx";
 import { APP_NAME } from "../config.js";
 import Avatar from "./Avatar.jsx";
@@ -26,20 +26,34 @@ export default function Layout() {
                         <NavLink to="/lists/new" className="nav-cta">
                             <Plus size={16} aria-hidden="true" /> Ny lista
                         </NavLink>
+                        <NavLink to="/santa/new" className="nav-cta">
+                            <TreePine size={16} aria-hidden="true" /> Secret Santa
+                        </NavLink>
                     </nav>
 
                     <div className="user-menu">
+                        <SettingsMenu label="Meny" icon={Menu}>
+                            <NavLink to="/groups" className="menu-item" role="menuitem">
+                                <Users size={16} aria-hidden="true" /> Grupper
+                            </NavLink>
+                            <NavLink to="/lists" end className="menu-item" role="menuitem">
+                                <ListChecks size={16} aria-hidden="true" /> Listor
+                            </NavLink>
+                            <NavLink to="/gifts" end className="menu-item" role="menuitem">
+                                <Gift size={16} aria-hidden="true" /> Gåvor
+                            </NavLink>
+                        </SettingsMenu>
                         <SettingsMenu
                             label={`Meny för ${user.name}`}
-                            title={`${user.name} (@${user.username})`}
+                            title={`${user.name} (${user.username})`}
                             buttonClassName="profile-button"
                             trigger={<Avatar icon={user.avatarIcon} color={user.avatarColor} />}
                         >
                             <button type="button" className="menu-item" role="menuitem" onClick={() => setEditingProfile(true)}>
                                 <UserPen size={16} aria-hidden="true" /> Redigera profil
                             </button>
-                            <NavLink to="/groups" className="menu-item" role="menuitem">
-                                <Users size={16} aria-hidden="true" /> Mina grupper
+                            <NavLink to={`/people/${user.id}/edit`} className="menu-item" role="menuitem">
+                                <Heart size={16} aria-hidden="true" /> Min önskeprofil
                             </NavLink>
                             <NavLink to="/children" className="menu-item" role="menuitem">
                                 <Baby size={16} aria-hidden="true" /> Mina barn

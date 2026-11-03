@@ -39,6 +39,16 @@ export function uploadGiftImage(image) {
     return uploadImage("gifts", image);
 }
 
+/**
+ * Uploads the image of a wish on someone's wish profile.
+ * @param {number} userId
+ * @param {{ buffer: Buffer, mimeType: string }} image
+ * @returns {Promise<string>} the public URL
+ */
+export function uploadProfileWishImage(userId, image) {
+    return uploadImage(`profiles/${userId}`, image);
+}
+
 async function uploadImage(folder, { buffer, mimeType }) {
     requireToken();
     const extension = EXTENSIONS[mimeType];

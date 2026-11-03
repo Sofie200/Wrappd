@@ -5,8 +5,9 @@ import { ErrorMessage } from "./Feedback.jsx";
 import ImageField from "./ImageField.jsx";
 import ProductLinkField from "./ProductLinkField.jsx";
 
-// Create a wish on a list (no `wish`), or edit one (`wish` given)
-export default function WishForm({ listId, wish, onSaved, onCancel }) {
+// Create a wish (no `wish`) on a list, or on a wish profile (createPath = "/people/:id/wishes"),
+// or edit one (`wish` given)
+export default function WishForm({ listId, createPath, wish, onSaved, onCancel }) {
     const [fields, setFields] = useState({
         title: wish?.title ?? "",
         description: wish?.description ?? "",
@@ -41,7 +42,7 @@ export default function WishForm({ listId, wish, onSaved, onCancel }) {
         image.appendTo(formData);
 
         try {
-            await api(wish ? `/wishes/${wish.id}` : `/lists/${listId}/wishes`, {
+            await api(wish ? `/wishes/${wish.id}` : (createPath ?? `/lists/${listId}/wishes`), {
                 method: wish ? "PATCH" : "POST",
                 formData,
                 timeoutMs: 30_000, // images take a while
