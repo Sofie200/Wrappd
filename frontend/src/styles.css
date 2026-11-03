@@ -2255,3 +2255,15 @@ button.event-edit {
     outline-offset: 2px;
     border-radius: 4px;
 }
+
+/* A checkbox with its help text right under it, lined up with the label's text */
+.check-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+}
+
+.check-field > small {
+    padding-left: calc(13px + 0.5rem); /* the checkbox's width + the gap in .check */
+    font-size: 0.875rem;
+}

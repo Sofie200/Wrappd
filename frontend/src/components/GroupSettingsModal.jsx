@@ -38,17 +38,18 @@ export default function GroupSettingsModal({ group, onSaved, onClose }) {
                     <input value={name} onChange={(e) => setName(e.target.value)} maxLength={80} required disabled={busy} />
                 </label>
 
-                <div className="field">
+                <div className="check-field">
                     <label className="check">
                         <input
                             type="checkbox"
                             checked={includeChildren}
                             onChange={(e) => setIncludeChildren(e.target.checked)}
                             disabled={busy}
+                            aria-describedby="group-include-children-help"
                         />
                         Inkludera barn
                     </label>
-                    <small className="muted">
+                    <small id="group-include-children-help" className="muted">
                         {includeChildren
                             ? "Alla medlemmars barn är med i gruppen automatiskt."
                             : "Inga barn kan vara med i gruppen."}

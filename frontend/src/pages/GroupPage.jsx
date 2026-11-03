@@ -264,7 +264,10 @@ export default function GroupPage() {
 
             {addingMember && (
                 <Modal title="Lägg till medlem" onClose={() => setAddingMember(false)}>
-                    <p className="muted small">Har personen redan ett konto? Sök på namn eller användarnamn.</p>
+                    <p className="muted small">
+                        Har personen redan ett konto? Personer i dina grupper dyker upp medan du skriver. Andra hittar
+                        du genom att skriva hela användarnamnet och trycka på Sök.
+                    </p>
                     <UserSearch
                         excludeGroupId={group.id}
                         onSelect={(member) => {

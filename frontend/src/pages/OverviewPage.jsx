@@ -8,7 +8,7 @@ import { Empty, ErrorMessage, Loading } from "../components/Feedback.jsx";
 import Avatar from "../components/Avatar.jsx";
 import ListCard from "../components/ListCard.jsx";
 import PersonLink from "../components/PersonLink.jsx";
-import { buildEvents, dateOrder, EventRow, sumShares } from "../components/EventRow.jsx";
+import { buildEvents, dateOrder, EventRow } from "../components/EventRow.jsx";
 import { formatDate, formatPrice, relativeDays } from "../format.js";
 
 // A Secret Santa among the events. Who I give to is hidden until I press the eye –
@@ -124,7 +124,6 @@ export default function OverviewPage() {
         ...santas.map((santa) => ({ key: `santa:${santa.id}`, santa, date: santa.date })),
     ].sort((a, b) => dateOrder(a.date) - dateOrder(b.date));
     const history = buildEvents([], gifts.history, { newestFirst: true });
-    const myTotal = sumShares(gifts.current);
 
     return (
         <div className="page">
@@ -146,16 +145,6 @@ export default function OverviewPage() {
             <section className="section">
                 <div className="section-head">
                     <h2>Kommande händelser</h2>
-                    <div className="actions">
-                        {gifts.current.length > 0 && (
-                            <span className="event-total">
-                                Totalt för mig <strong>{formatPrice(myTotal)}</strong>
-                            </span>
-                        )}
-                        <Link to="/gifts/new" className="btn btn-small">
-                            <Plus size={16} aria-hidden="true" /> Lägg till gåva
-                        </Link>
-                    </div>
                 </div>
 
                 {events.length === 0 ? (
@@ -186,22 +175,21 @@ export default function OverviewPage() {
                 )}
             </section>
 
-            <section className="section">
-                <div className="section-head">
-                    <h2>Mina privata listor</h2>
-                    <div className="actions">
-                        <Link to="/lists/new" className="btn btn-small">
-                            <Plus size={16} aria-hidden="true" /> Ny lista
-                        </Link>
-                        <Link to="/archive" className="btn btn-small btn-ghost">
-                            Arkiv{archivedCount > 0 && ` (${archivedCount})`}
-                        </Link>
+            {/* Only when there are any – the published ones are among the events above */}
+            {privateLists.length > 0 && (
+                <section className="section">
+                    <div className="section-head">
+                        <h2>Mina privata listor</h2>
+                        <div className="actions">
+                            <Link to="/lists/new" className="btn btn-small">
+                                <Plus size={16} aria-hidden="true" /> Ny lista
+                            </Link>
+                            <Link to="/archive" className="btn btn-small btn-ghost">
+                                Arkiv{archivedCount > 0 && ` (${archivedCount})`}
+                            </Link>
+                        </div>
                     </div>
-                </div>
-                {/* Lists whose date has passed are in the archive */}
-                {privateLists.length === 0 ? (
-                    <Empty>Du har inga opublicerade listor.</Empty>
-                ) : (
+                    {/* Lists whose date has passed are in the archive */}
                     <div className="cards">
                         {privateLists.map((list) => (
                             <ListCard
@@ -215,8 +203,8 @@ export default function OverviewPage() {
                             />
                         ))}
                     </div>
-                )}
-            </section>
+                </section>
+            )}
         </div>
     );
 }

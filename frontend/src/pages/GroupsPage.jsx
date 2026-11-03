@@ -74,20 +74,23 @@ export default function GroupsPage() {
                             {busy ? "Skapar…" : "Skapa"}
                         </button>
                     </div>
-                    <label className="check">
-                        <input
-                            type="checkbox"
-                            checked={includeChildren}
-                            onChange={(e) => setIncludeChildren(e.target.checked)}
-                            disabled={busy}
-                        />
-                        Inkludera barn
-                    </label>
-                    <small className="muted">
-                        Alla medlemmars barn kommer då med automatiskt
-                        {myChildren.length > 0 && <> – dina ({joinNames(myChildren.map((c) => c.name))}) direkt</>}. Utan det
-                        kan inga barn vara med i gruppen. Kan ändras senare.
-                    </small>
+                    <div className="check-field">
+                        <label className="check">
+                            <input
+                                type="checkbox"
+                                checked={includeChildren}
+                                onChange={(e) => setIncludeChildren(e.target.checked)}
+                                disabled={busy}
+                                aria-describedby="include-children-help"
+                            />
+                            Inkludera barn
+                        </label>
+                        <small id="include-children-help" className="muted">
+                            Alla medlemmars barn kommer då med automatiskt
+                            {myChildren.length > 0 && <> – dina ({joinNames(myChildren.map((c) => c.name))}) direkt</>}. Utan
+                            det kan inga barn vara med i gruppen. Kan ändras senare.
+                        </small>
+                    </div>
                 </form>
             </section>
         </div>
