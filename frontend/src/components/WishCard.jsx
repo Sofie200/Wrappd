@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { api } from "../api.js";
 import { formatPrice, joinNames } from "../format.js";
 import { useAuth } from "../context/AuthContext.jsx";
@@ -7,7 +6,9 @@ import Avatar from "./Avatar.jsx";
 import { ErrorMessage } from "./Feedback.jsx";
 import Modal from "./Modal.jsx";
 import WishForm from "./WishForm.jsx";
-import { ArrowUpRight, CircleMinus, Pencil, Trash2 } from "lucide-react";
+import { GiftEditor } from "../pages/GiftPage.jsx";
+import { ArrowUpRight, CircleMinus, Ellipsis, Pencil, Trash2 } from "lucide-react";
+import SettingsMenu from "./SettingsMenu.jsx";
 
 // One wish: a compact row (image, title, price, reserved badge) that opens the full wish in a modal.
 // What the modal shows depends on `me` from the server:
@@ -15,7 +16,6 @@ import { ArrowUpRight, CircleMinus, Pencil, Trash2 } from "lucide-react";
 //  - canReserve: reserve (creates a gift), or go to my gift
 //  - canEdit: edit and delete (list admins, not archived) – not once someone has reserved it
 export default function WishCard({ wish, me, listId, onChanged }) {
-    const navigate = useNavigate();
     const { user } = useAuth();
     // "dig och Ted" – me first, as "dig"
     const whoNames = (people) =>
@@ -28,6 +28,7 @@ export default function WishCard({ wish, me, listId, onChanged }) {
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState(null);
     const [qty, setQty] = useState(1);
+    const [editingGift, setEditingGift] = useState(false); // my reservation, in a modal on top
 
     async function run(action) {
         setBusy(true);
@@ -42,14 +43,16 @@ export default function WishCard({ wish, me, listId, onChanged }) {
         }
     }
 
-    // Reserving creates a gift – then straight to it, to add a price, comment or people to share with
+    // Reserving creates a gift – and stays here; the gift can be edited later (Gåvor / the overview)
     // quantity: from the row it's always 1, from the modal what's chosen there
     async function reserve(quantity = qty) {
         setBusy(true);
         setError(null);
         try {
-            const { id } = await api(`/wishes/${wish.id}/gifts`, { method: "POST", body: { quantity: Number(quantity) } });
-            navigate(`/gifts/${id}`);
+            // The gift is created as a straight copy of the wish – price, comment and sharing can be changed later
+            await api(`/wishes/${wish.id}/gifts`, { method: "POST", body: { quantity: Number(quantity) } });
+            setBusy(false);
+            onChanged();
         } catch (err) {
             setError(err.message);
             setBusy(false);
@@ -121,10 +124,12 @@ export default function WishCard({ wish, me, listId, onChanged }) {
     // "Reservera" straight on the row: when I can reserve, haven't already, and there's some left (1 st –
     // the quantity can be changed on the gift afterwards)
     const quickReserve = me.canReserve && !wish.myGiftId && available > 0;
+    // A "…" menu on the row for my own reservation
+    const myMenu = me.canReserve && Boolean(wish.myGiftId);
 
     return (
         <>
-            <div className={`wish-row${quickReserve ? " has-quick" : ""}`}>
+            <div className={`wish-row${quickReserve ? " has-quick" : ""}${myMenu ? " has-menu" : ""}`}>
                 <button
                     type="button"
                     className={`wish${full ? " wish-full" : ""}`}
@@ -154,6 +159,19 @@ export default function WishCard({ wish, me, listId, onChanged }) {
                         {busy ? "Reserverar…" : "Reservera"}
                     </button>
                 )}
+                {/* My reservation: "…" right after the badge, to edit or release it */}
+                {myMenu && (
+                    <div className="wish-row-menu">
+                        <SettingsMenu label={`Min reservation av ${wish.title}`} icon={Ellipsis}>
+                            <button type="button" className="menu-item" role="menuitem" onClick={() => setEditingGift(true)}>
+                                <Pencil size={16} aria-hidden="true" /> Redigera reservation
+                            </button>
+                            <button type="button" className="menu-item menu-item-danger" role="menuitem" onClick={unreserve} disabled={busy}>
+                                <CircleMinus size={16} aria-hidden="true" /> Släpp reservation
+                            </button>
+                        </SettingsMenu>
+                    </div>
+                )}
             </div>
 
             {open && (
@@ -178,9 +196,19 @@ export default function WishCard({ wish, me, listId, onChanged }) {
                                 <div className="wish-status-bar">
                                     {reservedBadge}
                                     {me.canReserve && wish.myGiftId && (
-                                        <button type="button" className="btn btn-small btn-danger-ghost" onClick={unreserve} disabled={busy}>
-                                            <CircleMinus size={16} aria-hidden="true" /> Släpp reservation
-                                        </button>
+                                        <>
+                                            <button
+                                                type="button"
+                                                className="btn btn-small btn-ghost"
+                                                onClick={() => setEditingGift(true)}
+                                                aria-haspopup="dialog"
+                                            >
+                                                <Pencil size={16} aria-hidden="true" /> Redigera reservation
+                                            </button>
+                                            <button type="button" className="btn btn-small btn-danger-ghost" onClick={unreserve} disabled={busy}>
+                                                <CircleMinus size={16} aria-hidden="true" /> Släpp reservation
+                                            </button>
+                                        </>
                                     )}
                                 </div>
                             )}
@@ -235,7 +263,12 @@ export default function WishCard({ wish, me, listId, onChanged }) {
                             )}
 
                             {me.canEdit && (
-                                <div className="wish-admin">
+                                <div
+                                    className={`wish-admin${locked ? " is-locked" : ""}`}
+                                    title={locked ? "Önskningen är reserverad och kan inte ändras" : undefined}
+                                >
+                                    {/* Greyed out as a whole when it can't be changed (someone has reserved it) */}
+                                    <span className="wish-admin-label">Hantera önskning:</span>
                                     <button
                                         type="button"
                                         className="btn btn-small btn-ghost"
@@ -258,6 +291,19 @@ export default function WishCard({ wish, me, listId, onChanged }) {
                             )}
                         </div>
                     )}
+                </Modal>
+            )}
+
+            {/* My reservation (the gift): price, comment, who shares – on top of the wish */}
+            {editingGift && wish.myGiftId && (
+                <Modal title="Redigera reservation" onClose={() => setEditingGift(false)}>
+                    <GiftEditor
+                        id={wish.myGiftId}
+                        onDone={() => {
+                            setEditingGift(false);
+                            onChanged();
+                        }}
+                    />
                 </Modal>
             )}
         </>

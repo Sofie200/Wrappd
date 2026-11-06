@@ -1311,13 +1311,15 @@ select {
     align-items: center;
     gap: 1rem;
     box-shadow: var(--shadow);
-    transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+    transition: border-color 0.15s, box-shadow 0.15s;
 }
 
-.wish:hover {
+/* Hover: a rose border and a deeper shadow – the row doesn't move. Also while hovering the
+   buttons laid over it ("Reservera", "…"), so the row still looks hovered */
+.wish:hover,
+.wish-row:hover .wish {
     border-color: #f5b3c1;
     box-shadow: var(--shadow-lift);
-    transform: translateY(-2px);
 }
 
 .wish:focus-visible {
@@ -1367,16 +1369,37 @@ select {
     padding-right: 7.5rem; /* room for the button */
 }
 
+.wish-row.has-menu .wish {
+    padding-right: 3rem; /* room for the "…" */
+}
+
+/* The "…" sits right after the badge */
+.wish-row.has-menu .wish-reserved {
+    padding-right: 0;
+}
+
+/* The "…" menus on a wish and in the gift tables: the same text size as the small buttons ("Lägg till egen gåva") */
+.wish-row-menu .menu-item,
+.row-actions .menu-item {
+    font-size: 0.875rem;
+}
+
+/* Centred without transform: a transform would become the containing block for the menu's
+   position: fixed list, and throw it off-screen */
+.wish-row-menu {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: 0.6rem;
+    display: flex;
+    align-items: center;
+}
+
 .wish-quick-reserve {
     position: absolute;
     top: 50%;
     right: 1rem;
     transform: translateY(-50%);
-}
-
-/* Follow the row when it lifts on hover */
-.wish-row:has(.wish:hover) .wish-quick-reserve {
-    transform: translateY(calc(-50% - 2px));
 }
 
 .wish-title {
@@ -1543,8 +1566,18 @@ select {
     color: var(--muted);
 }
 
+.wish-status-bar .btn,
 .wish-status-bar .btn:hover {
+    border-color: transparent;
+}
+
+.wish-status-bar .btn-danger-ghost:hover {
     color: var(--danger);
+}
+
+.wish-status-bar .btn-ghost:hover {
+    background: var(--surface-soft);
+    color: var(--ink);
 }
 
 .wish-status-bar .btn svg {
@@ -1604,10 +1637,48 @@ select {
     padding-bottom: 1rem; /* air under "Reservera" before the admin buttons */
 }
 
+/* Can't be changed: the label greyed out like the disabled buttons */
+.wish-admin.is-locked .wish-admin-label {
+    opacity: 0.5;
+}
+
+.wish-admin-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--muted);
+}
+
 .wish-admin {
+    justify-content: center;
     border-top: 1px solid var(--line);
     padding-top: 0.75rem;
     margin-top: 0.25rem;
+}
+
+/* The same small, quiet buttons as in the reservation bar */
+.wish-admin .btn {
+    font-size: 0.75rem;
+    padding: 0.3rem 0.7rem;
+    color: var(--muted);
+}
+
+.wish-admin .btn,
+.wish-admin .btn:hover {
+    border-color: transparent;
+}
+
+.wish-admin .btn svg {
+    width: 14px;
+    height: 14px;
+}
+
+.wish-admin .btn-ghost:hover {
+    background: var(--surface-soft);
+    color: var(--ink);
+}
+
+.wish-admin .btn-danger-ghost:hover {
+    color: var(--danger);
 }
 
 .reserved-by-me {

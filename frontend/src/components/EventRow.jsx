@@ -2,7 +2,7 @@
 // without a list) with its details on the left in a contrasting colour, and my gifts for it on the right.
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, Ellipsis, Gift, HatGlasses, Pencil, ScrollText, Sparkles, Trash2 } from "lucide-react";
+import { ArrowRight, CircleMinus, Ellipsis, Gift, HatGlasses, Pencil, ScrollText, Sparkles, Trash2 } from "lucide-react";
 import { api } from "../api.js";
 import { ErrorMessage } from "./Feedback.jsx";
 import Modal from "./Modal.jsx";
@@ -86,7 +86,7 @@ export function GiftTable({ rows, onChanged, totalLabel = "Totalt" }) {
     async function remove(g) {
         const question = g.offList
             ? `Ta bort "${g.title}"? Gåvan tas bort för alla som delar på den.`
-            : `Ångra reservationen av "${g.title}"? Gåvan tas bort för alla som delar på den.`;
+            : `Släpp reservationen av "${g.title}"? Gåvan tas bort för alla som delar på den.`;
         if (!window.confirm(question)) return;
         setBusyId(g.id);
         setError(null);
@@ -149,7 +149,16 @@ export function GiftTable({ rows, onChanged, totalLabel = "Totalt" }) {
                                                 onClick={() => remove(g)}
                                                 disabled={busyId === g.id}
                                             >
-                                                <Trash2 size={16} aria-hidden="true" /> {g.offList ? "Ta bort" : "Ångra reservation"}
+                                                {/* An own gift is deleted; a reservation is released – like on the list */}
+                                                {g.offList ? (
+                                                    <>
+                                                        <Trash2 size={16} aria-hidden="true" /> Ta bort
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <CircleMinus size={16} aria-hidden="true" /> Släpp reservation
+                                                    </>
+                                                )}
                                             </button>
                                         )}
                                     </SettingsMenu>
