@@ -571,6 +571,38 @@ input[type="file"] {
     padding: 0.4rem;
 }
 
+/* Image picker: a themed button instead of the browser's file input */
+.file-pick {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.file-btn {
+    width: fit-content;
+    cursor: pointer;
+}
+
+.file-btn svg {
+    color: var(--accent);
+}
+
+/* The hidden input still takes keyboard focus – show it on the button */
+.file-btn:focus-within {
+    outline: 3px solid var(--accent);
+    outline-offset: 2px;
+}
+
+.file-name {
+    min-width: 0;
+    font-size: 0.85rem;
+    color: var(--muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 select {
     width: auto;
     padding: 0.45rem 0.75rem;
@@ -1392,7 +1424,17 @@ select {
 }
 
 .modal-inner {
+    position: relative;
     padding: 1.5rem 1.75rem 1.75rem;
+}
+
+/* No visible title: the close button sits on top of the content (e.g. over a wish's image) */
+.modal-head.modal-head-floating {
+    position: absolute;
+    z-index: 1;
+    top: 2rem;
+    right: 2.25rem;
+    margin: 0;
 }
 
 .modal-head {
@@ -1411,9 +1453,10 @@ select {
 
 .modal-close {
     flex: none;
-    font: inherit;
-    font-size: 1.6rem;
-    line-height: 1;
+    margin-left: auto; /* stays on the right, also when the title is hidden */
+    display: grid;
+    place-items: center; /* the X icon dead centre */
+    padding: 0;
     width: 2.25rem;
     height: 2.25rem;
     border: none;
@@ -1439,6 +1482,28 @@ select {
     gap: 0.6rem;
 }
 
+/* Title, price, description and link: tight together, with extra air above and below the block */
+.wish-detail-info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.6rem;
+    margin: 0.75rem 0;
+}
+
+/* Fully reserved: the wish itself toned down (the reservation bar stays clear) */
+.wish-detail.is-reserved .wish-detail-image {
+    opacity: 0.55;
+    filter: grayscale(0.4);
+}
+
+.wish-detail.is-reserved .wish-detail-title,
+.wish-detail.is-reserved .price,
+.wish-detail.is-reserved .wish-description,
+.wish-detail.is-reserved .wish-link {
+    color: var(--muted);
+}
+
 .wish-detail p {
     margin: 0;
 }
@@ -1448,6 +1513,8 @@ select {
     max-height: 320px;
     aspect-ratio: 4 / 3;
     object-fit: contain;
+    /* When the picture doesn't fill the area, it gets some air on every side instead of touching the edges */
+    padding: 1rem;
     background: var(--surface-soft);
     border-radius: var(--radius-small);
     display: block;
@@ -1456,6 +1523,39 @@ select {
 .wish-detail-image.wish-image-empty {
     font-size: 3rem;
     aspect-ratio: 16 / 9;
+}
+
+/* Under the image: who has reserved it, and "Släpp reservation" – side by side in the middle, a line underneath */
+.wish-status-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center; /* together in the middle */
+    gap: 0.5rem 1rem;
+    flex-wrap: wrap;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--line);
+}
+
+/* "Släpp reservation" in the same small size as the badge, and quiet: muted, red only on hover */
+.wish-status-bar .btn {
+    font-size: 0.75rem;
+    padding: 0.3rem 0.7rem;
+    color: var(--muted);
+}
+
+.wish-status-bar .btn:hover {
+    color: var(--danger);
+}
+
+.wish-status-bar .btn svg {
+    width: 14px;
+    height: 14px;
+}
+
+.wish-detail-title {
+    margin: 0;
+    font-size: 1.35rem;
+    overflow-wrap: anywhere;
 }
 
 .wish-detail-top {
@@ -1501,6 +1601,7 @@ select {
 .wish-actions {
     margin-top: auto;
     padding-top: 0.5rem;
+    padding-bottom: 1rem; /* air under "Reservera" before the admin buttons */
 }
 
 .wish-admin {
@@ -1747,9 +1848,9 @@ select {
     /* Not overflow: hidden – the vertical label sticks out on the left. The panel rounds its own corners. */
 }
 
-/* The event: white text on a rose gradient (wish lists). --tab-bg is the label's darker shade. */
+/* The event: white text on a radial rose gradient (wish lists). --tab-bg is the label's darker shade. */
 .event-info {
-    --event-bg: linear-gradient(135deg, #e44f70, var(--rose-deep));
+    --event-bg: radial-gradient(circle at 15% 10%, var(--rose) 0%, #b02a4f 90%); /* lighter in the top-left corner */
     --tab-bg: #a92b4b;
     --tab-ink: #fff;
     border-radius: calc(var(--radius) - 1px) 0 0 calc(var(--radius) - 1px);
@@ -1853,14 +1954,14 @@ select {
 
 /* Lists to me (my own): a lavender gradient. */
 .event-to-me .event-info {
-    --event-bg: linear-gradient(135deg, #9466c2, #6c3d95);
+    --event-bg: radial-gradient(circle at 15% 10%, #a57cd2 0%, #5c3384 90%);
     --tab-bg: #57307a;
     --badge-ink: #6c3d95;
 }
 
 /* Secret Santa: a warm yellow-to-orange panel with dark text (white would be hard to read on it) */
 .event-santa .event-info {
-    --event-bg: linear-gradient(135deg, var(--yellow), var(--orange));
+    --event-bg: radial-gradient(circle at 15% 10%, #ffdc85 0%, #ef9310 90%);
     --tab-bg: #e58e0c;
     --tab-ink: var(--ink);
     --badge-ink: var(--yellow-ink);
@@ -1878,7 +1979,7 @@ select {
 
 /* Gifts without a list (and from wish profiles): a green gradient – dark enough for white text */
 .event-no-list .event-info {
-    --event-bg: linear-gradient(135deg, #4a9657, #2c6e39);
+    --event-bg: radial-gradient(circle at 15% 10%, #5aa967 0%, #245c30 90%);
     --tab-bg: #235a2e;
     --badge-ink: #2c6e39;
 }
@@ -1959,12 +2060,12 @@ select {
     align-items: center;
     gap: 0.35rem;
     padding: 0.7rem 0.3rem;
-    border-radius: 6px;
+    border-radius: 6px 0 6px 6px; /* square top-right corner */
     background: var(--tab-bg);
     color: var(--tab-ink);
-    box-shadow: 0 2px 6px rgba(63, 25, 17, 0.18);
-    writing-mode: vertical-rl;
-    transform: rotate(180deg); /* reads bottom to top */
+    /* Reads bottom to top without turning the box – a transform could leave it a fraction of a pixel
+       off the panel's edge on scaled screens */
+    writing-mode: sideways-lr;
     white-space: nowrap;
     font-size: 0.68rem;
     font-weight: 600;
@@ -2134,7 +2235,20 @@ button.event-edit {
 }
 
 .event-kicker svg {
-    transform: rotate(90deg); /* turn the icon with the text */
+    transform: rotate(-90deg); /* turn the icon with the text */
+}
+
+/* Older browsers without sideways-lr: turn a top-to-bottom label upside down instead */
+@supports not (writing-mode: sideways-lr) {
+    .event-kicker {
+        writing-mode: vertical-rl;
+        transform: rotate(180deg);
+        border-radius: 6px 6px 6px 0; /* turned, so its bottom-left shows as top-right */
+    }
+
+    .event-kicker svg {
+        transform: rotate(90deg);
+    }
 }
 
 /* ---------- Secret Santa: who I got, hidden behind an eye ---------- */
@@ -2518,7 +2632,12 @@ button.event-edit {
 .reserved-by {
     display: inline-flex;
     align-items: center;
-    gap: 0.4rem;
+}
+
+/* The avatars overlap the end of the "Reserverad" badge a little */
+.reserved-by .avatar-stack {
+    position: relative;
+    margin-left: -8px;
 }
 
 .avatar-stack {
@@ -2547,7 +2666,7 @@ button.event-edit {
     flex-wrap: wrap;
     gap: 0.35rem;
     list-style: none;
-    margin: 0 0 0.75rem;
+    margin: 0 0 1.5rem;
     padding: 0;
     font-size: 0.9rem;
 }

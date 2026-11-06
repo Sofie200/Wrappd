@@ -6,8 +6,9 @@ import { useFetch } from "../hooks/useFetch.js";
 import { Empty, ErrorMessage, Loading, Notice } from "../components/Feedback.jsx";
 import WishCard from "../components/WishCard.jsx";
 import WishForm from "../components/WishForm.jsx";
+import Modal from "../components/Modal.jsx";
+import AddGiftButton from "../components/AddGiftButton.jsx";
 import { formatDate, relativeDays } from "../format.js";
-import PersonLink from "../components/PersonLink.jsx";
 
 const names = (people) => people.map((p) => p.name).join(", ");
 
@@ -84,7 +85,7 @@ export default function ListPage() {
                                 {recipients.map((person, i) => (
                                     <span key={person.id}>
                                         {i > 0 && ", "}
-                                        <PersonLink person={person} />
+                                        {person.name}
                                     </span>
                                 ))}
                             </dd>
@@ -92,14 +93,8 @@ export default function ListPage() {
                     </dl>
                     <h1>
                         {list.title}
-                        {/* The status, raised next to the title */}
-                        {list.archived ? (
-                            <span className="badge title-badge">Arkiverad</span>
-                        ) : list.isPublic ? (
-                            <span className="badge badge-public title-badge">Publik</span>
-                        ) : (
-                            <span className="badge badge-private title-badge">Privat</span>
-                        )}
+                        {/* Only private lists get a badge, raised next to the title */}
+                        {!list.isPublic && <span className="badge badge-private title-badge">Privat</span>}
                     </h1>
                     <p className="list-date">
                         {formatDate(list.endDate)} <span className="muted">· {relativeDays(list.endDate)}</span>
@@ -157,22 +152,22 @@ export default function ListPage() {
                 <div className="section-head">
                     <h2>Önskningar ({wishes.length})</h2>
                     <div className="actions">
-                        {me.canEdit && !adding && (
-                            <button type="button" className="btn btn-small" onClick={() => setAdding(true)}>
+                        {me.canEdit && (
+                            <button type="button" className="btn btn-small" onClick={() => setAdding(true)} aria-haspopup="dialog">
                                 <Sparkles size={16} aria-hidden="true" /> Lägg till önskning
                             </button>
                         )}
                         {/* A gift bought outside the list – only those who share it ever see it. Only once it's published. */}
                         {me.seesReservations && list.isPublic && (
-                            <Link to={`/gifts/new?list=${list.id}`} className="btn btn-small">
+                            <AddGiftButton listId={list.id} onAdded={reload}>
                                 <Gift size={16} aria-hidden="true" /> Lägg till egen gåva
-                            </Link>
+                            </AddGiftButton>
                         )}
                     </div>
                 </div>
 
                 {adding && (
-                    <div className="panel">
+                    <Modal title="Lägg till önskning" onClose={() => setAdding(false)}>
                         <WishForm
                             listId={list.id}
                             onSaved={() => {
@@ -181,10 +176,10 @@ export default function ListPage() {
                             }}
                             onCancel={() => setAdding(false)}
                         />
-                    </div>
+                    </Modal>
                 )}
 
-                {wishes.length === 0 && !adding ? (
+                {wishes.length === 0 ? (
                     <Empty>Inga önskningar än.</Empty>
                 ) : (
                     groupByPrice(wishes).map((group) => (

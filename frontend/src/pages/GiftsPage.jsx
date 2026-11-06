@@ -1,9 +1,9 @@
-import { Link } from "react-router-dom";
 import { Gift } from "lucide-react";
 import { useFetch } from "../hooks/useFetch.js";
 import { Empty, ErrorMessage, Loading } from "../components/Feedback.jsx";
 import { buildEvents, EventRow, sumShares } from "../components/EventRow.jsx";
 import { formatPrice } from "../format.js";
+import AddGiftButton from "../components/AddGiftButton.jsx";
 
 // /gifts – everything I've bought or share: coming events first (soonest first, gifts from
 // wish profiles last), then earlier ones. The same rows as on the overview, but only with gifts.
@@ -23,9 +23,9 @@ export default function GiftsPage() {
                 <h1 className="title-with-icon">
                     <Gift size={28} aria-hidden="true" /> Gåvor
                 </h1>
-                <Link to="/gifts/new" className="btn btn-primary">
+                <AddGiftButton className="btn btn-primary" onAdded={reload}>
                     <Gift size={16} aria-hidden="true" /> Lägg till egen gåva
-                </Link>
+                </AddGiftButton>
             </div>
 
             <section className="section">

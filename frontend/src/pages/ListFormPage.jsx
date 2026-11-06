@@ -6,6 +6,7 @@ import { useAuth } from "../context/AuthContext.jsx";
 import { useFetch } from "../hooks/useFetch.js";
 import { Empty, ErrorMessage, Loading, Notice } from "../components/Feedback.jsx";
 import PeoplePicker from "../components/PeoplePicker.jsx";
+import Breadcrumbs from "../components/Breadcrumbs.jsx";
 import { todayIso } from "../format.js";
 
 // Create a new list (/lists/new) or edit one (/lists/:id/edit)
@@ -158,6 +159,10 @@ export default function ListFormPage() {
 
     return (
         <div className="page page-narrow">
+            {/* Editing: a way back to the list */}
+            {isEdit && (
+                <Breadcrumbs items={[{ label: existing.data.list.title, to: `/lists/${id}` }, { label: "Redigera" }]} />
+            )}
             <h1 className="title-with-icon">
                 <ScrollText size={28} aria-hidden="true" /> {isEdit ? "Redigera lista" : "Ny lista"}
             </h1>

@@ -162,6 +162,7 @@ function GiftForm({ data, lists, santas, presetListId, presetSantaId, justSaved,
         try {
             if (isNew) {
                 const { id } = await api("/gifts", { method: "POST", formData, timeoutMs: 30_000 });
+                if (onDone) return onDone(); // in a modal: just close it
                 return navigate(`/gifts/${id}`, { replace: true });
             }
             const result = await api(`/gifts/${gift.id}`, { method: "PUT", formData, timeoutMs: 30_000 });

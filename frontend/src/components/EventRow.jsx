@@ -12,6 +12,7 @@ import { GiftEditor } from "../pages/GiftPage.jsx";
 import { formatPrice, joinNames } from "../format.js";
 import Avatar from "./Avatar.jsx";
 import DateBadge from "./DateBadge.jsx";
+import AddGiftButton from "./AddGiftButton.jsx";
 
 export const sumShares = (rows) => rows.reduce((sum, g) => sum + Math.round((g.myShare ?? 0) * 100), 0) / 100;
 // The gifts' total prices added up (null when none of them has a price)
@@ -255,14 +256,14 @@ export function EventRow({ event, archived = false, onChanged }) {
                                     Mina inköp {gifts.length > 0 && <span className="muted small">({gifts.length})</span>}
                                 </h4>
                                 {listId && !archived && (
-                                    <Link to={`/gifts/new?list=${listId}`} className="btn btn-small btn-ghost">
+                                    <AddGiftButton listId={listId} className="btn btn-small btn-ghost" onAdded={onChanged}>
                                         <Gift size={16} aria-hidden="true" /> Lägg till egen gåva
-                                    </Link>
+                                    </AddGiftButton>
                                 )}
                                 {santaId && !archived && (
-                                    <Link to={`/gifts/new?santa=${santaId}`} className="btn btn-small btn-ghost">
+                                    <AddGiftButton santaId={santaId} className="btn btn-small btn-ghost" onAdded={onChanged}>
                                         <Gift size={16} aria-hidden="true" /> Lägg till egen gåva
-                                    </Link>
+                                    </AddGiftButton>
                                 )}
                             </div>
                             {gifts.length > 0 ? (
@@ -283,9 +284,9 @@ export function EventRow({ event, archived = false, onChanged }) {
                                                     "listan"
                                                 )}{" "}
                                                 eller lägg till en{" "}
-                                                <Link to={`/gifts/new?list=${listId}`} className="text-link">
+                                                <AddGiftButton listId={listId} className="text-link" onAdded={onChanged}>
                                                     egen post
-                                                </Link>
+                                                </AddGiftButton>
                                                 .
                                             </>
                                         )}

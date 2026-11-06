@@ -11,6 +11,7 @@ import PersonLink from "../components/PersonLink.jsx";
 import { buildEvents, dateOrder, EventRow, GiftTable } from "../components/EventRow.jsx";
 import { formatPrice } from "../format.js";
 import DateBadge from "../components/DateBadge.jsx";
+import AddGiftButton from "../components/AddGiftButton.jsx";
 
 // A Secret Santa among the events. Who I give to is hidden until I press the eye –
 // someone might be looking at the screen. Below it: my gifts for it – the ones linked to the draw,
@@ -128,9 +129,9 @@ function SantaRow({ santa, gifts = [], onChanged }) {
                                 <h4>
                                     Mina inköp {gifts.length > 0 && <span className="muted small">({gifts.length})</span>}
                                 </h4>
-                                <Link to={`/gifts/new?santa=${santa.id}`} className="btn btn-small btn-ghost">
+                                <AddGiftButton santaId={santa.id} className="btn btn-small btn-ghost" onAdded={onChanged}>
                                     <Gift size={16} aria-hidden="true" /> Lägg till egen gåva
-                                </Link>
+                                </AddGiftButton>
                             </div>
                             {gifts.length > 0 ? (
                                 <GiftTable rows={gifts} onChanged={onChanged} totalLabel="Totalt" />
@@ -145,9 +146,9 @@ function SantaRow({ santa, gifts = [], onChanged }) {
                                             önskeprofilen
                                         </PersonLink>{" "}
                                         eller lägg till en{" "}
-                                        <Link to={`/gifts/new?santa=${santa.id}`} className="text-link">
+                                        <AddGiftButton santaId={santa.id} className="text-link" onAdded={onChanged}>
                                             egen post
-                                        </Link>
+                                        </AddGiftButton>
                                         .
                                     </p>
                                 </div>

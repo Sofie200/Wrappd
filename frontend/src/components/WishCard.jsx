@@ -1,12 +1,13 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { api } from "../api.js";
 import { formatPrice, joinNames } from "../format.js";
+import { useAuth } from "../context/AuthContext.jsx";
 import Avatar from "./Avatar.jsx";
 import { ErrorMessage } from "./Feedback.jsx";
 import Modal from "./Modal.jsx";
 import WishForm from "./WishForm.jsx";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, CircleMinus, Pencil, Trash2 } from "lucide-react";
 
 // One wish: a compact row (image, title, price, reserved badge) that opens the full wish in a modal.
 // What the modal shows depends on `me` from the server:
@@ -15,6 +16,13 @@ import { ArrowUpRight } from "lucide-react";
 //  - canEdit: edit and delete (list admins, not archived) – not once someone has reserved it
 export default function WishCard({ wish, me, listId, onChanged }) {
     const navigate = useNavigate();
+    const { user } = useAuth();
+    // "dig och Ted" – me first, as "dig"
+    const whoNames = (people) =>
+        joinNames([
+            ...people.filter((p) => p.id === user.id).map(() => "dig"),
+            ...people.filter((p) => p.id !== user.id).map((p) => p.name),
+        ]);
     const [open, setOpen] = useState(false);
     const [editing, setEditing] = useState(false);
     const [busy, setBusy] = useState(false);
@@ -48,6 +56,12 @@ export default function WishCard({ wish, me, listId, onChanged }) {
             setOpen(true); // show the error in the wish (also when reserving straight from the row)
             onChanged();
         }
+    }
+
+    // Undo my reservation – the whole gift goes, also for the others who share it
+    function unreserve() {
+        if (!window.confirm(`Släpp din reservation av "${wish.title}"? Gåvan tas bort för alla som delar på den.`)) return;
+        run(() => api(`/gifts/${wish.myGiftId}`, { method: "DELETE" }));
     }
 
     function remove() {
@@ -90,14 +104,15 @@ export default function WishCard({ wish, me, listId, onChanged }) {
         me.seesReservations && reserved > 0 ? (
             <span className="reserved-by">
                 <span className={`badge ${full ? "badge-gift" : "badge-partial"}`}>
-                    {full ? "Reserverad" : `Reserverad ${reserved}/${wish.quantity}`}
+                    {/* "av dig" when I'm one of those who share a gift for it */}
+                    {(wish.myGiftId ? "Reserverad av dig" : "Reserverad") + (full ? "" : ` ${reserved}/${wish.quantity}`)}
                 </span>
                 {reservers.length > 0 && (
-                    <span className="avatar-stack" title={joinNames(reservers.map((p) => p.name))}>
+                    <span className="avatar-stack" title={`Reserverad av ${whoNames(reservers)}`}>
                         {reservers.map((p) => (
                             <Avatar key={p.id} icon={p.avatarIcon} color={p.avatarColor} size={22} />
                         ))}
-                        <span className="visually-hidden">av {joinNames(reservers.map((p) => p.name))}</span>
+                        <span className="visually-hidden">av {whoNames(reservers)}</span>
                     </span>
                 )}
             </span>
@@ -142,7 +157,8 @@ export default function WishCard({ wish, me, listId, onChanged }) {
             </div>
 
             {open && (
-                <Modal title={wish.title} onClose={close}>
+                <Modal title={wish.title} hideTitle={!editing} onClose={close}>
+                    {/* Viewing: the title sits under the image instead of in the modal's head */}
                     {editing ? (
                         <WishForm
                             listId={listId}
@@ -154,66 +170,69 @@ export default function WishCard({ wish, me, listId, onChanged }) {
                             onCancel={() => setEditing(false)}
                         />
                     ) : (
-                        <div className="wish-detail">
+                        <div className={`wish-detail${full ? " is-reserved" : ""}`}>
                             {image("wish-detail-image")}
 
-                            <div className="wish-detail-top">
-                                {wish.price !== null && <span className="price">{formatPrice(wish.price)}</span>}
-                                {reservedBadge}
-                            </div>
-
-                            {wish.description && <p className="wish-description">{wish.description}</p>}
-
-                            {wish.url && (
-                                <a href={wish.url} target="_blank" rel="noopener noreferrer" className="wish-link">
-                                    Se produkten <ArrowUpRight size={16} aria-hidden="true" />
-                                </a>
-                            )}
-
-                            <p className="muted small">
-                                Önskat antal: {wish.quantity}
-                                {me.seesReservations && ` · Reserverat: ${reserved} av ${wish.quantity}`}
-                            </p>
-
-                            {/* Who shares each gift – not the price, the split or who reserved first */}
-                            {me.seesReservations &&
-                                wish.gifts.map((gift, i) => (
-                                    <p key={i} className="small">
-                                        Reserverad av {joinNames(gift.names)}
-                                        {wish.quantity > 1 && ` (${gift.quantity} st)`}
-                                    </p>
-                                ))}
-
-                            <ErrorMessage message={error} />
-
-                            {me.canReserve && (
-                                <div className="wish-actions">
-                                    {wish.myGiftId ? (
-                                        <Link to={`/gifts/${wish.myGiftId}`} className="btn btn-small">
-                                            Hantera gåva
-                                        </Link>
-                                    ) : available > 0 ? (
-                                        <>
-                                            {available > 1 && (
-                                                <select value={qty} onChange={(e) => setQty(e.target.value)} aria-label="Antal" disabled={busy}>
-                                                    {options.map((n) => (
-                                                        <option key={n} value={n}>
-                                                            {n} st
-                                                        </option>
-                                                    ))}
-                                                </select>
-                                            )}
-                                            <button type="button" className="btn btn-small btn-primary" onClick={() => reserve()} disabled={busy}>
-                                                Reservera
-                                            </button>
-                                        </>
-                                    ) : (
-                                        <span className="badge">Fullt reserverad</span>
+                            {/* A small bar under the image: the reservation, and "Släpp reservation" when I'm in it */}
+                            {(reservedBadge || (me.canReserve && wish.myGiftId)) && (
+                                <div className="wish-status-bar">
+                                    {reservedBadge}
+                                    {me.canReserve && wish.myGiftId && (
+                                        <button type="button" className="btn btn-small btn-danger-ghost" onClick={unreserve} disabled={busy}>
+                                            <CircleMinus size={16} aria-hidden="true" /> Släpp reservation
+                                        </button>
                                     )}
                                 </div>
                             )}
 
-                            {wish.myGiftId && <p className="small reserved-by-me">✓ Du är med i en gåva ({wish.myQuantity} st)</p>}
+                            {/* The product info, as one block with air above and below */}
+                            <div className="wish-detail-info">
+                                <h3 className="wish-detail-title" aria-hidden="true">
+                                    {wish.title}
+                                </h3>
+
+                                {wish.price !== null && (
+                                    <div className="wish-detail-top">
+                                        <span className="price">{formatPrice(wish.price)}</span>
+                                    </div>
+                                )}
+
+                                {wish.description && <p className="wish-description">{wish.description}</p>}
+
+                                {wish.url && (
+                                    <a href={wish.url} target="_blank" rel="noopener noreferrer" className="wish-link">
+                                        Se produkten <ArrowUpRight size={16} aria-hidden="true" />
+                                    </a>
+                                )}
+                            </div>
+
+                            {/* Not needed once everything is reserved – the badge already says so */}
+                            {!full && (
+                                <p className="muted small">
+                                    Önskat antal: {wish.quantity}
+                                    {me.seesReservations && ` · Reserverat: ${reserved} av ${wish.quantity}`}
+                                </p>
+                            )}
+
+                            <ErrorMessage message={error} />
+
+                            {/* Only while there's something left to reserve */}
+                            {me.canReserve && !wish.myGiftId && available > 0 && (
+                                <div className="wish-actions">
+                                    {available > 1 && (
+                                        <select value={qty} onChange={(e) => setQty(e.target.value)} aria-label="Antal" disabled={busy}>
+                                            {options.map((n) => (
+                                                <option key={n} value={n}>
+                                                    {n} st
+                                                </option>
+                                            ))}
+                                        </select>
+                                    )}
+                                    <button type="button" className="btn btn-small btn-primary" onClick={() => reserve()} disabled={busy}>
+                                        Reservera
+                                    </button>
+                                </div>
+                            )}
 
                             {me.canEdit && (
                                 <div className="wish-admin">
@@ -224,7 +243,7 @@ export default function WishCard({ wish, me, listId, onChanged }) {
                                         disabled={busy || locked}
                                         title={locked ? "Önskningen är reserverad och kan inte ändras" : undefined}
                                     >
-                                        Redigera
+                                        <Pencil size={16} aria-hidden="true" /> Redigera
                                     </button>
                                     <button
                                         type="button"
@@ -233,7 +252,7 @@ export default function WishCard({ wish, me, listId, onChanged }) {
                                         disabled={busy || locked}
                                         title={locked ? "Önskningen är reserverad och kan inte tas bort" : undefined}
                                     >
-                                        Ta bort
+                                        <Trash2 size={16} aria-hidden="true" /> Ta bort
                                     </button>
                                 </div>
                             )}

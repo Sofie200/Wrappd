@@ -9,6 +9,7 @@ import Avatar from "../components/Avatar.jsx";
 import Breadcrumbs from "../components/Breadcrumbs.jsx";
 import WishCard from "../components/WishCard.jsx";
 import WishForm from "../components/WishForm.jsx";
+import Modal from "../components/Modal.jsx";
 import { WISH_CATEGORIES } from "../wishCategories.js";
 
 // The same limit as MAX_PROFILE_WISHES in api/_routes/people-routes.js
@@ -180,8 +181,8 @@ function WishProfileForm({ data, reload }) {
                             ({wishes.length} av {MAX_WISHES})
                         </span>
                     </h2>
-                    {!adding && wishes.length < MAX_WISHES && (
-                        <button type="button" className="btn btn-small" onClick={() => setAdding(true)}>
+                    {wishes.length < MAX_WISHES && (
+                        <button type="button" className="btn btn-small" onClick={() => setAdding(true)} aria-haspopup="dialog">
                             <Sparkles size={16} aria-hidden="true" /> Lägg till önskning
                         </button>
                     )}
@@ -193,7 +194,7 @@ function WishProfileForm({ data, reload }) {
                 </p>
 
                 {adding && (
-                    <div className="panel">
+                    <Modal title="Lägg till önskning" onClose={() => setAdding(false)}>
                         <WishForm
                             createPath={`/people/${person.id}/wishes`}
                             onSaved={() => {
@@ -202,7 +203,7 @@ function WishProfileForm({ data, reload }) {
                             }}
                             onCancel={() => setAdding(false)}
                         />
-                    </div>
+                    </Modal>
                 )}
 
                 {wishes.length > 0 && (

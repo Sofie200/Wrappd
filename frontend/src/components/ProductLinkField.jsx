@@ -37,7 +37,7 @@ export default function ProductLinkField({ value, onChange, onFetched, onError, 
                     {result.warning && <small className="field-error">{result.warning}</small>}
                 </>
             ) : (
-                <small>Klistra in en produktlänk och klicka på Hämta uppgifter – det skriver över titel, beskrivning, pris och bild.</small>
+                <small>Klistra in en produktlänk och klicka på Hämta uppgifter.</small>
             )}
         </div>
     );
