@@ -13,6 +13,7 @@ import { formatPrice, joinNames } from "../format.js";
 import Avatar from "./Avatar.jsx";
 import DateBadge from "./DateBadge.jsx";
 import AddGiftButton from "./AddGiftButton.jsx";
+import GiftPlusIcon from "./GiftPlusIcon.jsx";
 
 export const sumShares = (rows) => rows.reduce((sum, g) => sum + Math.round((g.myShare ?? 0) * 100), 0) / 100;
 // The gifts' total prices added up (null when none of them has a price)
@@ -51,14 +52,17 @@ export function buildEvents(lists, gifts, { newestFirst = false } = {}) {
               ? `santa:${g.santaId}`
               : g.personId
                 ? `person:${g.personId}`
-                : `off:${g.recipients}|${g.endDate}`;
+                : `off:${g.eventName}|${g.recipients ?? ""}|${g.endDate}`; // an own event: name, person and date
         if (!events.has(key)) {
             events.set(key, {
                 key,
                 listId: g.listId,
                 santaId: g.listId ? null : g.santaId,
                 personId: g.listId || g.santaId ? null : g.personId,
-                title: g.listTitle ?? g.santaTitle,
+                title: g.listTitle ?? g.santaTitle ?? g.eventName,
+                // An own event: its name and linked person – so more gifts can be added to it
+                eventName: g.eventName,
+                recipientId: g.recipientId,
                 endDate: g.endDate,
                 recipients: g.recipients,
                 isRecipient: false,
@@ -121,7 +125,7 @@ export function GiftTable({ rows, onChanged, totalLabel = "Totalt" }) {
                             <tr key={g.id}>
                                 <td>
                                     {g.title}
-                                    {g.offList && g.listId && <span className="muted small"> · utanför listan</span>}
+                                    {g.offList && g.listId && <span className="muted small"> · överraskningsgåva</span>}
                                     {/* Shared: everyone's avatars next to the name, like on a reservation */}
                                     {g.people?.length > 1 && (
                                         <span className="avatar-stack gift-people" title={`Delas av ${joinNames(g.people.map((p) => p.name))}`}>
@@ -198,16 +202,17 @@ export function GiftTable({ rows, onChanged, totalLabel = "Totalt" }) {
 export function EventRow({ event, archived = false, onChanged }) {
     const { listId, santaId, personId, title, endDate, recipients, isRecipient, canOpen, gifts, wishCount, reservedCount } =
         event;
+    const { eventName, recipientId } = event;
     // The kind of event decides the colour; past events keep it, toned down (event-archived)
     const kind = isRecipient ? " event-to-me" : santaId ? " event-santa" : !listId ? " event-no-list" : "";
     const variant = kind + (archived ? " event-archived" : "");
-    const kicker = listId ? "Önskelista" : santaId ? "Secret Santa" : personId ? "Önskeprofil" : "Gåva utanför lista";
+    const kicker = listId ? "Önskelista" : santaId ? "Secret Santa" : personId ? "Önskeprofil" : "Egen händelse";
     const KickerIcon = listId ? ScrollText : santaId ? HatGlasses : null;
 
     return (
         <div className={`event-group${variant}`}>
-            {/* Who it's for, as a label above the card */}
-            {listId && recipients && (
+            {/* Who it's for, as a label above the card – a list's recipients, or the person linked to an own event */}
+            {(listId || (!santaId && !personId)) && recipients && (
                 <p className="event-to">
                     Till: <span className="event-for">{recipients}</span>
                 </p>
@@ -220,7 +225,7 @@ export function EventRow({ event, archived = false, onChanged }) {
                             <p className="event-kicker">
                                 {KickerIcon && <KickerIcon size={14} aria-hidden="true" />} {kicker}
                             </p>
-                            <h3>{listId || santaId ? title : `Till ${recipients}`}</h3>
+                            <h3>{title ?? `Till ${recipients}`}</h3>
                         </div>
                     </div>
                     {wishCount !== undefined && (
@@ -266,12 +271,23 @@ export function EventRow({ event, archived = false, onChanged }) {
                                 </h4>
                                 {listId && !archived && (
                                     <AddGiftButton listId={listId} className="btn btn-small btn-ghost" onAdded={onChanged}>
-                                        <Gift size={16} aria-hidden="true" /> Lägg till egen gåva
+                                        <GiftPlusIcon /> Överraskningsgåva
+                                    </AddGiftButton>
+                                )}
+                                {/* An own event: another gift for the same event (name, person and date filled in) */}
+                                {!listId && !santaId && !personId && eventName && !archived && (
+                                    <AddGiftButton
+                                        presetEvent={{ name: eventName, recipientId, recipientName: recipients, date: endDate }}
+                                        title="Logga en gåva"
+                                        className="btn btn-small btn-ghost"
+                                        onAdded={onChanged}
+                                    >
+                                        <GiftPlusIcon /> Ytterligare gåva
                                     </AddGiftButton>
                                 )}
                                 {santaId && !archived && (
                                     <AddGiftButton santaId={santaId} className="btn btn-small btn-ghost" onAdded={onChanged}>
-                                        <Gift size={16} aria-hidden="true" /> Lägg till egen gåva
+                                        <GiftPlusIcon /> Överraskningsgåva
                                     </AddGiftButton>
                                 )}
                             </div>
@@ -294,7 +310,7 @@ export function EventRow({ event, archived = false, onChanged }) {
                                                 )}{" "}
                                                 eller lägg till en{" "}
                                                 <AddGiftButton listId={listId} className="text-link" onAdded={onChanged}>
-                                                    egen post
+                                                    överraskningsgåva
                                                 </AddGiftButton>
                                                 .
                                             </>

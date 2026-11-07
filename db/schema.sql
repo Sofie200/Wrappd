@@ -144,7 +144,8 @@ CREATE TABLE gifts (
     price       NUMERIC(10, 2) CHECK (price >= 0),
     comment     TEXT,
     split       TEXT NOT NULL DEFAULT 'equal' CHECK (split IN ('equal', 'custom')),
-    recipient   TEXT,
+    recipient   TEXT, -- without a list or Secret Santa: the event's name ("Farmors 80-årsdag")
+    recipient_id INT REFERENCES users(id) ON DELETE SET NULL, -- ...and optionally who it's for (a user in my groups)
     gift_date   DATE,
     description TEXT,
     url         TEXT,
@@ -162,6 +163,10 @@ CREATE TABLE gifts (
 CREATE INDEX gifts_wish_idx ON gifts (wish_id);
 CREATE INDEX gifts_created_by_idx ON gifts (created_by);
 CREATE INDEX gifts_list_idx ON gifts (list_id);
+CREATE INDEX gifts_recipient_idx ON gifts (recipient_id);
+ALTER TABLE gifts ADD CONSTRAINT gifts_recipient_only_free CHECK (
+    recipient_id IS NULL OR (wish_id IS NULL AND list_id IS NULL AND santa_id IS NULL)
+);
 
 -- Everyone who shares a gift – all with the same rights to it. amount is only used when split = 'custom'.
 CREATE TABLE gift_members (

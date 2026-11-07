@@ -7,13 +7,14 @@ import { useImageChoice } from "../hooks/useImageChoice.js";
 import { ErrorMessage, Loading, Notice } from "../components/Feedback.jsx";
 import ImageField from "../components/ImageField.jsx";
 import ProductLinkField from "../components/ProductLinkField.jsx";
+import PeoplePicker from "../components/PeoplePicker.jsx";
 import { amountText, formatDate, formatPrice, formatShortDate, parseAmount } from "../format.js";
 import { ArrowLeft, ArrowUpRight } from "lucide-react";
 
 // /gifts/:id – a gift ("gåva"), and /gifts/new – a new gift bought outside the wish list.
 //  - A gift on a wish: quantity, price, comment, who shares and how. After the event: price, comment and split.
 //  - A gift outside the wish list: also title, description, link, image, and a list OR a Secret Santa I give in
-//    OR a recipient and a date. Everything can always be changed. Never shown on the list.
+//    OR an event (a name, a date and optionally a linked person). Everything can always be changed. Never shown on the list.
 //    Can only be shared when it has a list.
 export default function GiftPage() {
     const { id } = useParams();
@@ -24,7 +25,7 @@ export default function GiftPage() {
 // The gift editor itself – used by the page, and in a modal (e.g. from the overview).
 // With `onDone` it runs in modal mode: no page chrome, and onDone() is called after
 // a save or a delete instead of navigating.
-export function GiftEditor({ id, presetListId = "", presetSantaId = "", onDone }) {
+export function GiftEditor({ id, presetListId = "", presetSantaId = "", presetEvent = null, onDone }) {
     const isNew = id === "new";
     const gift = useFetch(isNew ? null : `/gifts/${id}`);
     const isFree = isNew || gift.data?.gift.kind === "free";
@@ -43,6 +44,7 @@ export function GiftEditor({ id, presetListId = "", presetSantaId = "", onDone }
             santas={lists.data?.santas ?? []}
             presetListId={presetListId}
             presetSantaId={presetSantaId}
+            presetEvent={presetEvent}
             onDone={onDone}
             justSaved={justSaved}
             onSaved={() => {
@@ -54,12 +56,27 @@ export function GiftEditor({ id, presetListId = "", presetSantaId = "", onDone }
     );
 }
 
-function GiftForm({ data, lists, santas, presetListId, presetSantaId, justSaved, onSaved, onEdit, onDone }) {
+function GiftForm({ data, lists, santas, presetListId, presetSantaId, presetEvent, justSaved, onSaved, onEdit, onDone }) {
+    // "Till vem?" for an own event: a link to someone in my groups
+    const myGroups = useFetch("/groups");
+    const groupIds = (myGroups.data?.data ?? []).map((g) => g.id).join(",");
+    const groupMembers = useFetch(groupIds ? `/groups/members?ids=${groupIds}` : null);
     const { user } = useAuth();
     const navigate = useNavigate();
     const isNew = !data;
     const gift = data?.gift;
+    // The people to choose from – plus the saved one, if they're no longer in my groups
+    const groupPeople = (groupMembers.data?.data ?? []).filter((p) => p.id !== user.id);
+    if (gift?.recipientId && !groupPeople.some((p) => p.id === gift.recipientId)) {
+        groupPeople.unshift({ id: gift.recipientId, name: gift.recipientName });
+    }
     const isFree = isNew || gift.kind === "free";
+    // Logging another gift on an own event that already exists: no surprise text, no event fields to fill in
+    const forEvent = isNew && Boolean(presetEvent);
+    // Opened from a list or a Secret Santa: already linked to it – no choosing another one
+    const presetList = isNew ? lists.find((l) => String(l.id) === presetListId) : null;
+    const presetSanta = isNew ? santas.find((x) => String(x.id) === presetSantaId) : null;
+    const lockedLink = Boolean(presetList || presetSanta);
     const savedListId = String(gift?.listId ?? "");
 
     const [form, setForm] = useState({
@@ -75,8 +92,10 @@ function GiftForm({ data, lists, santas, presetListId, presetSantaId, justSaved,
         url: gift?.url ?? "",
         listId: isNew ? (lists.some((l) => String(l.id) === presetListId) ? presetListId : "") : savedListId,
         santaId: isNew ? (santas.some((x) => String(x.id) === presetSantaId) ? presetSantaId : "") : String(gift?.santaId ?? ""),
-        recipient: gift?.recipient ?? "",
-        giftDate: gift?.giftDate ?? "",
+        // An own event: its name, linked person and date – from the gift, or from the event it's added to
+        recipient: gift?.recipient ?? presetEvent?.name ?? "",
+        recipientId: String(gift?.recipientId ?? presetEvent?.recipientId ?? ""),
+        giftDate: gift?.giftDate ?? presetEvent?.date ?? "",
     });
     const image = useImageChoice(gift?.imageUrl);
     const [error, setError] = useState(null);
@@ -109,6 +128,19 @@ function GiftForm({ data, lists, santas, presetListId, presetSantaId, justSaved,
     const customSum = selectedIds.reduce((sum, pid) => sum + Math.round((parseAmount(form.members[pid]) ?? 0) * 100), 0) / 100;
     const sumMatches = price !== null && Math.round(customSum * 100) === Math.round(price * 100);
     const equalShare = price !== null && selectedIds.length > 0 ? price / selectedIds.length : null;
+
+    // "Vem är gåvan från?": "Bara mig" (just me), or – unchecked – the list of people to share with.
+    // Starts unchecked when someone else already shares it.
+    const [sharing, setSharing] = useState(() => selectedIds.some((pid) => pid !== user.id));
+    function toggleOnlyMe() {
+        if (sharing) {
+            // Back to just me: everyone else out (keeping my own amount, if any)
+            change({ members: { [user.id]: form.members[user.id] ?? "" }, split: "equal" });
+            setSharing(false);
+        } else {
+            setSharing(true);
+        }
+    }
 
     function toggle(personId) {
         const members = { ...form.members };
@@ -153,6 +185,7 @@ function GiftForm({ data, lists, santas, presetListId, presetSantaId, justSaved,
             for (const key of ["title", "description", "url", "listId", "santaId"]) formData.append(key, form[key]);
             if (freeText) {
                 formData.append("recipient", form.recipient);
+                formData.append("recipientId", form.recipientId);
                 formData.append("giftDate", form.giftDate);
             }
             image.appendTo(formData);
@@ -206,20 +239,41 @@ function GiftForm({ data, lists, santas, presetListId, presetSantaId, justSaved,
     const content = (
         <>
             {!isNew && (
-                <p className="muted">
+                <p className="muted gift-subtitle">
                     {list
                         ? `Gåva till ${list.recipients} · ${formatDate(list.endDate)}`
                         : santa
                           ? `Secret Santa: ${santa.title} · ${formatDate(santa.date)}`
                           : person
                             ? `Gåva till ${person.name} · från önskeprofilen`
-                            : `Till ${gift.recipient} · ${formatDate(gift.giftDate)}`}
-                    {isFree && " · utanför önskelistan"}
+                            : `${gift.recipient}${gift.recipientName ? ` · till ${gift.recipientName}` : ""} · ${formatDate(gift.giftDate)}`}
                 </p>
             )}
 
-            {isFree ? (
-                <Notice>En gåva utanför önskelistan syns bara för er som delar på den – aldrig på listan.</Notice>
+            {forEvent ? (
+                <p className="muted small gift-for-event">
+                    Loggas på <strong>{presetEvent.name}</strong>
+                    {presetEvent.recipientName && ` · till ${presetEvent.recipientName}`} · {formatDate(presetEvent.date)}
+                </p>
+            ) : lockedLink ? (
+                <>
+                    <p className="muted small gift-for-event">
+                        {presetList ? (
+                            <>
+                                På listan <strong>{presetList.title}</strong> · till {presetList.recipients} · {formatDate(presetList.endDate)}
+                            </>
+                        ) : (
+                            <>
+                                Till din Secret Santa i <strong>{presetSanta.title}</strong> · {formatDate(presetSanta.date)}
+                            </>
+                        )}
+                    </p>
+                    {/* The same banner as when picking a list in the form */}
+                    {presetList && <Notice>En överraskningsgåva syns bara för dem som delar på den.</Notice>}
+                </>
+            ) : isFree ? (
+                // Only about lists – an own event or a Secret Santa gift isn't a surprise on anyone's list
+                form.listId !== "" && <Notice>En överraskningsgåva syns bara för dem som delar på den.</Notice>
             ) : (
                 gift.archived && <Notice>Datumet har passerat. Du kan fortfarande ändra pris, kommentar och fördelning.</Notice>
             )}
@@ -259,16 +313,14 @@ function GiftForm({ data, lists, santas, presetListId, presetSantaId, justSaved,
                             <span>Titel</span>
                             <input value={form.title} onChange={set("title")} maxLength={200} required disabled={busy} />
                         </label>
-                        <label className="field">
-                            <span>Beskrivning</span>
-                            <textarea value={form.description} onChange={set("description")} rows={3} maxLength={2000} disabled={busy} />
-                        </label>
                         <ImageField image={image} onError={setError} />
 
+                        {/* Only when creating from scratch – once saved, what it's linked to can't change */}
+                        {isNew && !forEvent && !lockedLink && (
                         <label className="field">
                             <span>Kopplad till</span>
                             <select value={link} onChange={changeLink} disabled={busy}>
-                                <option value="">Ingen lista</option>
+                                <option value="">Egen händelse (ingen lista)</option>
                                 {listOptions.length > 0 && (
                                     <optgroup label="Önskelistor">
                                         {listOptions.map((l) => (
@@ -294,19 +346,38 @@ function GiftForm({ data, lists, santas, presetListId, presetSantaId, justSaved,
                                     : "Gåvan kopplas till listan men syns inte där. Raderas listan raderas gåvan också."}
                             </small>
                         </label>
+                        )}
 
-                        {form.listId === "" && form.santaId === "" && (
-                            <div className="field-row">
-                                <label className="field">
-                                    <span>Till vem?</span>
-                                    <input value={form.recipient} onChange={set("recipient")} maxLength={100} required disabled={busy} placeholder="t.ex. Farmor" />
-                                </label>
-                                <label className="field">
-                                    <span>Datum</span>
-                                    <input type="date" value={form.giftDate} onChange={set("giftDate")} required disabled={busy} />
-                                    <small>När gåvan ska ges. Efter datumet hamnar den i historiken.</small>
-                                </label>
-                            </div>
+                        {!forEvent && form.listId === "" && form.santaId === "" && (
+                            <>
+                                <div className="field-row">
+                                    <label className="field">
+                                        <span>Händelse</span>
+                                        <input
+                                            value={form.recipient}
+                                            onChange={set("recipient")}
+                                            maxLength={100}
+                                            required
+                                            disabled={busy}
+                                            placeholder="t.ex. Farmors 80-årsdag"
+                                        />
+                                    </label>
+                                    <label className="field">
+                                        <span>Datum</span>
+                                        <input type="date" value={form.giftDate} onChange={set("giftDate")} required disabled={busy} />
+                                    </label>
+                                </div>
+                                {/* A link to a real person in my groups – not free text. Search, pick one. */}
+                                <PeoplePicker
+                                    legend="Till vem? (valfritt)"
+                                    hint="Sök bland personerna i dina grupper. Hen ser aldrig gåvan."
+                                    people={groupPeople}
+                                    selected={form.recipientId ? [Number(form.recipientId)] : []}
+                                    onChange={(ids) => change({ recipientId: ids.length ? String(ids[0]) : "" })}
+                                    emptyText="Det finns inga andra i dina grupper än."
+                                    single
+                                />
+                            </>
                         )}
                     </>
                 )}
@@ -331,94 +402,106 @@ function GiftForm({ data, lists, santas, presetListId, presetSantaId, justSaved,
                     <label className="field">
                         <span>Pris totalt (kr)</span>
                         <input value={form.price} onChange={set("price")} inputMode="decimal" placeholder="t.ex. 299,50" disabled={busy} />
-                        {priceInvalid ? (
-                            <small className="field-error">Skriv ett belopp, t.ex. 299 eller 299,50</small>
-                        ) : (
-                            <small>Det ni faktiskt betalade, för alla exemplar.</small>
-                        )}
+                        {priceInvalid && <small className="field-error">Skriv ett belopp, t.ex. 299 eller 299,50</small>}
                     </label>
                 </div>
 
                 <label className="field">
                     <span>Kommentar</span>
                     <textarea value={form.comment} onChange={set("comment")} rows={3} maxLength={1000} disabled={busy} />
-                    <small>Syns bara för er som delar på gåvan.</small>
+                    <small>Syns bara för den/de som köpt gåvan.</small>
                 </label>
 
                 {canShare ? (
                     <>
                         <fieldset className="fieldset">
-                            <legend>Vilka delar på gåvan?</legend>
-                            <small className="muted">
-                                Vuxna i listans grupper som inte är mottagare. Alla som delar ser gåvan bland sina inköp och kan ändra den.
-                            </small>
-                            <div className="checks">
-                                {people.map((person) => (
-                                    <label key={person.id} className="check">
-                                        <input type="checkbox" checked={person.id in form.members} onChange={() => toggle(person.id)} disabled={busy} />
-                                        {person.name}
-                                        {person.id === user.id && <span className="muted"> (du)</span>}
-                                    </label>
-                                ))}
-                            </div>
-                        </fieldset>
-
-                        <fieldset className="fieldset">
-                            <legend>Hur delas kostnaden?</legend>
-                            <div className="checks">
-                                <label className="check">
-                                    <input type="radio" name="split" value="equal" checked={form.split === "equal"} onChange={set("split")} disabled={busy} />
-                                    Lika
-                                </label>
-                                <label className="check">
-                                    <input type="radio" name="split" value="custom" checked={form.split === "custom"} onChange={set("split")} disabled={busy} />
-                                    Egna belopp
-                                </label>
-                            </div>
-
-                            {form.split === "equal" ? (
-                                <p className="small">
-                                    {equalShare === null
-                                        ? "Ange ett pris för att se vad var och en betalar."
-                                        : `${formatPrice(Math.round(equalShare * 100) / 100)} per person (${selectedIds.length} st).`}
-                                </p>
-                            ) : (
+                            <legend>Vem är gåvan från?</legend>
+                            {/* "Bara mig" by default – uncheck it to pick others to share with */}
+                            <label className="check">
+                                <input type="checkbox" checked={!sharing} onChange={toggleOnlyMe} disabled={busy} />
+                                Bara mig
+                            </label>
+                            {sharing && (
                                 <>
-                                    <div className="split-rows">
-                                        {people
-                                            .filter((p) => p.id in form.members)
-                                            .map((person) => (
-                                                <label key={person.id} className="split-row">
-                                                    <span>{person.name}</span>
-                                                    <input
-                                                        value={form.members[person.id]}
-                                                        onChange={(e) => change({ members: { ...form.members, [person.id]: e.target.value } })}
-                                                        inputMode="decimal"
-                                                        placeholder="kr"
-                                                        aria-label={`Belopp för ${person.name}`}
-                                                        disabled={busy}
-                                                    />
-                                                </label>
-                                            ))}
+                                    <small className="muted">
+                                        Alla valda användare kan se gåvan bland sina inköp och ändra den.
+                                    </small>
+                                    <div className="checks">
+                                        {people.map((person) => (
+                                            <label key={person.id} className="check">
+                                                <input type="checkbox" checked={person.id in form.members} onChange={() => toggle(person.id)} disabled={busy} />
+                                                {person.name}
+                                                {person.id === user.id && <span className="muted"> (du)</span>}
+                                            </label>
+                                        ))}
                                     </div>
-                                    <p className={`small${price !== null && !sumMatches ? " field-error" : ""}`}>
-                                        Summa: {formatPrice(customSum)}
-                                        {price === null ? " – ange ett pris först." : sumMatches ? " ✓ stämmer med priset." : ` – ska vara ${formatPrice(price)}.`}
-                                    </p>
                                 </>
                             )}
                         </fieldset>
+
+                        {/* Only when someone else shares it – alone, I pay it all */}
+                        {selectedIds.length > 1 && (
+                            <fieldset className="fieldset">
+                                <legend>Hur delas kostnaden?</legend>
+                                <div className="checks">
+                                    <label className="check">
+                                        <input type="radio" name="split" value="equal" checked={form.split === "equal"} onChange={set("split")} disabled={busy} />
+                                        Lika
+                                    </label>
+                                    <label className="check">
+                                        <input type="radio" name="split" value="custom" checked={form.split === "custom"} onChange={set("split")} disabled={busy} />
+                                        Egna belopp
+                                    </label>
+                                </div>
+
+                                {form.split === "equal" ? (
+                                    <p className="small">
+                                        {equalShare === null
+                                            ? "Ange ett pris för att se vad var och en betalar."
+                                            : `${formatPrice(Math.round(equalShare * 100) / 100)} per person (${selectedIds.length} st).`}
+                                    </p>
+                                ) : (
+                                    <>
+                                        <div className="split-rows">
+                                            {people
+                                                .filter((p) => p.id in form.members)
+                                                .map((person) => (
+                                                    <label key={person.id} className="split-row">
+                                                        <span>{person.name}</span>
+                                                        <input
+                                                            value={form.members[person.id]}
+                                                            onChange={(e) => change({ members: { ...form.members, [person.id]: e.target.value } })}
+                                                            inputMode="decimal"
+                                                            placeholder="kr"
+                                                            aria-label={`Belopp för ${person.name}`}
+                                                            disabled={busy}
+                                                        />
+                                                    </label>
+                                                ))}
+                                        </div>
+                                        <p className={`small${price !== null && !sumMatches ? " field-error" : ""}`}>
+                                            Summa: {formatPrice(customSum)}
+                                            {price === null ? " – ange ett pris först." : sumMatches ? " ✓ stämmer med priset." : ` – ska vara ${formatPrice(price)}.`}
+                                        </p>
+                                    </>
+                                )}
+                            </fieldset>
+                        )}
                     </>
                 ) : (
-                    <p className="small muted">
-                        {form.santaId !== ""
-                            ? "En Secret Santa-gåva kan inte delas – bara du vet vem den är till."
-                            : form.listId === ""
-                            ? "En gåva utan lista kan inte delas med andra. Välj en lista för att kunna dela den."
-                            : isNew
-                              ? "När gåvan är sparad kan du dela den med andra i listans grupper."
-                              : "Spara först – sedan kan du välja vilka i den nya listans grupper som delar på gåvan."}
-                    </p>
+                    !forEvent &&
+                    (isNew && form.listId !== "" && form.santaId === "" ? (
+                        // A new gift on a list: sharing comes after saving – as a banner
+                        <Notice>När gåvan är sparad kan du dela den med andra.</Notice>
+                    ) : (
+                        <p className="small muted">
+                            {form.santaId !== ""
+                                ? "En Secret Santa-gåva kan inte delas – bara du vet vem den är till."
+                                : form.listId === ""
+                                  ? "En gåva utan lista kan inte delas med andra. Välj en lista för att kunna dela den."
+                                  : "Spara först – sedan kan du välja vilka i den nya listans grupper som delar på gåvan."}
+                        </p>
+                    ))
                 )}
 
                 <ErrorMessage message={error} />
@@ -454,7 +537,7 @@ function GiftForm({ data, lists, santas, presetListId, presetSantaId, justSaved,
                     </Link>
                 )}
             </p>
-            <h1>{isNew ? "Ny gåva" : gift.title}</h1>
+            <h1>{isNew ? "Ny överraskningsgåva" : gift.title}</h1>
             {content}
         </div>
     );

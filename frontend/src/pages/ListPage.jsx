@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { Gift, Settings, Sparkles, Trash2 } from "lucide-react";
+import { Ellipsis, Pencil, Settings, Sparkles, Trash2 } from "lucide-react";
 import { api } from "../api.js";
 import { useFetch } from "../hooks/useFetch.js";
 import { Empty, ErrorMessage, Loading, Notice } from "../components/Feedback.jsx";
@@ -8,7 +8,11 @@ import WishCard from "../components/WishCard.jsx";
 import WishForm from "../components/WishForm.jsx";
 import Modal from "../components/Modal.jsx";
 import AddGiftButton from "../components/AddGiftButton.jsx";
-import { formatDate, relativeDays } from "../format.js";
+import GiftPlusIcon from "../components/GiftPlusIcon.jsx";
+import SettingsMenu from "../components/SettingsMenu.jsx";
+import Avatar from "../components/Avatar.jsx";
+import { GiftEditor } from "./GiftPage.jsx";
+import { formatDate, formatPrice, relativeDays } from "../format.js";
 
 const names = (people) => people.map((p) => p.name).join(", ");
 
@@ -41,7 +45,7 @@ export default function ListPage() {
     if (!data && loading) return <Loading />;
     if (!data) return <ErrorMessage message={error} onRetry={reload} />;
 
-    const { list, me, groups, recipients, wishes } = data;
+    const { list, me, groups, recipients, wishes, myGifts = [] } = data;
 
     async function publish() {
         const ok = window.confirm(
@@ -160,7 +164,7 @@ export default function ListPage() {
                         {/* A gift bought outside the list – only those who share it ever see it. Only once it's published. */}
                         {me.seesReservations && list.isPublic && (
                             <AddGiftButton listId={list.id} onAdded={reload}>
-                                <Gift size={16} aria-hidden="true" /> Lägg till egen gåva
+                                <GiftPlusIcon /> Överraskningsgåva
                             </AddGiftButton>
                         )}
                     </div>
@@ -196,6 +200,94 @@ export default function ListPage() {
                     ))
                 )}
             </section>
+
+            {/* My own gifts linked to this list – last, looking like the wishes. Only for me (and those I share them with) */}
+            {myGifts.length > 0 && (
+                <section className="section">
+                    <h3 className="subhead">
+                        Mina överraskningsgåvor <span className="muted small">({myGifts.length})</span>
+                    </h3>
+                    <div className="wishes">
+                        {myGifts.map((gift) => (
+                            <OwnGiftCard key={gift.id} gift={gift} onChanged={reload} />
+                        ))}
+                    </div>
+                </section>
+            )}
         </div>
+    );
+}
+
+// One of my own gifts on the list, as a row like a wish: image, title and price, who shares it,
+// and a "…" menu. The row opens the gift for editing.
+function OwnGiftCard({ gift, onChanged }) {
+    const [editing, setEditing] = useState(false);
+    const [error, setError] = useState(null);
+    const shared = (gift.people ?? []).length > 1;
+    const names = (gift.people ?? []).map((p) => p.name).join(", ");
+
+    async function remove() {
+        if (!window.confirm(`Ta bort "${gift.title}"? Gåvan tas bort för alla som delar på den.`)) return;
+        try {
+            await api(`/gifts/${gift.id}`, { method: "DELETE" });
+            onChanged();
+        } catch (err) {
+            setError(err.message);
+        }
+    }
+
+    return (
+        <>
+            <div className="wish-row has-menu">
+                <button type="button" className="wish" onClick={() => setEditing(true)} aria-haspopup="dialog">
+                    {gift.imageUrl ? (
+                        <img className="wish-image" src={gift.imageUrl} alt="" loading="lazy" />
+                    ) : (
+                        <img className="wish-image wish-image-empty" src="/gift-placeholder.png" alt="" />
+                    )}
+                    <span className="wish-summary">
+                        <span className="wish-title">{gift.title}</span>
+                        {gift.price !== null && (
+                            <span className="wish-meta">
+                                <span className="price">{formatPrice(gift.price)}</span>
+                            </span>
+                        )}
+                    </span>
+                    {shared && (
+                        <span className="wish-reserved">
+                            <span className="avatar-stack" title={`Delas av ${names}`}>
+                                {gift.people.map((p) => (
+                                    <Avatar key={p.id} icon={p.avatarIcon} color={p.avatarColor} size={22} />
+                                ))}
+                                <span className="visually-hidden">Delas av {names}</span>
+                            </span>
+                        </span>
+                    )}
+                </button>
+                <div className="wish-row-menu">
+                    <SettingsMenu label={`Alternativ för ${gift.title}`} icon={Ellipsis}>
+                        <button type="button" className="menu-item" role="menuitem" onClick={() => setEditing(true)}>
+                            <Pencil size={16} aria-hidden="true" /> Redigera
+                        </button>
+                        <button type="button" className="menu-item menu-item-danger" role="menuitem" onClick={remove}>
+                            <Trash2 size={16} aria-hidden="true" /> Ta bort
+                        </button>
+                    </SettingsMenu>
+                </div>
+            </div>
+            <ErrorMessage message={error} />
+
+            {editing && (
+                <Modal title={gift.title} onClose={() => setEditing(false)}>
+                    <GiftEditor
+                        id={gift.id}
+                        onDone={() => {
+                            setEditing(false);
+                            onChanged();
+                        }}
+                    />
+                </Modal>
+            )}
+        </>
     );
 }

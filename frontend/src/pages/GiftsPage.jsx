@@ -4,6 +4,7 @@ import { Empty, ErrorMessage, Loading } from "../components/Feedback.jsx";
 import { buildEvents, EventRow, sumShares } from "../components/EventRow.jsx";
 import { formatPrice } from "../format.js";
 import AddGiftButton from "../components/AddGiftButton.jsx";
+import GiftPlusIcon from "../components/GiftPlusIcon.jsx";
 
 // /gifts – everything I've bought or share: coming events first (soonest first, gifts from
 // wish profiles last), then earlier ones. The same rows as on the overview, but only with gifts.
@@ -21,21 +22,17 @@ export default function GiftsPage() {
         <div className="page">
             <div className="page-head">
                 <h1 className="title-with-icon">
-                    <Gift size={28} aria-hidden="true" /> Gåvor
+                    <Gift size={28} aria-hidden="true" /> Mina gåvor
                 </h1>
-                <AddGiftButton className="btn btn-primary" onAdded={reload}>
-                    <Gift size={16} aria-hidden="true" /> Lägg till egen gåva
+                {/* Any gift I've bought: on a list (a surprise gift) or for an own event */}
+                <AddGiftButton className="btn btn-primary" title="Logga egen gåva" onAdded={reload}>
+                    <GiftPlusIcon /> Logga egen gåva
                 </AddGiftButton>
             </div>
 
             <section className="section">
                 <div className="section-head">
                     <h2>Aktuella</h2>
-                    {gifts.current.length > 0 && (
-                        <span className="event-total">
-                            Totalt för mig <strong>{formatPrice(sumShares(gifts.current))}</strong>
-                        </span>
-                    )}
                 </div>
                 {current.length === 0 ? (
                     <Empty>Du har inga aktuella gåvor. Reservera något på en lista eller en önskeprofil!</Empty>

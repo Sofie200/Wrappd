@@ -32,7 +32,10 @@ const FreeFields = z.object({
     removeImage: WishBody.shape.removeImage,
     listId: optionalId,
     santaId: optionalId,
-    recipient: z.string().trim().max(100, "Mottagaren får vara högst 100 tecken").optional().transform((v) => v || null),
+    // Without a list or Secret Santa: who it's for, as a link to a user in my groups (optional)
+    recipientId: optionalId,
+    // Without a list or Secret Santa: the event's name, e.g. "Farmors 80-årsdag" (stored in gifts.recipient)
+    recipient: z.string().trim().max(100, "Händelsens namn får vara högst 100 tecken").optional().transform((v) => v || null),
     giftDate: z
         .string()
         .trim()

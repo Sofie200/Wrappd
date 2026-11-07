@@ -15,7 +15,7 @@ export default function ArchivePage() {
 
     return (
         <div className="page">
-            <Breadcrumbs items={[{ label: "Listor", to: "/lists" }, { label: "Arkiv" }]} />
+            <Breadcrumbs items={[{ label: "Mina listor", to: "/lists" }, { label: "Arkiv" }]} />
             <h1>Arkiv</h1>
             <p className="muted">Önskelistor du administrerar vars datum har passerat. De kan inte längre ändras.</p>
 

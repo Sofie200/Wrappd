@@ -2,9 +2,18 @@ import { useState } from "react";
 import Modal from "./Modal.jsx";
 import { GiftEditor } from "../pages/GiftPage.jsx";
 
-// "Lägg till egen gåva": opens the gift form in a modal, already linked to the list or the
+// "+ Överraskningsgåva" (a gift bought outside the wish list): opens the gift form in a modal, already linked to the list or the
 // Secret Santa it was pressed on. children is the button's content; onAdded runs after saving.
-export default function AddGiftButton({ listId = "", santaId = "", className = "btn btn-small", onAdded, children }) {
+// presetEvent: { name, recipientId, date } – a new gift for an own event that already exists
+export default function AddGiftButton({
+    listId = "",
+    santaId = "",
+    presetEvent = null,
+    title = "Ny överraskningsgåva",
+    className = "btn btn-small",
+    onAdded,
+    children,
+}) {
     const [open, setOpen] = useState(false);
     return (
         <>
@@ -12,11 +21,12 @@ export default function AddGiftButton({ listId = "", santaId = "", className = "
                 {children}
             </button>
             {open && (
-                <Modal title="Lägg till egen gåva" onClose={() => setOpen(false)}>
+                <Modal title={title} onClose={() => setOpen(false)}>
                     <GiftEditor
                         id="new"
                         presetListId={String(listId)}
                         presetSantaId={String(santaId)}
+                        presetEvent={presetEvent}
                         onDone={() => {
                             setOpen(false);
                             onAdded?.();

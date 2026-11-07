@@ -3,7 +3,8 @@
 //  - On a wish (wish_id): created by reserving the wish. Title and price are copied from the wish.
 //  - Outside the wish list (wish_id NULL): created here, with its own title, description, link and image.
 //    Linked to a list (list_id), to a Secret Santa I'm a giver in (santa_id – recipient and date come
-//    from the draw), or to a recipient in free text and a date. NEVER shown on the list.
+//    from the draw), or to an event: a name (free text, stored in `recipient`) and a date – and optionally
+//    who it's for, as a link to a user in my groups (recipient_id). NEVER shown on the list.
 // Rules:
 //  - Everyone who shares a gift has the same rights to it. Others don't see it at all
 //    (a gift on a wish only shows as "Reserverad av …" on the list).
@@ -12,7 +13,8 @@
 //    A gift without a list or a wish can't be shared (also not a Secret Santa gift – only the giver knows who it's for).
 //  - Gifts on wishes: quantity and undo are locked after the event; price, comment and split are not.
 //    One person can be in at most one gift per wish.
-//  - Gifts outside the list: everything can always be changed, also the list, and they can always be deleted.
+//  - Gifts outside the list: everything can always be changed – except what it is linked to (a list, a Secret
+//    Santa or an own event), which is set when it is created – and they can always be deleted.
 //  - The split is either equal, or an amount in kronor per person that adds up to the price.
 import { Router } from "express";
 import { pool, TODAY, withTransaction } from "../_db/pool.js";
@@ -30,7 +32,8 @@ const router = Router();
 async function loadGift(db, giftId, userId, { lock = false } = {}) {
     const { rows: [gift] } = await db.query(
         `SELECT g.id, g.wish_id, g.quantity, g.title, g.price, g.comment, g.split,
-                g.list_id AS own_list_id, g.santa_id, g.recipient, g.gift_date, g.description, g.url, g.image_url,
+                g.list_id AS own_list_id, g.santa_id, g.recipient, g.recipient_id, g.gift_date, g.description, g.url, g.image_url,
+                (SELECT name FROM users WHERE id = g.recipient_id) AS recipient_name,
                 g.wish_id IS NULL AS is_free,
                 COALESCE(w.list_id, g.list_id) AS list_id,
                 w.user_id AS wish_owner_id,
@@ -92,6 +95,19 @@ async function requireLinkableList(db, listId, userId) {
     const access = await getListAccess(db, listId, userId); // 404 if I can't see it
     if (access.isRecipient) throw new HttpError(403, "Du kan inte koppla en gåva till en lista till dig själv");
     if (!access.list.is_public) throw new HttpError(403, "Listan är inte publicerad än – då kan du inte koppla gåvor till den");
+}
+
+// Who a gift for an event is for: someone else in one of my groups. 404 otherwise.
+async function requireLinkablePerson(db, personId, userId) {
+    if (personId === userId) throw new HttpError(400, "Du kan inte välja dig själv som mottagare");
+    const { rowCount } = await db.query(
+        `SELECT 1 FROM group_members a
+         JOIN group_members b ON b.group_id = a.group_id
+         WHERE a.user_id = $1 AND b.user_id = $2
+         LIMIT 1`,
+        [userId, personId]
+    );
+    if (rowCount === 0) throw new HttpError(404, "Personen finns inte i dina grupper");
 }
 
 // ...or to a Secret Santa where I'm a giver. 404 otherwise – others don't learn it exists.
@@ -206,7 +222,9 @@ router.get("/:id", async (req, res) => {
             imageUrl: gift.image_url,
             listId: gift.own_list_id,
             santaId: gift.santa_id,
-            recipient: gift.recipient,
+            recipient: gift.recipient, // the event's name
+            recipientId: gift.recipient_id,
+            recipientName: gift.recipient_name,
             giftDate: gift.gift_date,
         },
         wish: wish.rows[0],
@@ -218,12 +236,12 @@ router.get("/:id", async (req, res) => {
     });
 });
 
-// A gift outside the list: a title, and a list OR a Secret Santa OR a recipient and a date
+// A gift outside the list: a title, and a list OR a Secret Santa OR an event (a name and a date)
 function checkFreeGift(body) {
     if (!body.title) throw new HttpError(400, "Ange en titel");
     if (body.listId && body.santaId) throw new HttpError(400, "Välj en lista eller en Secret Santa – inte båda");
     if (!body.listId && !body.santaId) {
-        if (!body.recipient) throw new HttpError(400, "Välj en lista, eller skriv vem gåvan är till");
+        if (!body.recipient) throw new HttpError(400, "Välj en lista, eller skriv vad det är för händelse");
         if (!body.giftDate) throw new HttpError(400, "Ange ett datum för gåvan");
     }
 }
@@ -259,20 +277,22 @@ router.post("/", receiveImage, async (req, res) => {
     checkFreeGift(body);
     if (body.listId) await requireLinkableList(pool, body.listId, req.user.id);
     if (body.santaId) await requireMySanta(pool, body.santaId, req.user.id);
-    const freeText = !body.listId && !body.santaId; // recipient and date only without a list or a Secret Santa
+    const freeText = !body.listId && !body.santaId; // event name, date and person only without a list or a Secret Santa
+    if (freeText && body.recipientId) await requireLinkablePerson(pool, body.recipientId, req.user.id);
 
     const imageUrl = await uploadNewGiftImage(req.file, body.imageFromUrl);
     try {
         const id = await withTransaction(async (db) => {
             const { rows: [gift] } = await db.query(
                 `INSERT INTO gifts (created_by, quantity, title, price, comment, description, url, image_url,
-                                    list_id, santa_id, recipient, gift_date)
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING id`,
+                                    list_id, santa_id, recipient, recipient_id, gift_date)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING id`,
                 [
                     req.user.id, body.quantity, body.title, body.price, body.comment, body.description, body.url, imageUrl,
                     body.listId,
                     body.santaId,
                     freeText ? body.recipient : null,
+                    freeText ? body.recipientId : null,
                     freeText ? body.giftDate : null,
                 ]
             );
@@ -288,7 +308,8 @@ router.post("/", receiveImage, async (req, res) => {
 
 /* --- PUT /api/gifts/:id  (JSON or multipart) – change the gift (member) ---
    All gifts:     { quantity, price, comment, split, members: [{ userId, amount }] }
-   Outside list:  + { title, description, url, listId | santaId | (recipient, giftDate), image / imageFromUrl / removeImage } */
+   Outside list:  + { title, description, url, (recipient = event name, giftDate, recipientId? – own events only),
+                      image / imageFromUrl / removeImage }. The link (list / Secret Santa / own event) never changes. */
 router.put("/:id", receiveImage, async (req, res) => {
     const giftId = parseId(req.params.id);
     const body = parse(GiftBody, req.body ?? {});
@@ -297,9 +318,14 @@ router.put("/:id", receiveImage, async (req, res) => {
     // Who I am in it, and what kind it is – before uploading any image
     const before = await loadGift(pool, giftId, req.user.id);
     if (before.is_free) {
+        // What it's linked to (a list, a Secret Santa or an own event) is decided when it's created and
+        // can't change – whatever arrives is replaced by what it already has
+        body.listId = before.own_list_id;
+        body.santaId = before.santa_id;
         checkFreeGift(body);
-        if (body.listId && body.listId !== before.own_list_id) await requireLinkableList(pool, body.listId, req.user.id);
-        if (body.santaId && body.santaId !== before.santa_id) await requireMySanta(pool, body.santaId, req.user.id);
+        if (!body.listId && !body.santaId && body.recipientId && body.recipientId !== before.recipient_id) {
+            await requireLinkablePerson(pool, body.recipientId, req.user.id);
+        }
         if (!body.listId && userIds.length > 1) throw new HttpError(400, "En gåva utan lista kan inte delas. Välj en lista, eller ta bort de andra.");
     }
 
@@ -355,12 +381,14 @@ router.put("/:id", receiveImage, async (req, res) => {
                 await db.query(
                     `UPDATE gifts SET quantity = $1, price = $2, comment = $3, split = $4,
                             title = $5, description = $6, url = $7, image_url = $8,
-                            list_id = $9, santa_id = $10, recipient = $11, gift_date = $12, updated_at = now()
-                     WHERE id = $13`,
+                            list_id = $9, santa_id = $10, recipient = $11, gift_date = $12, recipient_id = $13,
+                            updated_at = now()
+                     WHERE id = $14`,
                     [
                         body.quantity, body.price, body.comment, body.split,
                         body.title, body.description, body.url, imageUrl,
                         listId, santaId, freeText ? body.recipient : null, freeText ? body.giftDate : null,
+                        freeText ? body.recipientId : null,
                         giftId,
                     ]
                 );

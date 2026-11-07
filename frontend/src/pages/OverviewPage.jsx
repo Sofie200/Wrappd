@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, Eye, EyeOff, Gift, HatGlasses, Heart, Lock, Pencil, Sparkles, Trash2 } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, HatGlasses, Heart, Trash2 } from "lucide-react";
 import { api } from "../api.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useFetch } from "../hooks/useFetch.js";
@@ -12,6 +12,8 @@ import { buildEvents, dateOrder, EventRow, GiftTable } from "../components/Event
 import { formatPrice } from "../format.js";
 import DateBadge from "../components/DateBadge.jsx";
 import AddGiftButton from "../components/AddGiftButton.jsx";
+import ListPanelCard from "../components/ListPanelCard.jsx";
+import GiftPlusIcon from "../components/GiftPlusIcon.jsx";
 
 // A Secret Santa among the events. Who I give to is hidden until I press the eye –
 // someone might be looking at the screen. Below it: my gifts for it – the ones linked to the draw,
@@ -130,7 +132,7 @@ function SantaRow({ santa, gifts = [], onChanged }) {
                                     Mina inköp {gifts.length > 0 && <span className="muted small">({gifts.length})</span>}
                                 </h4>
                                 <AddGiftButton santaId={santa.id} className="btn btn-small btn-ghost" onAdded={onChanged}>
-                                    <Gift size={16} aria-hidden="true" /> Lägg till egen gåva
+                                    <GiftPlusIcon /> Överraskningsgåva
                                 </AddGiftButton>
                             </div>
                             {gifts.length > 0 ? (
@@ -147,7 +149,7 @@ function SantaRow({ santa, gifts = [], onChanged }) {
                                         </PersonLink>{" "}
                                         eller lägg till en{" "}
                                         <AddGiftButton santaId={santa.id} className="text-link" onAdded={onChanged}>
-                                            egen post
+                                            överraskningsgåva
                                         </AddGiftButton>
                                         .
                                     </p>
@@ -177,41 +179,6 @@ function SantaRow({ santa, gifts = [], onChanged }) {
                         <p className="muted small">Alla ger en gåva och får en. Ingen kan se vem som har fått vem.</p>
                     </Modal>
                 )}
-            </article>
-        </div>
-    );
-}
-
-// One of my private (not yet published) lists: the same look as the event panels, but inverted –
-// white with rose details. Only the panel, since nobody can buy anything before it's published.
-function PrivateListCard({ list }) {
-    return (
-        <div className="event-group">
-            {list.recipients && (
-                <p className="event-to">
-                    Till: <span className="event-for">{list.recipients}</span>
-                </p>
-            )}
-            <article className="event event-light">
-                <div className="event-info">
-                    <Link to={`/lists/${list.id}`} className="event-edit" aria-label={`Öppna ${list.title}`} title="Öppna listan">
-                        <Pencil size={16} aria-hidden="true" />
-                    </Link>
-                    <div className="event-head">
-                        <DateBadge iso={list.endDate} />
-                        <div className="event-title">
-                            <p className="event-kicker">
-                                <Lock size={14} aria-hidden="true" /> Privat lista
-                            </p>
-                            <h3>{list.title}</h3>
-                        </div>
-                    </div>
-                    <p className="event-stats">
-                        <span>
-                            <Sparkles size={14} aria-hidden="true" /> {list.wishCount} {list.wishCount === 1 ? "önskning" : "önskningar"}
-                        </span>
-                    </p>
-                </div>
             </article>
         </div>
     );
@@ -301,9 +268,9 @@ export default function OverviewPage() {
                         <h2>Mina privata listor</h2>
                     </div>
                     {/* Lists whose date has passed are in the archive */}
-                    <div className="cards private-lists">
+                    <div className="cards list-cards">
                         {privateLists.map((list) => (
-                            <PrivateListCard key={list.id} list={list} />
+                            <ListPanelCard key={list.id} list={list} />
                         ))}
                     </div>
                 </section>

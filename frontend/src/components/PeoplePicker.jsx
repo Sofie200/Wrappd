@@ -6,6 +6,7 @@ import Avatar from "./Avatar.jsx";
 // field that suggests the others as you type (on name or username).
 // lockedIds: always chosen, can't be removed (e.g. the creator as admin).
 // disabledIds: can't be picked (e.g. someone else's child) – disabledHint says why.
+// single: at most one person – picking someone replaces the choice, and the search hides once someone is chosen.
 const MAX_SUGGESTIONS = 8;
 
 export default function PeoplePicker({
@@ -18,6 +19,7 @@ export default function PeoplePicker({
     disabledIds = [],
     disabledHint,
     emptyText = "Välj en grupp först.",
+    single = false,
 }) {
     const [query, setQuery] = useState("");
     const [open, setOpen] = useState(false);
@@ -36,7 +38,7 @@ export default function PeoplePicker({
 
     function add(person) {
         if (disabledIds.includes(person.id)) return;
-        onChange([...selected, person.id]);
+        onChange(single ? [person.id] : [...selected, person.id]);
         setQuery("");
         setActive(0);
     }
@@ -98,6 +100,7 @@ export default function PeoplePicker({
                         </ul>
                     )}
 
+                    {!(single && chosen.length > 0) && (
                     <div className="people-search">
                         <input
                             type="search"
@@ -165,6 +168,7 @@ export default function PeoplePicker({
                             </ul>
                         )}
                     </div>
+                    )}
                 </div>
             )}
         </fieldset>

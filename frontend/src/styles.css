@@ -504,7 +504,7 @@ a:focus-visible {
 .form {
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    gap: 1.25rem;
 }
 
 /* A short description between a page's title and its form */
@@ -1340,10 +1340,10 @@ select {
     display: block;
 }
 
-.wish-image-empty {
-    display: grid;
-    place-items: center;
-    font-size: 2rem;
+/* No picture: the presents illustration, whole and with some air around it */
+.wish-image.wish-image-empty {
+    object-fit: contain;
+    padding: 0.6rem;
 }
 
 .wish-summary {
@@ -1544,8 +1544,8 @@ select {
 }
 
 .wish-detail-image.wish-image-empty {
-    font-size: 3rem;
     aspect-ratio: 16 / 9;
+    padding: 1.5rem;
 }
 
 /* Under the image: who has reserved it, and "Släpp reservation" – side by side in the middle, a line underneath */
@@ -2056,8 +2056,14 @@ select {
 }
 
 /* A private list on the overview: the same panel, inverted – white with rose details, and no gifts column */
+/* Only the panel, no gifts column (list cards on Mina listor and the overview's private lists) */
+.event.event-solo,
 .event.event-light {
     grid-template-columns: 1fr;
+}
+
+.event.event-solo .event-info {
+    border-radius: calc(var(--radius) - 1px);
 }
 
 .event-light .event-info {
@@ -2098,7 +2104,7 @@ select {
     border-color: #fbd0da;
 }
 
-.private-lists {
+.list-cards {
     /* Same width as the panels above, and the same gap as between the events */
     grid-template-columns: repeat(auto-fill, var(--event-panel-width));
     gap: 1.25rem;
@@ -2398,7 +2404,7 @@ button.event-edit {
         grid-template-columns: 1fr;
     }
 
-    .private-lists {
+    .list-cards {
         grid-template-columns: 1fr;
     }
 
@@ -2530,6 +2536,16 @@ button.event-edit {
 /* The gift editor inside a modal: tighter spacing than on its own page */
 .gift-editor > .muted:first-child {
     margin-top: 0;
+}
+
+/* "Gåva till Anders · söndag 8 november" right under the title */
+.gift-subtitle {
+    margin-top: 0;
+}
+
+.gift-editor > .gift-subtitle:first-child,
+.gift-editor > .gift-for-event:first-child {
+    margin-top: -0.75rem; /* pulled up towards the modal's title */
 }
 
 .gift-editor .section {
@@ -3238,4 +3254,52 @@ button.event-edit {
     padding: 0.45rem 0.6rem;
     color: var(--muted);
     font-size: 0.9rem;
+}
+
+/* Gift icon with a small plus badge (GiftPlusIcon) */
+.icon-gift-plus {
+    position: relative;
+    display: inline-flex;
+    flex: none;
+    margin-right: 3px; /* room for the badge before the text */
+}
+
+.icon-gift-plus-badge {
+    position: absolute;
+    right: -4px;
+    bottom: -3px;
+    display: grid;
+    place-items: center;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #fff;
+    box-shadow: 0 0 0 1.5px var(--surface);
+}
+
+/* On a rose button: a white badge with a rose plus */
+.btn-primary .icon-gift-plus-badge {
+    background: #fff;
+    color: var(--accent-strong);
+    box-shadow: none;
+}
+
+/* Mobile: no gradient backdrop around the sheet – header and sheet go edge to edge */
+@media (max-width: 640px) {
+    :root {
+        --sheet-gap: 0px;
+    }
+
+    .app {
+        background: var(--sheet);
+    }
+
+    .app-sheet {
+        border-radius: 0;
+    }
+    /* A bit more side air for text that sits straight on the sheet */
+    .main {
+        --main-pad-x: 1.5rem;
+    }
 }

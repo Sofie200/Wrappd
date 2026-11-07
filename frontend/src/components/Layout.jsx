@@ -31,13 +31,13 @@ export default function Layout() {
                     <div className="user-menu">
                         <SettingsMenu label="Meny" icon={Menu}>
                             <NavLink to="/groups" className="menu-item" role="menuitem">
-                                <Users size={16} aria-hidden="true" /> Grupper
+                                <Users size={16} aria-hidden="true" /> Mina grupper
                             </NavLink>
                             <NavLink to="/lists" end className="menu-item" role="menuitem">
-                                <ScrollText size={16} aria-hidden="true" /> Listor
+                                <ScrollText size={16} aria-hidden="true" /> Mina listor
                             </NavLink>
                             <NavLink to="/gifts" end className="menu-item" role="menuitem">
-                                <Gift size={16} aria-hidden="true" /> Gåvor
+                                <Gift size={16} aria-hidden="true" /> Mina gåvor
                             </NavLink>
                         </SettingsMenu>
                         <SettingsMenu

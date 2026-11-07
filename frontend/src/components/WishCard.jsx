@@ -89,9 +89,8 @@ export default function WishCard({ wish, me, listId, onChanged }) {
         wish.imageUrl ? (
             <img className={className} src={wish.imageUrl} alt="" loading="lazy" />
         ) : (
-            <div className={`${className} wish-image-empty`} aria-hidden="true">
-                🎁
-            </div>
+            // No picture: the app's own illustration of presents
+            <img className={`${className} wish-image-empty`} src="/gift-placeholder.png" alt="" />
         );
 
     // Everyone who has reserved it (in any of its gifts), once each

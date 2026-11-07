@@ -66,7 +66,11 @@ router.get("/", async (req, res) => {
                     COALESCE(l.end_date, g.gift_date, ss.event_date) AS "endDate",
                     -- A gift from a wish profile has no date, so it stays current until it's removed
                     COALESCE(COALESCE(l.end_date, g.gift_date, ss.event_date) < ${TODAY}, false) AS archived,
-                    COALESCE(${RECIPIENTS}, g.recipient, wo.name, sr.name) AS recipients
+                    -- Who it's for: the list's recipients, the linked person, the wish profile's owner or my Santa match
+                    COALESCE(${RECIPIENTS}, ru.name, wo.name, sr.name) AS recipients,
+                    -- A gift for an event (no list, no Santa): the event's name
+                    CASE WHEN g.wish_id IS NULL AND g.list_id IS NULL AND g.santa_id IS NULL THEN g.recipient END AS "eventName",
+                    g.recipient_id AS "recipientId"
              FROM gift_members me
              JOIN gifts g ON g.id = me.gift_id
              LEFT JOIN wishes w ON w.id = g.wish_id
@@ -75,6 +79,7 @@ router.get("/", async (req, res) => {
              LEFT JOIN secret_santas ss ON ss.id = g.santa_id
              LEFT JOIN secret_santa_pairs sp ON sp.santa_id = g.santa_id AND sp.giver_id = $1
              LEFT JOIN users sr ON sr.id = sp.receiver_id
+             LEFT JOIN users ru ON ru.id = g.recipient_id
              WHERE me.user_id = $1
              ORDER BY "endDate" DESC, l.title, g.title`,
             [me]
@@ -85,6 +90,12 @@ router.get("/", async (req, res) => {
             `SELECT l.id, l.title, l.end_date AS "endDate", l.is_public AS "isPublic",
                     l.end_date < ${TODAY} AS archived,
                     (SELECT count(*)::int FROM wishes WHERE list_id = l.id) AS "wishCount",
+                    -- Fully reserved wishes – not on lists to me (that's a surprise, also for admins)
+                    CASE WHEN EXISTS (SELECT 1 FROM list_recipients WHERE list_id = l.id AND user_id = $1) THEN NULL
+                         ELSE (SELECT count(*)::int FROM wishes w
+                               WHERE w.list_id = l.id
+                                 AND (SELECT COALESCE(sum(gi.quantity), 0) FROM gifts gi WHERE gi.wish_id = w.id) >= w.quantity)
+                    END AS "reservedCount",
                     ${RECIPIENTS} AS recipients
              FROM lists l
              JOIN list_admins la ON la.list_id = l.id AND la.user_id = $1

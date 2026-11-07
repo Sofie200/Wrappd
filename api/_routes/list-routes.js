@@ -69,7 +69,7 @@ router.post("/", async (req, res) => {
     res.status(201).json({ id });
 });
 
-/* --- GET /api/lists/:id → { list, me, groups, admins, recipients, wishes } --- */
+/* --- GET /api/lists/:id → { list, me, groups, admins, recipients, wishes, myGifts } --- */
 // Recipients get the wishes WITHOUT anything about reservations.
 router.get("/:id", async (req, res) => {
     const listId = parseId(req.params.id);
@@ -131,6 +131,29 @@ router.get("/:id", async (req, res) => {
         });
     }
 
+    // My own gifts (bought outside the list) linked to this list – shown in a section of their own,
+    // only to me and those I share them with. Never to recipients (they can't have any here anyway).
+    const { rows: myGifts } = access.seesReservations
+        ? await pool.query(
+              `SELECT g.id, g.title, g.quantity, g.price, g.image_url AS "imageUrl",
+                      true AS "offList", g.list_id AS "listId",
+                      $3::boolean AS archived,
+                      CASE WHEN g.split = 'custom' THEN me.amount
+                           ELSE round(g.price / (SELECT count(*) FROM gift_members WHERE gift_id = g.id), 2)
+                      END AS "myShare",
+                      (SELECT json_agg(json_build_object('id', u.id, 'name', u.name,
+                                                         'avatarIcon', u.avatar_icon, 'avatarColor', u.avatar_color)
+                                       ORDER BY u.name)
+                       FROM gift_members o JOIN users u ON u.id = o.user_id
+                       WHERE o.gift_id = g.id) AS people
+               FROM gift_members me
+               JOIN gifts g ON g.id = me.gift_id
+               WHERE me.user_id = $1 AND g.list_id = $2 AND g.wish_id IS NULL
+               ORDER BY g.created_at, g.id`,
+              [req.user.id, listId, list.archived]
+          )
+        : { rows: [] };
+
     res.json({
         list: {
             id: list.id,
@@ -152,6 +175,7 @@ router.get("/:id", async (req, res) => {
         admins: admins.rows,
         recipients: recipients.rows,
         wishes: result,
+        myGifts,
     });
 });
 
