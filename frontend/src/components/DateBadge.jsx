@@ -20,3 +20,15 @@ export default function DateBadge({ iso, title }) {
         </time>
     );
 }
+
+// The same date as plain text ("24 december 2026"), under the title. Shown instead of the badge on mobile.
+export function EventDate({ iso }) {
+    const [y, m, d] = iso.split("-").map(Number);
+    const text = new Date(y, m - 1, d).toLocaleDateString("sv-SE", { day: "numeric", month: "long", year: "numeric" });
+
+    return (
+        <time className="event-date" dateTime={iso}>
+            {text}
+        </time>
+    );
+}

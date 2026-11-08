@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, Eye, EyeOff, HatGlasses, Heart, Trash2 } from "lucide-react";
+import { ArrowRight, Ellipsis, Eye, HatGlasses, Heart, Trash2 } from "lucide-react";
 import { api } from "../api.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useFetch } from "../hooks/useFetch.js";
@@ -8,12 +8,14 @@ import { Empty, ErrorMessage, Loading } from "../components/Feedback.jsx";
 import Avatar from "../components/Avatar.jsx";
 import Modal from "../components/Modal.jsx";
 import PersonLink from "../components/PersonLink.jsx";
+import SettingsMenu from "../components/SettingsMenu.jsx";
 import { buildEvents, dateOrder, EventRow, GiftTable } from "../components/EventRow.jsx";
 import { formatPrice } from "../format.js";
 import DateBadge from "../components/DateBadge.jsx";
 import AddGiftButton from "../components/AddGiftButton.jsx";
 import ListPanelCard from "../components/ListPanelCard.jsx";
 import GiftPlusIcon from "../components/GiftPlusIcon.jsx";
+import Confetti from "../components/Confetti.jsx";
 
 // A Secret Santa among the events. Who I give to is hidden until I press the eye –
 // someone might be looking at the screen. Below it: my gifts for it – the ones linked to the draw,
@@ -21,10 +23,18 @@ import GiftPlusIcon from "../components/GiftPlusIcon.jsx";
 function SantaRow({ santa, gifts = [], onChanged }) {
     const { user } = useAuth();
     const [shown, setShown] = useState(false);
+    // A little confetti every time the name is revealed
+    const [burst, setBurst] = useState(0);
+    const nameRef = useRef(null);
     const [showParticipants, setShowParticipants] = useState(false);
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState(null);
     const { receiver } = santa;
+
+    function reveal(show) {
+        setShown(show);
+        if (show) setBurst((b) => b + 1);
+    }
 
     async function remove() {
         if (
@@ -53,71 +63,81 @@ function SantaRow({ santa, gifts = [], onChanged }) {
             </p>
             <article className="event event-santa">
                 <div className="event-info">
-                    {santa.isCreator && (
-                        <button
-                            type="button"
-                            className="event-edit"
-                            onClick={remove}
-                            disabled={busy}
-                            aria-label={`Ta bort ${santa.title}`}
-                            title="Ta bort lottningen"
-                        >
-                            <Trash2 size={16} aria-hidden="true" />
-                        </button>
-                    )}
                     <div className="event-head">
                         <DateBadge iso={santa.date} />
                         <div className="event-title">
                             <p className="event-kicker">
                                 <HatGlasses size={14} aria-hidden="true" /> Secret Santa
                             </p>
-                            <h3>{santa.title}</h3>
+                            {/* The title with a "…" menu right after it, for whoever drew it */}
+                            <div className="santa-title-row">
+                                <h3>{santa.title}</h3>
+                                {santa.isCreator && (
+                                    <SettingsMenu label={`Alternativ för ${santa.title}`} icon={Ellipsis} buttonClassName="santa-menu-btn">
+                                        <button type="button" className="menu-item menu-item-danger" role="menuitem" onClick={remove} disabled={busy}>
+                                            <Trash2 size={16} aria-hidden="true" /> Ta bort
+                                        </button>
+                                    </SettingsMenu>
+                                )}
+                            </div>
+                            <p className="santa-meta">
+                                {santa.budget !== null && (
+                                    <>
+                                        Budget: <strong>{formatPrice(santa.budget)}</strong> ·{" "}
+                                    </>
+                                )}
+                                <button type="button" className="text-link" onClick={() => setShowParticipants(true)}>
+                                    {santa.participantCount} deltagare
+                                </button>
+                            </p>
                         </div>
                     </div>
-                    <p className="event-recipients">
-                        {santa.groupName} ·{" "}
-                        <button type="button" className="text-link" onClick={() => setShowParticipants(true)}>
-                            {santa.participantCount} deltagare
-                        </button>
-                    </p>
-                    {santa.budget !== null && <p className="event-recipients">Budget: <strong>{formatPrice(santa.budget)}</strong></p>}
 
                     {/* Who I got – hidden until I press the eye */}
                     {receiver && (
                         <div className="santa-secret">
-                            <div className="santa-label-row">
-                                <p className="santa-label">Du ska ge en gåva till</p>
-                                <button
-                                    type="button"
-                                    className="icon-btn santa-eye"
-                                    onClick={() => setShown(!shown)}
-                                    aria-pressed={shown}
-                                    aria-label={shown ? "Dölj vem du fått" : "Visa vem du fått"}
-                                    title={shown ? "Dölj" : "Visa"}
-                                >
-                                    {shown ? <EyeOff size={15} aria-hidden="true" /> : <Eye size={15} aria-hidden="true" />}
-                                </button>
-                            </div>
+                            {/* The eye lies on top of the blurred name; once shown, clicking the name hides it again */}
+                            <p className="santa-label">Du ska ge en gåva till:</p>
                             {/* The same placeholder for everyone while hidden, so the blur doesn't hint at the name's length */}
                             {/* Clicking the name shows/hides it too (the eye is the button for keyboard and screen readers) */}
-                            <span
-                                className={`santa-name${shown ? "" : " santa-name-hidden"}`}
-                                aria-live="polite"
-                                onClick={() => setShown(!shown)}
-                                title={shown ? "Dölj" : "Visa"}
-                            >
-                                {shown ? receiver.name : "Hemlis"}
-                            </span>
-                        </div>
-                    )}
-
-                    {/* Bottom right, like "Se lista" on the other cards. Opens the profile without revealing
-                        the name here – the modal shows it, on purpose. */}
-                    {receiver && (
-                        <div className="event-foot">
-                            <PersonLink person={receiver} className="btn btn-small event-link" title="Se vad hen önskar sig">
+                            <div className="santa-name-row">
+                                <span
+                                    ref={nameRef}
+                                    className={`santa-name${shown ? "" : " santa-name-hidden"}`}
+                                    aria-live="polite"
+                                    onClick={() => reveal(!shown)}
+                                    title={shown ? "Dölj" : "Visa"}
+                                    // Once shown, the name is the way to hide it – so it works from the keyboard too
+                                    role={shown ? "button" : undefined}
+                                    tabIndex={shown ? 0 : undefined}
+                                    aria-label={shown ? `${receiver.name} – dölj` : undefined}
+                                    onKeyDown={(e) => {
+                                        if (shown && (e.key === "Enter" || e.key === " ")) {
+                                            e.preventDefault();
+                                            reveal(false);
+                                        }
+                                    }}
+                                >
+                                    {shown ? receiver.name : "Hemlis"}
+                                </span>
+                                {/* The eye on top of the blurred name */}
+                                {!shown && (
+                                    <button
+                                        type="button"
+                                        className="icon-btn santa-eye santa-eye-over"
+                                        onClick={() => reveal(true)}
+                                        aria-label="Visa vem du fått"
+                                        title="Visa"
+                                    >
+                                        <Eye size={16} aria-hidden="true" />
+                                    </button>
+                                )}
+                            </div>
+                            {/* Own row, never blurred: the profile opens without revealing the name here */}
+                            <PersonLink person={receiver} className="text-link santa-profile-link" title="Se vad hen önskar sig">
                                 Se önskeprofil <ArrowRight size={16} aria-hidden="true" />
                             </PersonLink>
+                            {burst > 0 && <Confetti key={burst} anchor={nameRef} />}
                         </div>
                     )}
                 </div>

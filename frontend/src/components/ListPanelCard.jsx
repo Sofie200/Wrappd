@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { ArrowRight, Gift, Lock, Pencil, ScrollText, Sparkles } from "lucide-react";
-import DateBadge from "./DateBadge.jsx";
+import DateBadge, { EventDate } from "./DateBadge.jsx";
 
 // One of my lists as a card in the overview's event style – only the coloured panel, no gifts column.
 //  - Published: the rose panel, "Önskelista", and "Se lista" at the bottom right.
@@ -36,6 +36,7 @@ export default function ListPanelCard({ list }) {
                                 )}
                             </p>
                             <h3>{list.title}</h3>
+                            {list.endDate && <EventDate iso={list.endDate} />}
                         </div>
                     </div>
                     <p className="event-stats">

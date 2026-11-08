@@ -30,6 +30,14 @@ export default function Layout() {
 
                     <div className="user-menu">
                         <SettingsMenu label="Meny" icon={Menu}>
+                            {/* Mobile only: the main menu lives here instead of in the header */}
+                            <NavLink to="/" end className="menu-item menu-mobile-only" role="menuitem">
+                                <House size={16} aria-hidden="true" /> Översikt
+                            </NavLink>
+                            <NavLink to="/santa/new" className="menu-item menu-mobile-only" role="menuitem">
+                                <HatGlasses size={16} aria-hidden="true" /> Secret Santa
+                            </NavLink>
+                            <hr className="menu-divider menu-mobile-only" />
                             <NavLink to="/groups" className="menu-item" role="menuitem">
                                 <Users size={16} aria-hidden="true" /> Mina grupper
                             </NavLink>

@@ -11,7 +11,7 @@ import SettingsMenu from "./SettingsMenu.jsx";
 import { GiftEditor } from "../pages/GiftPage.jsx";
 import { formatPrice, joinNames } from "../format.js";
 import Avatar from "./Avatar.jsx";
-import DateBadge from "./DateBadge.jsx";
+import DateBadge, { EventDate } from "./DateBadge.jsx";
 import AddGiftButton from "./AddGiftButton.jsx";
 import GiftPlusIcon from "./GiftPlusIcon.jsx";
 
@@ -206,7 +206,7 @@ export function EventRow({ event, archived = false, onChanged }) {
     // The kind of event decides the colour; past events keep it, toned down (event-archived)
     const kind = isRecipient ? " event-to-me" : santaId ? " event-santa" : !listId ? " event-no-list" : "";
     const variant = kind + (archived ? " event-archived" : "");
-    const kicker = listId ? "Önskelista" : santaId ? "Secret Santa" : personId ? "Önskeprofil" : "Egen händelse";
+    const kicker = listId ? "Önskelista" : santaId ? "Secret Santa" : personId ? "Önskeprofil" : "Egen lista";
     const KickerIcon = listId ? ScrollText : santaId ? HatGlasses : null;
 
     return (
@@ -226,6 +226,7 @@ export function EventRow({ event, archived = false, onChanged }) {
                                 {KickerIcon && <KickerIcon size={14} aria-hidden="true" />} {kicker}
                             </p>
                             <h3>{title ?? `Till ${recipients}`}</h3>
+                            {endDate && <EventDate iso={endDate} />}
                         </div>
                     </div>
                     {wishCount !== undefined && (
