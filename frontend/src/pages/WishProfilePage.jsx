@@ -118,8 +118,8 @@ function WishProfileForm({ data, reload }) {
                         disabled={busy}
                     />
                     <small>
-                        Vad gillar {isMe ? "du" : person.name}? Vad ska man undvika? Önskar {isMe ? "du" : person.name} sig
-                        kläder eller skor – skriv gärna storlekar, t.ex. "T-shirt M, byxor 32/32, skor 39".
+                        Önskar {isMe ? "du dig" : `${person.name} sig`} kläder eller skor, ange gärna storlekar, t.ex. "T-shirt M,
+                        byxor 32/32, skor 39".
                     </small>
                 </label>
 

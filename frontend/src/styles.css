@@ -9,6 +9,7 @@
     --orange: #f6a623;
     --yellow: #fcc95b;
     --lavender: #c49be2;
+    --sky: #74aee0; /* the blue avatar colour */
 
     --bg: var(--cream);
     --surface: #ffffff;
@@ -132,7 +133,7 @@ a:not([class]) {
 a:not([class]):hover {
     color: var(--accent-strong);
     text-decoration-color: var(--coral);
-    text-decoration-thickness: 2px;
+    text-decoration-thickness: 1.5px;
     text-underline-offset: 0.25em;
 }
 
@@ -1927,11 +1928,12 @@ select {
     /* Not overflow: hidden – the vertical label sticks out on the left. The panel rounds its own corners. */
 }
 
-/* The event: white text on a radial rose gradient (wish lists). --tab-bg is the label's darker shade. */
+/* The event: dark text on a pale gradient, lighter top-left (wish lists: peach into pink).
+   --tab-bg is the label's shade, a step deeper. */
 .event-info {
-    --event-bg: linear-gradient(135deg, #f0773f 0%, #e44a72 100%); /* light orange top-left into rose */
-    --tab-bg: #a92b4b;
-    --tab-ink: #fff;
+    --event-bg: linear-gradient(135deg, #fbd9c4 0%, #f3b9c8 100%);
+    --tab-bg: var(--accent-strong); /* the label and the button: the app's own colours */
+    --tab-ink: var(--accent-ink);
     border-radius: calc(var(--radius) - 1px) 0 0 calc(var(--radius) - 1px);
     display: flex;
     flex-direction: column;
@@ -1939,7 +1941,7 @@ select {
     gap: 0.5rem;
     padding: 1.1rem 0.9rem 0.9rem 2.35rem; /* left: room for the vertical label; right/bottom: same as the edit icon's inset */
     min-height: 9.5rem; /* tall enough for the longest vertical label */
-    color: #fff;
+    color: var(--ink);
     background: var(--event-bg);
 }
 
@@ -1958,8 +1960,8 @@ select {
     width: 2.1rem;
     height: 2.1rem;
     border-radius: 50%;
-    background: rgba(255, 255, 255, 0.2);
-    color: #fff;
+    background: rgba(255, 255, 255, 0.5);
+    color: var(--ink);
     transition: background-color 0.15s, color 0.15s;
 }
 
@@ -1969,7 +1971,7 @@ select {
 }
 
 .event-edit:focus-visible {
-    outline-color: #fff;
+    outline-color: var(--ink);
 }
 
 /* Room for the icon next to a long title */
@@ -1994,7 +1996,6 @@ select {
     display: none;
     font-size: 0.85rem;
     font-weight: 500;
-    opacity: 0.9;
 }
 
 /* ---------- Date badge: "8 / NOV" on a filled wavy-edged circle ---------- */
@@ -2008,7 +2009,7 @@ select {
     height: var(--badge-size);
     /* Pull the badge left by the empty space around lucide's shape, so its edge lines up with the text below */
     margin-left: calc(var(--badge-size) * -0.09);
-    color: #fff; /* the shape's fill */
+    color: var(--ink); /* the shape's outline – no fill, the panel shows through */
 }
 
 .date-badge-shape {
@@ -2024,50 +2025,42 @@ select {
     flex-direction: column;
     align-items: center;
     line-height: 1;
-    color: var(--badge-ink, var(--rose-deep));
+    color: var(--ink);
 }
 
 .date-badge-day {
-    font-size: 1.3rem;
+    font-size: 1.1rem;
     font-weight: 600;
 }
 
 .date-badge-month {
     margin-top: 0.1rem;
-    font-size: 0.62rem;
+    font-size: 0.56rem;
     font-weight: 600;
     letter-spacing: 0.08em;
 }
 
 /* Lists to me (my own): a lavender gradient. */
 .event-to-me .event-info {
-    --event-bg: radial-gradient(circle at 15% 10%, #a57cd2 0%, #5c3384 90%);
-    --tab-bg: #57307a;
+    --event-bg: linear-gradient(135deg, #e6d9f5 0%, #cdb6ea 100%);
+    --tab-bg: var(--lavender);
+    --tab-ink: var(--ink);
     --badge-ink: #6c3d95;
 }
 
-/* Secret Santa: a warm yellow-to-orange panel with dark text (white would be hard to read on it) */
+/* Secret Santa: pale yellow into soft orange */
 .event-santa .event-info {
-    --event-bg: linear-gradient(135deg, #ffd66a 0%, #f28a1a 100%); /* yellow into orange */
-    --tab-bg: #e58e0c;
+    --event-bg: linear-gradient(135deg, #fdecbf 0%, #f8cd98 100%);
+    --tab-bg: var(--orange);
     --tab-ink: var(--ink);
     --badge-ink: var(--yellow-ink);
-    color: var(--ink);
 }
 
-.event-santa .event-edit {
-    background: rgba(255, 255, 255, 0.5);
-    color: var(--ink);
-}
-
-.event-santa .event-edit:focus-visible {
-    outline-color: var(--ink);
-}
-
-/* Gifts without a list (and from wish profiles): a blue-green gradient – dark enough for white text */
+/* Gifts without a list (and from wish profiles): pale green into soft blue */
 .event-no-list .event-info {
-    --event-bg: linear-gradient(135deg, #3aa077 0%, #2f8a8e 45%, #2c68a8 100%); /* light green top-left into blue */
-    --tab-bg: #24578f;
+    --event-bg: linear-gradient(135deg, #cfe9d9 0%, #bdd6eb 100%);
+    --tab-bg: var(--sky);
+    --tab-ink: var(--ink);
     --badge-ink: #2b5d8f;
 }
 
@@ -2089,10 +2082,6 @@ select {
     --badge-ink: var(--accent-text);
     color: var(--ink);
     border-radius: calc(var(--radius) - 1px);
-}
-
-.event-light .date-badge {
-    color: #fbd6df; /* the badge's fill */
 }
 
 .event-light .event-stats svg {
@@ -2183,7 +2172,6 @@ select {
     gap: 0.25rem 0.9rem;
     font-size: 0.85rem;
     font-weight: 500;
-    opacity: 0.9;
 }
 
 .event-stats span {
@@ -2197,6 +2185,20 @@ select {
     margin-top: auto;
     border-color: #fff;
     color: var(--ink);
+}
+
+/* On a panel the button takes the kind's colour, like the label */
+.event-info .event-link {
+    background: var(--tab-bg);
+    border-color: var(--tab-bg);
+    color: var(--tab-ink);
+    transition: filter 0.15s;
+}
+
+.event-info .event-link:hover {
+    background: var(--tab-bg);
+    border-color: var(--tab-bg);
+    filter: brightness(0.9);
 }
 
 .event-info .event-link {
@@ -2220,6 +2222,8 @@ select {
     align-items: center;
     gap: 0.2rem;
     margin: 0 0 0.2rem;
+    position: relative;
+    top: 1px; /* nudged a pixel closer to the card */
     color: var(--muted);
     font-weight: 500;
     font-size: 0.78rem;
@@ -2239,7 +2243,7 @@ select {
 }
 
 .event-link:focus-visible {
-    outline-color: #fff;
+    outline-color: var(--ink);
 }
 
 /* My gifts */
@@ -2579,7 +2583,7 @@ button.event-edit {
 
 /* "Mina inköp" fold-out (GiftsCollapse): only a thing on phones. On wider screens the bar is
    hidden and the wrappers step aside, so the section is the card's right column as usual. */
-.event-gifts-toggle {
+.event-gifts-bar {
     display: none;
 }
 
@@ -2675,31 +2679,79 @@ button.event-edit {
         padding: 0;
     }
 
-    /* Secret Santa keeps its date badge (there's no date text under its title) */
-    .event-santa .event-head .date-badge {
-        display: grid;
-    }
-
-    /* Secret Santa: no fixed height on phones */
+    /* Secret Santa: no fixed height on phones, and "Du ska ge en gåva till:" on the right
+       of the title (or under it, right-aligned, if there isn't room) */
     .event-santa .event-info {
-        min-height: 0;
+        /* At least 10px taller than its tab. The tab always says "Secret Santa", so its height is
+           known: 8.8rem (measured). */
+        min-height: calc(8.8rem + 10px);
+        flex-direction: row;
+        flex-wrap: nowrap;
+        align-items: stretch;
+        column-gap: 1rem;
+    }
+
+    .event-santa .event-info > .event-head {
+        width: auto;
+        flex: 0 0 auto; /* the details keep their width; the right side gives way */
+        max-width: 60%;
+        min-width: auto;
+    }
+
+    /* Same air between the date and the budget line as above the counts on the list cards */
+    .event-santa .event-info .santa-meta {
+        margin-top: 1.1rem;
+    }
+
+    /* Break the title between words, not inside them */
+    .event-santa .event-info h3 {
+        overflow-wrap: normal;
+    }
+
+    /* Who I got: pushed to the right of the event's details (text left-aligned in it),
+       vertically centred, with some air before the panel's right edge */
+    .event-santa .santa-secret {
+        flex: 0 1 auto;
+        min-width: 0;
+        width: auto;
+        margin: 0 0 0 auto;
+        padding-right: 0.75rem;
+        justify-content: center; /* vertically centred; left-aligned */
     }
 
 
-    /* "Mina inköp ⌄" – a bar under the panel; tap to roll the section out */
-    .event-gifts-toggle {
+    /* "Mina inköp (2) ⌄" – a bar under the panel; tap to roll the section out.
+       The add buttons sit on the right of the same bar. */
+    .event-gifts-bar {
         display: flex;
         align-items: center;
         justify-content: space-between;
+        flex-wrap: wrap;
         gap: 0.5rem;
-        width: 100%;
-        padding: 0.85rem 1.25rem;
+        padding: 0.6rem 0.6rem 0.6rem 1rem;
+    }
+
+    /* A bit more compact, so it fits beside "Mina inköp" */
+    .event-gifts-bar .btn {
+        padding-inline: 0.7rem;
+        font-size: 0.85rem;
+    }
+
+    .event-gifts-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.25rem 0;
         border: none;
         background: none;
         font: inherit;
         font-weight: 600;
         color: var(--ink);
         cursor: pointer;
+    }
+
+    .event-gifts-toggle .muted {
+        font-weight: 500;
     }
 
     .event-gifts-toggle svg {
@@ -2736,13 +2788,13 @@ button.event-edit {
         transition: visibility 0s;
     }
 
-    /* The bar already says "Mina inköp" */
-    .event-gifts-head h4 {
+    /* The bar already has the heading and the buttons */
+    .event-gifts-head {
         display: none;
     }
 
-    .event-gifts-head {
-        justify-content: flex-end;
+    .event-gifts-collapse .event-gifts {
+        padding-top: 0.25rem;
     }
 
     .event-gifts {
@@ -3456,12 +3508,8 @@ button.event-edit {
 }
 
 .text-link:hover {
-    text-decoration-thickness: 2px;
+    text-decoration-thickness: 1.5px;
     text-underline-offset: 0.25em;
-}
-
-.text-link:hover {
-    text-decoration-thickness: 3px;
 }
 
 .text-link:disabled {
@@ -3648,6 +3696,11 @@ button.event-edit {
     .events,
     .list-cards {
         margin-inline: -0.75rem;
+    }
+
+    /* …but "Till: Anders" above a card lines up with the text */
+    .event-to {
+        padding-left: 0.75rem;
     }
 
     /* Slightly smaller table text on phones */

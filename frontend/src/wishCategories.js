@@ -1,7 +1,7 @@
 // Categories in the wish profile – someone can like or not like each. The keys are what's saved
 // (the same list is in api/_lib/profileSchema.js).
 import {
-    BookOpen, Candy, Clapperboard, Coffee, Dumbbell, Gamepad2, Gem, Headphones, Palette, PawPrint, Plane,
+    BookOpen, Candy, Clapperboard, Coffee, Dumbbell, Gamepad2, Gem, Headphones, Palette, Plane,
     Puzzle, Shirt, Smartphone, Sofa, Sparkles, Sprout, Tent, Ticket, ToyBrick, UtensilsCrossed,
 } from "lucide-react";
 
@@ -26,7 +26,6 @@ export const WISH_CATEGORIES = [
     { key: "crafts", label: "Pyssel & konst", Icon: Palette },
     { key: "experiences", label: "Upplevelser", Icon: Ticket },
     { key: "travel", label: "Resor", Icon: Plane },
-    { key: "animals", label: "Djur", Icon: PawPrint },
 ];
 
 export const categoryByKey = Object.fromEntries(WISH_CATEGORIES.map((c) => [c.key, c]));

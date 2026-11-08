@@ -201,22 +201,23 @@ export function GiftTable({ rows, onChanged, totalLabel = "Totalt" }) {
 // "Mina inköp" on a card. On phones it starts folded away behind a bar with a down arrow and
 // rolls out when tapped; on wider screens the bar is hidden and the section always shows
 // (the wrappers are display: contents there).
-export function GiftsCollapse({ count = null, children }) {
+export function GiftsCollapse({ count = null, actions = null, children }) {
     const [open, setOpen] = useState(false);
 
     return (
         <>
-            <button
-                type="button"
-                className={`event-gifts-toggle${open ? " is-open" : ""}`}
-                aria-expanded={open}
-                onClick={() => setOpen(!open)}
-            >
-                <span>
+            <div className="event-gifts-bar">
+                <button
+                    type="button"
+                    className={`event-gifts-toggle${open ? " is-open" : ""}`}
+                    aria-expanded={open}
+                    onClick={() => setOpen(!open)}
+                >
                     Mina inköp {count !== null && <span className="muted small">({count})</span>}
-                </span>
-                <ChevronDown size={18} aria-hidden="true" />
-            </button>
+                    <ChevronDown size={18} aria-hidden="true" />
+                </button>
+                {actions}
+            </div>
             <div className={`event-gifts-collapse${open ? " is-open" : ""}`}>
                 <div className="event-gifts-collapse-inner">{children}</div>
             </div>
@@ -234,6 +235,33 @@ export function EventRow({ event, archived = false, onChanged }) {
     const variant = kind + (archived ? " event-archived" : "");
     const kicker = listId ? "Önskelista" : santaId ? "Secret Santa" : personId ? "Önskeprofil" : "Egen lista";
     const KickerIcon = listId ? ScrollText : santaId ? HatGlasses : personId ? null : Table2;
+
+    // The buttons for adding a gift: in the section's head – on phones up in the "Mina inköp" bar
+    const actions = isRecipient ? null : (
+        <>
+            {listId && !archived && (
+                <AddGiftButton listId={listId} className="btn btn-small btn-ghost" onAdded={onChanged}>
+                    <GiftPlusIcon /> Överraskningsgåva
+                </AddGiftButton>
+            )}
+            {/* An own event: another gift for the same event (name, person and date filled in) */}
+            {!listId && !santaId && !personId && eventName && !archived && (
+                <AddGiftButton
+                    presetEvent={{ name: eventName, recipientId, recipientName: recipients, date: endDate }}
+                    title="Logga en gåva"
+                    className="btn btn-small btn-ghost"
+                    onAdded={onChanged}
+                >
+                    <GiftPlusIcon /> Ytterligare gåva
+                </AddGiftButton>
+            )}
+            {santaId && !archived && (
+                <AddGiftButton santaId={santaId} className="btn btn-small btn-ghost" onAdded={onChanged}>
+                    <GiftPlusIcon /> Överraskningsgåva
+                </AddGiftButton>
+            )}
+        </>
+    );
 
     return (
         <div className={`event-group${variant}`}>
@@ -284,7 +312,7 @@ export function EventRow({ event, archived = false, onChanged }) {
                     )}
                 </div>
 
-                <GiftsCollapse count={isRecipient ? null : gifts.length}>
+                <GiftsCollapse count={isRecipient ? null : gifts.length} actions={actions}>
                 <div className="event-gifts">
                     {isRecipient ? (
                         <p className="event-note">
@@ -297,27 +325,7 @@ export function EventRow({ event, archived = false, onChanged }) {
                                 <h4>
                                     Mina inköp {gifts.length > 0 && <span className="muted small">({gifts.length})</span>}
                                 </h4>
-                                {listId && !archived && (
-                                    <AddGiftButton listId={listId} className="btn btn-small btn-ghost" onAdded={onChanged}>
-                                        <GiftPlusIcon /> Överraskningsgåva
-                                    </AddGiftButton>
-                                )}
-                                {/* An own event: another gift for the same event (name, person and date filled in) */}
-                                {!listId && !santaId && !personId && eventName && !archived && (
-                                    <AddGiftButton
-                                        presetEvent={{ name: eventName, recipientId, recipientName: recipients, date: endDate }}
-                                        title="Logga en gåva"
-                                        className="btn btn-small btn-ghost"
-                                        onAdded={onChanged}
-                                    >
-                                        <GiftPlusIcon /> Ytterligare gåva
-                                    </AddGiftButton>
-                                )}
-                                {santaId && !archived && (
-                                    <AddGiftButton santaId={santaId} className="btn btn-small btn-ghost" onAdded={onChanged}>
-                                        <GiftPlusIcon /> Överraskningsgåva
-                                    </AddGiftButton>
-                                )}
+                                {actions}
                             </div>
                             {gifts.length > 0 ? (
                                 <GiftTable rows={gifts} onChanged={onChanged} />

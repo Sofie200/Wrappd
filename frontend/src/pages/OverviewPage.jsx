@@ -11,7 +11,7 @@ import PersonLink from "../components/PersonLink.jsx";
 import SettingsMenu from "../components/SettingsMenu.jsx";
 import { buildEvents, dateOrder, EventRow, GiftsCollapse, GiftTable } from "../components/EventRow.jsx";
 import { formatPrice } from "../format.js";
-import DateBadge from "../components/DateBadge.jsx";
+import DateBadge, { EventDate } from "../components/DateBadge.jsx";
 import AddGiftButton from "../components/AddGiftButton.jsx";
 import ListPanelCard from "../components/ListPanelCard.jsx";
 import GiftPlusIcon from "../components/GiftPlusIcon.jsx";
@@ -55,6 +55,13 @@ function SantaRow({ santa, gifts = [], onChanged }) {
         }
     }
 
+    // In the section's head – on phones up in the "Mina inköp" bar
+    const addGift = (
+        <AddGiftButton santaId={santa.id} className="btn btn-small btn-ghost" onAdded={onChanged}>
+            <GiftPlusIcon /> Överraskningsgåva
+        </AddGiftButton>
+    );
+
     return (
         <div className="event-group">
             {/* Same label as the lists – but it never says who */}
@@ -82,6 +89,7 @@ function SantaRow({ santa, gifts = [], onChanged }) {
                                     </SettingsMenu>
                                 )}
                             </div>
+                            {santa.date && <EventDate iso={santa.date} />}
                             <p className="santa-meta">
                                 {santa.budget !== null && (
                                     <>
@@ -137,7 +145,7 @@ function SantaRow({ santa, gifts = [], onChanged }) {
                 </div>
 
                 {/* Right side: only my gifts for it */}
-                <GiftsCollapse count={receiver ? gifts.length : null}>
+                <GiftsCollapse count={receiver ? gifts.length : null} actions={receiver ? addGift : null}>
                 <div className="event-gifts">
                     <ErrorMessage message={error} />
                     {receiver ? (
@@ -146,9 +154,7 @@ function SantaRow({ santa, gifts = [], onChanged }) {
                                 <h4>
                                     Mina inköp {gifts.length > 0 && <span className="muted small">({gifts.length})</span>}
                                 </h4>
-                                <AddGiftButton santaId={santa.id} className="btn btn-small btn-ghost" onAdded={onChanged}>
-                                    <GiftPlusIcon /> Överraskningsgåva
-                                </AddGiftButton>
+                                {addGift}
                             </div>
                             {gifts.length > 0 ? (
                                 <GiftTable rows={gifts} onChanged={onChanged} totalLabel="Totalt" />
