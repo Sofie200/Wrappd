@@ -2,7 +2,7 @@
 // without a list) with its details on the left in a contrasting colour, and my gifts for it on the right.
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, CircleMinus, Ellipsis, Gift, HatGlasses, Pencil, ScrollText, Sparkles, Trash2 } from "lucide-react";
+import { ArrowRight, ChevronDown, CircleMinus, Ellipsis, Gift, HatGlasses, Pencil, ScrollText, Sparkles, Table2, Trash2 } from "lucide-react";
 import { api } from "../api.js";
 import { ErrorMessage } from "./Feedback.jsx";
 import Modal from "./Modal.jsx";
@@ -198,6 +198,32 @@ export function GiftTable({ rows, onChanged, totalLabel = "Totalt" }) {
     );
 }
 
+// "Mina inköp" on a card. On phones it starts folded away behind a bar with a down arrow and
+// rolls out when tapped; on wider screens the bar is hidden and the section always shows
+// (the wrappers are display: contents there).
+export function GiftsCollapse({ count = null, children }) {
+    const [open, setOpen] = useState(false);
+
+    return (
+        <>
+            <button
+                type="button"
+                className={`event-gifts-toggle${open ? " is-open" : ""}`}
+                aria-expanded={open}
+                onClick={() => setOpen(!open)}
+            >
+                <span>
+                    Mina inköp {count !== null && <span className="muted small">({count})</span>}
+                </span>
+                <ChevronDown size={18} aria-hidden="true" />
+            </button>
+            <div className={`event-gifts-collapse${open ? " is-open" : ""}`}>
+                <div className="event-gifts-collapse-inner">{children}</div>
+            </div>
+        </>
+    );
+}
+
 // One event: the list's details on the left (in a contrasting colour), my gifts for it on the right
 export function EventRow({ event, archived = false, onChanged }) {
     const { listId, santaId, personId, title, endDate, recipients, isRecipient, canOpen, gifts, wishCount, reservedCount } =
@@ -207,7 +233,7 @@ export function EventRow({ event, archived = false, onChanged }) {
     const kind = isRecipient ? " event-to-me" : santaId ? " event-santa" : !listId ? " event-no-list" : "";
     const variant = kind + (archived ? " event-archived" : "");
     const kicker = listId ? "Önskelista" : santaId ? "Secret Santa" : personId ? "Önskeprofil" : "Egen lista";
-    const KickerIcon = listId ? ScrollText : santaId ? HatGlasses : null;
+    const KickerIcon = listId ? ScrollText : santaId ? HatGlasses : personId ? null : Table2;
 
     return (
         <div className={`event-group${variant}`}>
@@ -258,6 +284,7 @@ export function EventRow({ event, archived = false, onChanged }) {
                     )}
                 </div>
 
+                <GiftsCollapse count={isRecipient ? null : gifts.length}>
                 <div className="event-gifts">
                     {isRecipient ? (
                         <p className="event-note">
@@ -322,6 +349,7 @@ export function EventRow({ event, archived = false, onChanged }) {
                         </>
                     )}
                 </div>
+                </GiftsCollapse>
             </article>
         </div>
     );

@@ -37,11 +37,14 @@ async function requireGroupAdmin(db, groupId, userId) {
     return member;
 }
 
-/* --- GET /api/groups → { data: [{ id, name, isAdmin, includeChildren, memberCount }] } – my groups --- */
+/* --- GET /api/groups → { data: [{ id, name, isAdmin, includeChildren, memberCount, activeListCount }] } – my groups --- */
+// activeListCount: published lists shared with the group whose date hasn't passed
 router.get("/", async (req, res) => {
     const { rows } = await pool.query(
         `SELECT g.id, g.name, gm.is_admin AS "isAdmin", g.include_children AS "includeChildren",
-                (SELECT count(*)::int FROM group_members WHERE group_id = g.id) AS "memberCount"
+                (SELECT count(*)::int FROM group_members WHERE group_id = g.id) AS "memberCount",
+                (SELECT count(*)::int FROM list_groups lg JOIN lists l ON l.id = lg.list_id
+                 WHERE lg.group_id = g.id AND l.is_public AND l.end_date >= ${TODAY}) AS "activeListCount"
          FROM groups g
          JOIN group_members gm ON gm.group_id = g.id AND gm.user_id = $1
          ORDER BY g.name`,

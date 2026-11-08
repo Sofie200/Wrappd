@@ -1912,7 +1912,9 @@ select {
 }
 
 :root {
-    --event-panel-width: 300px; /* the coloured panel – also the width of the private list cards, so they line up */
+    /* The coloured panel: a third of the card, as if the card were three columns with 20px gaps.
+       The list cards use the same three columns, so everything lines up. (% resolves in each grid.) */
+    --event-panel-width: calc((100% - 40px) / 3);
 }
 
 .event {
@@ -1927,7 +1929,7 @@ select {
 
 /* The event: white text on a radial rose gradient (wish lists). --tab-bg is the label's darker shade. */
 .event-info {
-    --event-bg: radial-gradient(circle at 15% 10%, var(--rose) 0%, #b02a4f 90%); /* lighter in the top-left corner */
+    --event-bg: linear-gradient(135deg, #f0773f 0%, #e44a72 100%); /* light orange top-left into rose */
     --tab-bg: #a92b4b;
     --tab-ink: #fff;
     border-radius: calc(var(--radius) - 1px) 0 0 calc(var(--radius) - 1px);
@@ -2046,7 +2048,7 @@ select {
 
 /* Secret Santa: a warm yellow-to-orange panel with dark text (white would be hard to read on it) */
 .event-santa .event-info {
-    --event-bg: radial-gradient(circle at 15% 10%, #ffdc85 0%, #ef9310 90%);
+    --event-bg: linear-gradient(135deg, #ffd66a 0%, #f28a1a 100%); /* yellow into orange */
     --tab-bg: #e58e0c;
     --tab-ink: var(--ink);
     --badge-ink: var(--yellow-ink);
@@ -2062,11 +2064,11 @@ select {
     outline-color: var(--ink);
 }
 
-/* Gifts without a list (and from wish profiles): a green gradient – dark enough for white text */
+/* Gifts without a list (and from wish profiles): a blue-green gradient – dark enough for white text */
 .event-no-list .event-info {
-    --event-bg: radial-gradient(circle at 15% 10%, #5aa967 0%, #245c30 90%);
-    --tab-bg: #235a2e;
-    --badge-ink: #2c6e39;
+    --event-bg: linear-gradient(135deg, #3aa077 0%, #2f8a8e 45%, #2c68a8 100%); /* light green top-left into blue */
+    --tab-bg: #24578f;
+    --badge-ink: #2b5d8f;
 }
 
 /* A private list on the overview: the same panel, inverted – white with rose details, and no gifts column */
@@ -2120,8 +2122,8 @@ select {
 
 .list-cards {
     /* Same width as the panels above, and the same gap as between the events */
-    grid-template-columns: repeat(auto-fill, var(--event-panel-width));
-    gap: 1.25rem;
+    grid-template-columns: repeat(3, var(--event-panel-width));
+    gap: 20px;
 }
 
 /* Past events keep their kind's colour, toned down: less saturated and a little faded */
@@ -2357,7 +2359,22 @@ button.event-edit {
 }
 
 /* "Budget: 500 kr · 9 deltagare" under the Secret Santa's title – the count opens the participant list */
+.santa-budget {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.santa-budget svg {
+    flex: none;
+}
+
 .event-info .santa-meta {
+    /* A flex row, so the coin icon doesn't pull the budget off the line of the text after it */
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    column-gap: 0.35rem;
     margin-top: 0.15rem;
     font-size: 0.85rem; /* same as the wish/reserved counts on the other cards */
     font-weight: 500;
@@ -2413,7 +2430,7 @@ button.event-edit {
 
 /* Click the name to show or hide it. Pulled up a little – the round eye makes the row above taller. */
 .santa-name {
-    margin-top: -0.25rem;
+    margin-top: 0.1rem;
     cursor: pointer;
 }
 
@@ -2441,6 +2458,40 @@ button.event-edit {
     animation: confetti-fly 1.3s cubic-bezier(0.2, 0.7, 0.4, 1) forwards;
 }
 
+/* The pieces left lying on the card: they drop in as the burst fades, then stay */
+.confetti-rest {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    border-radius: inherit;
+    pointer-events: none;
+}
+
+.confetti-rest-piece {
+    position: absolute;
+    opacity: 0;
+    transform: rotate(var(--spin));
+    animation: confetti-land 0.5s ease-out forwards;
+}
+
+@keyframes confetti-land {
+    from {
+        opacity: 0;
+        transform: translateY(-14px) rotate(calc(var(--spin) - 90deg));
+    }
+    to {
+        opacity: 0.9;
+        transform: translateY(0) rotate(var(--spin));
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .confetti-rest-piece {
+        animation: none;
+        opacity: 0.9;
+    }
+}
+
 /* Out in a burst, then drifting down and fading */
 @keyframes confetti-fly {
     0% {
@@ -2457,32 +2508,39 @@ button.event-edit {
     }
 }
 
-/* Who I got, centred: the label, the name and "Se önskeprofil →" right under it */
-.event-santa .santa-secret {
-    align-items: center;
-    text-align: center;
+/* Who I got, left-aligned: the label, then "Anki · ♡ Se önskeprofil ›" */
+.santa-who {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.15rem;
+    min-width: 0;
 }
 
 .santa-name-row {
     display: flex;
     align-items: baseline;
-    justify-content: center;
+    justify-content: flex-start;
     flex-wrap: wrap;
-    gap: 0.25rem 0.75rem;
+    gap: 0.25rem 0.85rem;
     max-width: 100%;
 }
 
-.text-link.santa-profile-link {
-    margin-top: 0.35rem;
+/* The eye on top of the blurred name, on a light round background */
+.santa-name-wrap {
+    position: relative;
     display: inline-flex;
-    align-items: center;
-    gap: 0.3rem;
-    font-size: 0.9rem;
 }
 
-/* The eye on top of the whole blurred name row, on a light round background */
-.santa-name-row {
-    position: relative;
+/* Once shown, the name opens the wish profile – underlined like the other links on the panel
+   (.text-link sets font: inherit, so the size needs the double class) */
+.text-link.santa-name-link {
+    font-size: 1.35rem;
+    text-align: left;
+}
+
+.santa-name-link:focus-visible {
+    outline-color: var(--ink);
 }
 
 .icon-btn.santa-eye.santa-eye-over {
@@ -2517,6 +2575,17 @@ button.event-edit {
 
 .history .events {
     margin-top: 0.5rem;
+}
+
+/* "Mina inköp" fold-out (GiftsCollapse): only a thing on phones. On wider screens the bar is
+   hidden and the wrappers step aside, so the section is the card's right column as usual. */
+.event-gifts-toggle {
+    display: none;
+}
+
+.event-gifts-collapse,
+.event-gifts-collapse-inner {
+    display: contents;
 }
 
 /* Stacked on small screens: the event on top, my gifts below */
@@ -2617,8 +2686,67 @@ button.event-edit {
     }
 
 
+    /* "Mina inköp ⌄" – a bar under the panel; tap to roll the section out */
+    .event-gifts-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.5rem;
+        width: 100%;
+        padding: 0.85rem 1.25rem;
+        border: none;
+        background: none;
+        font: inherit;
+        font-weight: 600;
+        color: var(--ink);
+        cursor: pointer;
+    }
+
+    .event-gifts-toggle svg {
+        flex: none;
+        color: var(--accent);
+        transition: transform 0.25s ease;
+    }
+
+    .event-gifts-toggle.is-open svg {
+        transform: rotate(180deg);
+    }
+
+    /* Rolls open by animating the row from 0fr to 1fr */
+    .event-gifts-collapse {
+        display: grid;
+        grid-template-rows: 0fr;
+        transition: grid-template-rows 0.3s ease;
+    }
+
+    .event-gifts-collapse.is-open {
+        grid-template-rows: 1fr;
+    }
+
+    .event-gifts-collapse-inner {
+        display: block;
+        min-height: 0;
+        overflow: hidden;
+        visibility: hidden; /* out of the tab order while folded */
+        transition: visibility 0s 0.3s;
+    }
+
+    .event-gifts-collapse.is-open .event-gifts-collapse-inner {
+        visibility: visible;
+        transition: visibility 0s;
+    }
+
+    /* The bar already says "Mina inköp" */
+    .event-gifts-head h4 {
+        display: none;
+    }
+
+    .event-gifts-head {
+        justify-content: flex-end;
+    }
+
     .event-gifts {
-        padding: 1rem 1.25rem 1.25rem;
+        padding: 0 1.25rem 1.25rem;
     }
 
     /* Only what matters on a phone: the gift, my share and the icons */

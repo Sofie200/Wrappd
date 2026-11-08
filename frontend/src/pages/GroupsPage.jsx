@@ -48,7 +48,8 @@ export default function GroupsPage() {
                                     {group.isAdmin && <span className="badge">Admin</span>}
                                 </div>
                                 <p className="muted">
-                                    {group.memberCount} {group.memberCount === 1 ? "medlem" : "medlemmar"}
+                                    {group.memberCount} {group.memberCount === 1 ? "medlem" : "medlemmar"} ·{" "}
+                                    {group.activeListCount} {group.activeListCount === 1 ? "aktiv lista" : "aktiva listor"}
                                 </p>
                             </Link>
                         ))}

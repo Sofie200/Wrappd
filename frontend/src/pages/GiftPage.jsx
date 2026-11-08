@@ -409,7 +409,8 @@ function GiftForm({ data, lists, santas, presetListId, presetSantaId, presetEven
                 <label className="field">
                     <span>Kommentar</span>
                     <textarea value={form.comment} onChange={set("comment")} rows={3} maxLength={1000} disabled={busy} />
-                    <small>Syns bara för den/de som köpt gåvan.</small>
+                    {/* Not for Secret Santa – only I have it anyway */}
+                    {form.santaId === "" && <small>Syns bara för den/de som köpt gåvan.</small>}
                 </label>
 
                 {canShare ? (
@@ -490,16 +491,15 @@ function GiftForm({ data, lists, santas, presetListId, presetSantaId, presetEven
                     </>
                 ) : (
                     !forEvent &&
-                    (isNew && form.listId !== "" && form.santaId === "" ? (
+                    form.santaId === "" &&
+                    (isNew && form.listId !== "" ? (
                         // A new gift on a list: sharing comes after saving – as a banner
                         <Notice>När gåvan är sparad kan du dela den med andra.</Notice>
                     ) : (
                         <p className="small muted">
-                            {form.santaId !== ""
-                                ? "En Secret Santa-gåva kan inte delas – bara du vet vem den är till."
-                                : form.listId === ""
-                                  ? "En gåva utan lista kan inte delas med andra. Välj en lista för att kunna dela den."
-                                  : "Spara först – sedan kan du välja vilka i den nya listans grupper som delar på gåvan."}
+                            {form.listId === ""
+                                ? "En gåva utan lista kan inte delas med andra. Välj en lista för att kunna dela den."
+                                : "Spara först – sedan kan du välja vilka i den nya listans grupper som delar på gåvan."}
                         </p>
                     ))
                 )}
