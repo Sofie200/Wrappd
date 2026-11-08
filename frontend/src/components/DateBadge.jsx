@@ -1,8 +1,8 @@
-import { Badge } from "lucide-react";
+import { Calendar } from "lucide-react";
 import { formatDate } from "../format.js";
 
-// A date as a compact badge: the day over a short month ("8" / "NOV") on a filled, wavy-edged
-// circle outline (lucide's Badge shape). Screen readers get the full date. `title` replaces the
+// A date as a small calendar (lucide's Calendar icon) with the day ("8") in it, and the short
+// month ("NOV") under it. Screen readers get the full date. `title` replaces the
 // default tooltip (the full date).
 export default function DateBadge({ iso, title }) {
     const [y, m, d] = iso.split("-").map(Number);
@@ -11,10 +11,13 @@ export default function DateBadge({ iso, title }) {
 
     return (
         <time className="date-badge" dateTime={iso} title={title ?? formatDate(iso)}>
-            <Badge className="date-badge-shape" fill="none" stroke="currentColor" strokeWidth={0.6} aria-hidden="true" />
-            <span className="date-badge-text" aria-hidden="true">
+            {/* The day inside a small calendar, the month under it */}
+            <span className="date-badge-cal" aria-hidden="true">
+                <Calendar className="date-badge-shape" strokeWidth={1.25} />
                 <span className="date-badge-day">{d}</span>
-                <span className="date-badge-month">{month}</span>
+            </span>
+            <span className="date-badge-month" aria-hidden="true">
+                {month}
             </span>
             <span className="visually-hidden">{formatDate(iso)}</span>
         </time>

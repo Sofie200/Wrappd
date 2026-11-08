@@ -2051,16 +2051,22 @@ select {
 
 /* ---------- Date badge: "8 / NOV" on a filled wavy-edged circle ---------- */
 .date-badge {
-    --badge-size: 58px;
-    position: relative;
+    --badge-size: 40px;
     flex: none;
-    display: grid;
-    place-items: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.1rem;
+    /* Pull it left by the empty space around lucide's calendar, so its edge lines up with the text below */
+    margin-left: calc(var(--badge-size) * -0.125);
+    color: var(--ink);
+    line-height: 1;
+}
+
+.date-badge-cal {
+    position: relative;
     width: var(--badge-size);
     height: var(--badge-size);
-    /* Pull the badge left by the empty space around lucide's shape, so its edge lines up with the text below */
-    margin-left: calc(var(--badge-size) * -0.09);
-    color: var(--ink); /* the shape's outline – no fill, the panel shows through */
 }
 
 .date-badge-shape {
@@ -2070,23 +2076,34 @@ select {
     height: 100%;
 }
 
-.date-badge-text {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    line-height: 1;
-    color: var(--ink);
+/* The day centred in the calendar's body (y 10–22 of 24) */
+.date-badge-day {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 59%; /* nudged up from the body's centre (66.7%) – looks more centred */
+    transform: translateY(calc(-50% - 2px));
+    text-align: center;
+    font-size: 0.58rem;
+    font-weight: 600;
+}
+
+.date-badge-month {
+    margin-top: -2px;
+    font-size: 0.56rem;
+    font-weight: 900;
+    letter-spacing: 0.08em;
 }
 
 .date-badge-day {
+    top: 66.7%;
     font-size: 1.1rem;
     font-weight: 600;
 }
 
 .date-badge-month {
-    margin-top: 0.1rem;
-    font-size: 0.56rem;
+    top: 30%;
+    font-size: 0.5rem;
     font-weight: 600;
     letter-spacing: 0.08em;
 }
