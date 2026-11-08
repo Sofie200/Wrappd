@@ -2595,7 +2595,7 @@ button.event-edit {
 /* Stacked on small screens: the event on top, my gifts below */
 @media (max-width: 720px) {
     .event {
-        grid-template-columns: 1fr;
+        grid-template-columns: minmax(0, 1fr); /* never wider than the screen, whatever is inside */
     }
 
     .list-cards {
