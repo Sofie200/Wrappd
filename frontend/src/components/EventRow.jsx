@@ -265,20 +265,23 @@ export function EventRow({ event, archived = false, onChanged }) {
 
     return (
         <div className={`event-group${variant}`}>
-            {/* Who it's for, as a label above the card – a list's recipients, or the person linked to an own event */}
-            {(listId || (!santaId && !personId)) && recipients && (
-                <p className="event-to">
-                    Till: <span className="event-for">{recipients}</span>
+            {/* Above the card: the kind of event as a tab on its top-left corner, and who it's for beside it –
+                a list's recipients, or the person linked to an own event */}
+            <div className="event-tab-row">
+                <p className="event-kicker">
+                    {KickerIcon && <KickerIcon size={14} aria-hidden="true" />} {kicker}
                 </p>
-            )}
+                {(listId || (!santaId && !personId)) && recipients && (
+                    <p className="event-to">
+                        Till: <span className="event-for">{recipients}</span>
+                    </p>
+                )}
+            </div>
             <article className={`event${variant}`}>
                 <div className="event-info">
                     <div className="event-head">
                         {endDate && <DateBadge iso={endDate} />}
                         <div className="event-title">
-                            <p className="event-kicker">
-                                {KickerIcon && <KickerIcon size={14} aria-hidden="true" />} {kicker}
-                            </p>
                             <h3>{title ?? `Till ${recipients}`}</h3>
                             {endDate && <EventDate iso={endDate} />}
                         </div>

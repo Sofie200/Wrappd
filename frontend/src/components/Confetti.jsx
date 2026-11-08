@@ -52,30 +52,3 @@ export default function Confetti({ anchor }) {
     );
 }
 
-// A few pieces left lying on the card after the burst, landing as the burst fades.
-// Place it inside a positioned element; it covers it without catching clicks.
-export function ConfettiRest({ count = 12 }) {
-    const [pieces] = useState(() =>
-        Array.from({ length: count }, (_, i) => ({
-            key: i,
-            style: {
-                left: `${4 + Math.random() * 92}%`,
-                top: `${4 + Math.random() * 92}%`,
-                "--spin": `${Math.round(Math.random() * 360)}deg`,
-                background: COLORS[i % COLORS.length],
-                width: `${5 + Math.random() * 3}px`,
-                height: `${7 + Math.random() * 5}px`,
-                borderRadius: Math.random() < 0.3 ? "50%" : "2px",
-                animationDelay: `${700 + Math.random() * 500}ms`,
-            },
-        }))
-    );
-
-    return (
-        <div className="confetti-rest" aria-hidden="true">
-            {pieces.map((p) => (
-                <span key={p.key} className="confetti-rest-piece" style={p.style} />
-            ))}
-        </div>
-    );
-}

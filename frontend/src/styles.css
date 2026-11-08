@@ -1756,7 +1756,7 @@ select {
 }
 
 .table tfoot td {
-    font-weight: 500;
+    font-weight: 600;
     border-bottom: 0;
 }
 
@@ -1845,6 +1845,10 @@ select {
     font-weight: 500;
 }
 
+.table tfoot .share {
+    font-weight: 600; /* as bold as the rest of the total row */
+}
+
 /* ---------- Wish form: link + "Hämta uppgifter" ---------- */
 .field > label {
     font-weight: 500;
@@ -1925,7 +1929,55 @@ select {
     border: 1px solid var(--line);
     border-radius: var(--radius);
     box-shadow: var(--shadow);
-    /* Not overflow: hidden – the vertical label sticks out on the left. The panel rounds its own corners. */
+    /* The panel rounds its own corners */
+}
+
+/* Above each card: the kind of event as a tab sitting on the card's top-left corner, "Till: Anders"
+   beside it. The two texts share a baseline. */
+.event-tab-row {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+}
+
+/* The tab's colours (the panel inside sets the same ones for its button) */
+.event-group {
+    --tab-bg: var(--accent-strong);
+    --tab-ink: var(--accent-ink);
+}
+
+.event-group.event-to-me {
+    --tab-bg: var(--lavender);
+    --tab-ink: var(--ink);
+}
+
+.event-group.event-santa {
+    --tab-bg: var(--orange);
+    --tab-ink: var(--ink);
+}
+
+.event-group.event-no-list {
+    --tab-bg: var(--sky);
+    --tab-ink: var(--ink);
+}
+
+.event-group.event-light {
+    --tab-bg: #f9cbd5;
+    --tab-ink: var(--accent-text);
+}
+
+.event-group.event-archived .event-kicker {
+    filter: saturate(0.45) brightness(1.05);
+    opacity: 0.85;
+}
+
+/* The tab's corner of the card is square, so the tab sits flush on it */
+.event-tab-row + .event {
+    border-top-left-radius: 0;
+}
+
+.event-tab-row + .event .event-info {
+    border-top-left-radius: 0;
 }
 
 /* The event: dark text on a pale gradient, lighter top-left (wish lists: peach into pink).
@@ -1939,8 +1991,7 @@ select {
     flex-direction: column;
     align-items: flex-start;
     gap: 0.5rem;
-    padding: 1.1rem 0.9rem 0.9rem 2.35rem; /* left: room for the vertical label; right/bottom: same as the edit icon's inset */
-    min-height: 9.5rem; /* tall enough for the longest vertical label */
+    padding: 1.1rem 0.9rem 0.9rem 1.25rem; /* right/bottom: same as the edit icon's inset */
     color: var(--ink);
     background: var(--event-bg);
 }
@@ -2084,6 +2135,11 @@ select {
     border-radius: calc(var(--radius) - 1px);
 }
 
+/* The count right under the title on a private list card – with a little air */
+.event-title .event-stats {
+    margin-top: 0.35rem;
+}
+
 .event-light .event-stats svg {
     color: var(--accent);
 }
@@ -2135,19 +2191,14 @@ select {
 /* The label ("Önskelista", "Secret Santa" …) runs vertically in the panel's top-left corner, as a tab
    in a darker shade that sticks out past the card's edge */
 .event-kicker {
-    position: absolute;
-    left: -0.55rem;
-    top: 0;
-    display: flex;
-    align-items: center;
+    display: inline-flex;
+    align-items: baseline; /* so the tab's baseline is its text's – the icon is centred on its own below */
     gap: 0.35rem;
-    padding: 0.7rem 0.3rem;
-    border-radius: 6px 0 6px 6px; /* square top-right corner */
+    margin: 0;
+    padding: 0.35rem 0.75rem 0.3rem;
+    border-radius: 8px 8px 0 0; /* a folder tab: rounded on top, flat where it meets the card */
     background: var(--tab-bg);
     color: var(--tab-ink);
-    /* Reads bottom to top without turning the box – a transform could leave it a fraction of a pixel
-       off the panel's edge on scaled screens */
-    writing-mode: sideways-lr;
     white-space: nowrap;
     font-size: 0.68rem;
     font-weight: 600;
@@ -2219,11 +2270,9 @@ select {
 /* "Till: Sigrid", as a small label above the card */
 .event-to {
     display: flex;
-    align-items: center;
+    align-items: baseline;
     gap: 0.2rem;
-    margin: 0 0 0.2rem;
-    position: relative;
-    top: 1px; /* nudged a pixel closer to the card */
+    margin: 0;
     color: var(--muted);
     font-weight: 500;
     font-size: 0.78rem;
@@ -2358,8 +2407,9 @@ button.event-edit {
     outline-color: var(--ink);
 }
 
+/* The icon is centred and left out of the baseline, which comes from the text */
 .event-kicker svg {
-    transform: rotate(-90deg); /* turn the icon with the text */
+    align-self: center;
 }
 
 /* "Budget: 500 kr · 9 deltagare" under the Secret Santa's title – the count opens the participant list */
@@ -2378,23 +2428,10 @@ button.event-edit {
     display: flex;
     align-items: center;
     flex-wrap: wrap;
-    column-gap: 0.35rem;
+    gap: 0.25rem 0.9rem; /* same as between the counts on the list cards */
     margin-top: 0.15rem;
     font-size: 0.85rem; /* same as the wish/reserved counts on the other cards */
     font-weight: 500;
-}
-
-/* Older browsers without sideways-lr: turn a top-to-bottom label upside down instead */
-@supports not (writing-mode: sideways-lr) {
-    .event-kicker {
-        writing-mode: vertical-rl;
-        transform: rotate(180deg);
-        border-radius: 6px 6px 6px 0; /* turned, so its bottom-left shows as top-right */
-    }
-
-    .event-kicker svg {
-        transform: rotate(90deg);
-    }
 }
 
 /* ---------- Secret Santa: who I got, hidden behind an eye ---------- */
@@ -2462,40 +2499,6 @@ button.event-edit {
     animation: confetti-fly 1.3s cubic-bezier(0.2, 0.7, 0.4, 1) forwards;
 }
 
-/* The pieces left lying on the card: they drop in as the burst fades, then stay */
-.confetti-rest {
-    position: absolute;
-    inset: 0;
-    overflow: hidden;
-    border-radius: inherit;
-    pointer-events: none;
-}
-
-.confetti-rest-piece {
-    position: absolute;
-    opacity: 0;
-    transform: rotate(var(--spin));
-    animation: confetti-land 0.5s ease-out forwards;
-}
-
-@keyframes confetti-land {
-    from {
-        opacity: 0;
-        transform: translateY(-14px) rotate(calc(var(--spin) - 90deg));
-    }
-    to {
-        opacity: 0.9;
-        transform: translateY(0) rotate(var(--spin));
-    }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .confetti-rest-piece {
-        animation: none;
-        opacity: 0.9;
-    }
-}
-
 /* Out in a burst, then drifting down and fading */
 @keyframes confetti-fly {
     0% {
@@ -2512,11 +2515,11 @@ button.event-edit {
     }
 }
 
-/* Who I got, left-aligned: the label, then "Anki · ♡ Se önskeprofil ›" */
+/* Who I got: the label, and the name centred under it */
 .santa-who {
     display: flex;
     flex-direction: column;
-    align-items: flex-start;
+    align-items: center;
     gap: 0.15rem;
     min-width: 0;
 }
@@ -2581,15 +2584,155 @@ button.event-edit {
     margin-top: 0.5rem;
 }
 
-/* "Mina inköp" fold-out (GiftsCollapse): only a thing on phones. On wider screens the bar is
-   hidden and the wrappers step aside, so the section is the card's right column as usual. */
+/* ---------- Event cards: the coloured panel on top, "Mina inköp" folded away under it ---------- */
+/* (Trying it on all screen sizes – it used to be panel left, gifts right on wide screens) */
+.events .event {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.events .event-info {
+    border-radius: calc(var(--radius) - 1px) calc(var(--radius) - 1px) 0 0;
+}
+
+/* Wide screens: the panel's details spread out in a row – title and date, the counts, then the button */
+@media (min-width: 721px) {
+    .events .event-info {
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.75rem 2.5rem;
+        min-height: 0;
+        padding: 1.1rem 1.25rem;
+    }
+
+    .events .event-info .event-head {
+        width: auto;
+        flex: 0 1 auto;
+    }
+
+    /* The counts (lists) and budget · participants (Secret Santa) in the middle of the panel */
+    .events .event-info > .event-stats,
+    .events .event-santa .event-info .santa-meta {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        margin: 0;
+        white-space: nowrap;
+    }
+
+    .events .event-info > .event-foot,
+    .events .event-info > .event-link-wrap {
+        width: auto;
+        margin: 0 0 0 auto;
+        padding: 0;
+    }
+
+    .events .event-santa .santa-secret {
+        width: auto;
+        margin: 0 0 0 auto;
+    }
+
+    /* Titles break between words – there's room now */
+    .events .event-info h3 {
+        overflow-wrap: normal;
+    }
+}
+
+/* "Mina inköp (2) ⌄" – a bar under the panel; tap to roll the section out.
+   The add buttons sit on the right of the same bar. */
 .event-gifts-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 0.3rem 0.75rem 0.3rem 1.25rem; /* left: in line with the panel's text */
+}
+
+/* "🎁 Överraskningsgåva" straight on the background – no border, a soft rose behind it on hover.
+   A bit more compact, so it fits beside "Mina inköp". */
+.event-gifts-bar .btn {
+    padding-inline: 0.7rem;
+    font-size: 0.85rem;
+    border-color: transparent;
+    background: none;
+}
+
+.event-gifts-bar .btn:hover {
+    border-color: transparent;
+    background: none;
+}
+
+/* Hover: the gift gives a little shake, like the icons in the menus */
+.event-gifts-bar .btn:hover .icon-gift-plus {
+    animation: icon-shake 0.5s ease-in-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .event-gifts-bar .btn:hover .icon-gift-plus {
+        animation: none;
+    }
+}
+
+.event-gifts-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.25rem 0;
+    border: none;
+    background: none;
+    font: inherit;
+    font-weight: 600;
+    color: var(--ink);
+    cursor: pointer;
+}
+
+.event-gifts-toggle .muted {
+    font-weight: 500;
+}
+
+.event-gifts-toggle svg {
+    flex: none;
+    color: var(--accent);
+    transition: transform 0.25s ease;
+}
+
+.event-gifts-toggle.is-open svg {
+    transform: rotate(180deg);
+}
+
+/* Rolls open by animating the row from 0fr to 1fr */
+.event-gifts-collapse {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 0.3s ease;
+}
+
+.event-gifts-collapse.is-open {
+    grid-template-rows: 1fr;
+}
+
+.event-gifts-collapse-inner {
+    display: block;
+    min-height: 0;
+    overflow: hidden;
+    visibility: hidden; /* out of the tab order while folded */
+    transition: visibility 0s 0.3s;
+}
+
+.event-gifts-collapse.is-open .event-gifts-collapse-inner {
+    visibility: visible;
+    transition: visibility 0s;
+}
+
+/* The bar already has the heading and the buttons */
+.event-gifts-head {
     display: none;
 }
 
-.event-gifts-collapse,
-.event-gifts-collapse-inner {
-    display: contents;
+.event-gifts-collapse .event-gifts {
+    padding: 0.25rem 1.25rem 1.25rem;
 }
 
 /* Stacked on small screens: the event on top, my gifts below */
@@ -2603,7 +2746,7 @@ button.event-edit {
     }
 
     .event-info {
-        padding: 1.2rem 0.9rem 1.4rem 2.35rem;
+        padding: 1.2rem 0.9rem 1.4rem 1.25rem;
         border-radius: calc(var(--radius) - 1px) calc(var(--radius) - 1px) 0 0;
     }
 
@@ -2617,51 +2760,45 @@ button.event-edit {
         margin-top: 0.15rem;
     }
 
-    /* A grid where the vertical tab is a real column, so the panel is as low as its content allows
-       but always at least the tab's height + 10px. Title and date in the middle, "Se lista" up on
-       the right. Not on Secret Santa – it has more rows and the delete icon in the corner. */
+    /* A grid: title and date on the left, "Se lista" up on the right, the counts under them.
+       Not on Secret Santa – it has its own layout below. */
     .event:not(.event-santa) .event-info {
         display: grid;
-        grid-template-columns: auto minmax(0, 1fr) auto;
-        grid-template-rows: auto auto auto auto 1fr;
+        grid-template-columns: minmax(0, 1fr) auto;
         align-items: start;
         column-gap: 0.75rem;
         row-gap: 0;
         min-height: 0;
-        padding-left: 0;
     }
 
     .event:not(.event-santa) .event-info :is(.event-head, .event-title) {
         display: contents;
     }
 
-    .event:not(.event-santa) .event-info .event-kicker {
-        position: static;
-        grid-column: 1;
-        grid-row: 1 / -1;
-        /* Up to the panel's top edge, out past its left edge, and the panel's bottom
-           padding cut down so it ends at least 10px below the tab */
-        margin: -1.2rem 0.7rem calc(10px - 1.4rem) -0.55rem;
-    }
-
     .event:not(.event-santa) .event-info h3 {
-        grid-column: 2;
+        grid-column: 1;
         grid-row: 1;
     }
 
     .event:not(.event-santa) .event-info .event-date {
-        grid-column: 2;
+        grid-column: 1;
         grid-row: 2;
     }
 
     .event:not(.event-santa) .event-info > .event-stats {
-        grid-column: 2 / -1;
+        grid-column: 1 / -1;
         grid-row: 3;
         margin-top: 1.1rem;
     }
 
+    /* A private list's count sits inside the title block: put it under the date */
+    .event:not(.event-santa) .event-info .event-title .event-stats {
+        grid-column: 1;
+        grid-row: 3;
+    }
+
     .event:not(.event-santa) .event-info > .event-link-wrap {
-        grid-column: 2 / -1;
+        grid-column: 1 / -1;
         grid-row: 4;
     }
 
@@ -2671,7 +2808,7 @@ button.event-edit {
     }
 
     .event:not(.event-santa) .event-info > .event-foot {
-        grid-column: 3;
+        grid-column: 2;
         grid-row: 1 / span 2;
         align-self: start;
         width: auto;
@@ -2682,9 +2819,7 @@ button.event-edit {
     /* Secret Santa: no fixed height on phones, and "Du ska ge en gåva till:" on the right
        of the title (or under it, right-aligned, if there isn't room) */
     .event-santa .event-info {
-        /* At least 10px taller than its tab. The tab always says "Secret Santa", so its height is
-           known: 8.8rem (measured). */
-        min-height: calc(8.8rem + 10px);
+        min-height: 0;
         flex-direction: row;
         flex-wrap: nowrap;
         align-items: stretch;
@@ -2720,86 +2855,7 @@ button.event-edit {
     }
 
 
-    /* "Mina inköp (2) ⌄" – a bar under the panel; tap to roll the section out.
-       The add buttons sit on the right of the same bar. */
-    .event-gifts-bar {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        flex-wrap: wrap;
-        gap: 0.5rem;
-        padding: 0.6rem 0.6rem 0.6rem 1rem;
-    }
 
-    /* A bit more compact, so it fits beside "Mina inköp" */
-    .event-gifts-bar .btn {
-        padding-inline: 0.7rem;
-        font-size: 0.85rem;
-    }
-
-    .event-gifts-toggle {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.35rem;
-        padding: 0.25rem 0;
-        border: none;
-        background: none;
-        font: inherit;
-        font-weight: 600;
-        color: var(--ink);
-        cursor: pointer;
-    }
-
-    .event-gifts-toggle .muted {
-        font-weight: 500;
-    }
-
-    .event-gifts-toggle svg {
-        flex: none;
-        color: var(--accent);
-        transition: transform 0.25s ease;
-    }
-
-    .event-gifts-toggle.is-open svg {
-        transform: rotate(180deg);
-    }
-
-    /* Rolls open by animating the row from 0fr to 1fr */
-    .event-gifts-collapse {
-        display: grid;
-        grid-template-rows: 0fr;
-        transition: grid-template-rows 0.3s ease;
-    }
-
-    .event-gifts-collapse.is-open {
-        grid-template-rows: 1fr;
-    }
-
-    .event-gifts-collapse-inner {
-        display: block;
-        min-height: 0;
-        overflow: hidden;
-        visibility: hidden; /* out of the tab order while folded */
-        transition: visibility 0s 0.3s;
-    }
-
-    .event-gifts-collapse.is-open .event-gifts-collapse-inner {
-        visibility: visible;
-        transition: visibility 0s;
-    }
-
-    /* The bar already has the heading and the buttons */
-    .event-gifts-head {
-        display: none;
-    }
-
-    .event-gifts-collapse .event-gifts {
-        padding-top: 0.25rem;
-    }
-
-    .event-gifts {
-        padding: 0 1.25rem 1.25rem;
-    }
 
     /* Only what matters on a phone: the gift, my share and the icons */
     .event-gifts .col-optional {
@@ -3698,11 +3754,6 @@ button.event-edit {
         margin-inline: -0.75rem;
     }
 
-    /* …but "Till: Anders" above a card lines up with the text */
-    .event-to {
-        padding-left: 0.75rem;
-    }
-
     /* Slightly smaller table text on phones */
     .table td {
         font-size: 0.9rem;
@@ -3738,7 +3789,7 @@ button.event-edit {
     }
 
     /* Less side margin around the gift table inside the card */
-    .event-gifts {
+    .event-gifts-collapse .event-gifts {
         padding-inline: 0.75rem;
     }
 

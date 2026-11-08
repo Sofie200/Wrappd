@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, Coins, Ellipsis, Eye, HatGlasses, Heart, Trash2 } from "lucide-react";
+import { ArrowRight, Coins, Users, Ellipsis, Eye, HatGlasses, Heart, Trash2 } from "lucide-react";
 import { api } from "../api.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useFetch } from "../hooks/useFetch.js";
@@ -15,7 +15,7 @@ import DateBadge, { EventDate } from "../components/DateBadge.jsx";
 import AddGiftButton from "../components/AddGiftButton.jsx";
 import ListPanelCard from "../components/ListPanelCard.jsx";
 import GiftPlusIcon from "../components/GiftPlusIcon.jsx";
-import Confetti, { ConfettiRest } from "../components/Confetti.jsx";
+import Confetti from "../components/Confetti.jsx";
 
 // A Secret Santa among the events. Who I give to is hidden until I press the eye –
 // someone might be looking at the screen. Below it: my gifts for it – the ones linked to the draw,
@@ -63,21 +63,21 @@ function SantaRow({ santa, gifts = [], onChanged }) {
     );
 
     return (
-        <div className="event-group">
-            {/* Same label as the lists – but it never says who */}
-            <p className="event-to">
-                Till: <span className="event-for">{shown && receiver ? receiver.name : "Hemlig"}</span>
-            </p>
+        <div className="event-group event-santa">
+            {/* The tab and "Till:" like the lists – but who it's for stays hidden until revealed */}
+            <div className="event-tab-row">
+                <p className="event-kicker">
+                    <HatGlasses size={14} aria-hidden="true" /> Secret Santa
+                </p>
+                <p className="event-to">
+                    Till: <span className="event-for">{shown && receiver ? receiver.name : "Hemlig"}</span>
+                </p>
+            </div>
             <article className="event event-santa">
                 <div className="event-info">
-                    {/* Some confetti stays on the card after the burst */}
-                    {burst > 0 && <ConfettiRest />}
                     <div className="event-head">
                         <DateBadge iso={santa.date} />
                         <div className="event-title">
-                            <p className="event-kicker">
-                                <HatGlasses size={14} aria-hidden="true" /> Secret Santa
-                            </p>
                             {/* The title with a "…" menu right after it, for whoever drew it */}
                             <div className="santa-title-row">
                                 <h3>{santa.title}</h3>
@@ -92,16 +92,16 @@ function SantaRow({ santa, gifts = [], onChanged }) {
                             {santa.date && <EventDate iso={santa.date} />}
                             <p className="santa-meta">
                                 {santa.budget !== null && (
-                                    <>
-                                        <span className="santa-budget" title="Budget">
-                                            <Coins size={14} aria-label="Budget" /> <strong>{formatPrice(santa.budget)}</strong>
-                                        </span>{" "}
-                                        ·{" "}
-                                    </>
+                                    <span className="santa-budget" title="Budget">
+                                        <Coins size={14} aria-label="Budget" /> <strong>{formatPrice(santa.budget)}</strong>
+                                    </span>
                                 )}
-                                <button type="button" className="text-link" onClick={() => setShowParticipants(true)}>
-                                    {santa.participantCount} deltagare
-                                </button>
+                                <span className="santa-budget">
+                                    <Users size={14} aria-hidden="true" />
+                                    <button type="button" className="text-link" onClick={() => setShowParticipants(true)}>
+                                        {santa.participantCount} deltagare
+                                    </button>
+                                </span>
                             </p>
                         </div>
                     </div>
