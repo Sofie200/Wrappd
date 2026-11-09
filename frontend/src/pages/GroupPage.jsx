@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { api } from "../api.js";
 import { useAuth } from "../context/AuthContext.jsx";
@@ -37,6 +37,12 @@ export default function GroupPage() {
     }
     const [showArchive, setShowArchive] = useState(false); // the group's past lists instead of the current ones
     const [memberPage, setMemberPage] = useState(0); // the members are shown MEMBERS_PER_PAGE at a time
+    const membersRef = useRef(null);
+    // A new page of members: back up to the start of the list, so it isn't read from the bottom
+    function changeMemberPage(next) {
+        setMemberPage(next);
+        membersRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
 
     if (!data && loading) return <Loading />;
     if (!data) return <ErrorMessage message={error} onRetry={reload} />;
@@ -146,7 +152,7 @@ export default function GroupPage() {
 
             <ErrorMessage message={actionError} />
 
-            <section className="section">
+            <section className="section members-section" ref={membersRef}>
                 <div className="section-head">
                     <h2>
                     Medlemmar ({members.length})
@@ -254,7 +260,7 @@ export default function GroupPage() {
                         );
                     })}
                 </ul>
-                <Pagination page={page} pageCount={memberPageCount} onChange={setMemberPage} label="Sidor med medlemmar" />
+                <Pagination page={page} pageCount={memberPageCount} onChange={changeMemberPage} label="Sidor med medlemmar" />
             </section>
 
             <section className="section">

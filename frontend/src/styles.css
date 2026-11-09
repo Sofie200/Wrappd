@@ -4122,3 +4122,8 @@ button.event-edit {
         gap: 2.5rem;
     }
 }
+
+/* Scrolled to when paging through the members: stops below the sticky header, with a little air */
+.members-section {
+    scroll-margin-top: 6rem;
+}
