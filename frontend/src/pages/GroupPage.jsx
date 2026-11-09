@@ -41,7 +41,12 @@ export default function GroupPage() {
     // A new page of members: back up to the start of the list, so it isn't read from the bottom
     function changeMemberPage(next) {
         setMemberPage(next);
-        membersRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+        // Measured, so the heading always lands below the sticky header (its height differs on phones)
+        const section = membersRef.current;
+        if (!section) return;
+        const headerHeight = document.querySelector(".header")?.offsetHeight ?? 0;
+        const top = section.getBoundingClientRect().top + window.scrollY - headerHeight - 24;
+        window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
     }
 
     if (!data && loading) return <Loading />;
