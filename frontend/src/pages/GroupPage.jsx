@@ -4,17 +4,20 @@ import { api } from "../api.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useFetch } from "../hooks/useFetch.js";
 import { Empty, ErrorMessage, Loading } from "../components/Feedback.jsx";
-import ListCard from "../components/ListCard.jsx";
+import ListPanelCard from "../components/ListPanelCard.jsx";
+import Pagination from "../components/Pagination.jsx";
 import UserSearch from "../components/UserSearch.jsx";
 import CreateUserForm from "../components/CreateUserForm.jsx";
 import UserLinkBox from "../components/UserLinkBox.jsx";
 import Avatar from "../components/Avatar.jsx";
-import { Ellipsis, KeyRound, Link2, LogOut, Pencil, ShieldCheck, ShieldOff, UserMinus, UserPlus, Users } from "lucide-react";
+import { Archive, Ellipsis, KeyRound, ScrollText, Link2, LogOut, Pencil, ShieldCheck, ShieldOff, UserMinus, UserPlus, Users } from "lucide-react";
 import Breadcrumbs from "../components/Breadcrumbs.jsx";
 import Modal from "../components/Modal.jsx";
 import GroupSettingsModal from "../components/GroupSettingsModal.jsx";
 import SettingsMenu from "../components/SettingsMenu.jsx";
 import PersonLink from "../components/PersonLink.jsx";
+
+const MEMBERS_PER_PAGE = 10;
 
 export default function GroupPage() {
     const { id } = useParams();
@@ -26,11 +29,19 @@ export default function GroupPage() {
     const [editingSettings, setEditingSettings] = useState(false); // the group settings modal
     const [shownLink, setShownLink] = useState(null); // { user, link } – a link to copy and send
     const [addingMember, setAddingMember] = useState(false); // the "add member" modal
+    const [showArchive, setShowArchive] = useState(false); // the group's past lists instead of the current ones
+    const [memberPage, setMemberPage] = useState(0); // the members are shown MEMBERS_PER_PAGE at a time
 
     if (!data && loading) return <Loading />;
     if (!data) return <ErrorMessage message={error} onRetry={reload} />;
 
     const { group, me, members, lists } = data;
+    const memberPageCount = Math.max(1, Math.ceil(members.length / MEMBERS_PER_PAGE));
+    const page = Math.min(memberPage, memberPageCount - 1); // e.g. after someone was removed from the last page
+    const shownMembers = members.slice(page * MEMBERS_PER_PAGE, (page + 1) * MEMBERS_PER_PAGE);
+    const archivedLists = lists.filter((l) => l.archived).reverse(); // most recent first
+    const currentLists = lists.filter((l) => !l.archived);
+    const shownLists = showArchive ? archivedLists : currentLists;
     const adminCount = members.filter((m) => m.isAdmin).length;
 
     // Runs a change, shows any error, and reloads the group
@@ -97,52 +108,37 @@ export default function GroupPage() {
     return (
         <div className="page">
             <Breadcrumbs items={[{ label: "Mina grupper", to: "/groups" }, { label: group.name }]} />
-            <div className="page-head">
+            {/* The group's name with a "…" menu right after it: edit (admins) and leave */}
+            <div className="title-row">
                 <h1 className="title-with-icon">
                     <Users size={28} aria-hidden="true" /> {group.name}
                 </h1>
-
-                <div className="actions">
+                <SettingsMenu label="Alternativ för gruppen" icon={Ellipsis}>
                     {me.isAdmin && (
                         <button
                             type="button"
-                            className="icon-btn"
+                            className="menu-item"
+                            role="menuitem"
                             onClick={() => setEditingSettings(true)}
                             disabled={busy}
-                            aria-label="Gruppens inställningar"
-                            title="Redigera gruppen"
-                            aria-haspopup="dialog"
                         >
-                            <Pencil size={18} aria-hidden="true" />
+                            <Pencil size={16} aria-hidden="true" /> Redigera gruppen
                         </button>
                     )}
                     <button
                         type="button"
-                        className="icon-btn icon-btn-danger icon-btn-danger-always"
+                        className="menu-item menu-item-danger"
+                        role="menuitem"
                         onClick={leave}
                         disabled={busy || lastAdmin}
-                        aria-label="Lämna gruppen"
-                        title={lastAdmin ? "Gör någon annan till admin innan du lämnar" : "Lämna gruppen"}
+                        title={lastAdmin ? "Gör någon annan till admin innan du lämnar" : undefined}
                     >
-                        <LogOut size={18} aria-hidden="true" />
+                        <LogOut size={16} aria-hidden="true" /> Lämna gruppen
                     </button>
-                </div>
+                </SettingsMenu>
             </div>
 
             <ErrorMessage message={actionError} />
-
-            <section className="section">
-                <h2>Listor i gruppen</h2>
-                {lists.length === 0 ? (
-                    <Empty>Inga publika listor i gruppen än.</Empty>
-                ) : (
-                    <div className="cards">
-                        {lists.map((list) => (
-                            <ListCard key={list.id} list={list} />
-                        ))}
-                    </div>
-                )}
-            </section>
 
             <section className="section">
                 <div className="section-head">
@@ -162,7 +158,7 @@ export default function GroupPage() {
                 </div>
                 {shownLink && <UserLinkBox {...shownLink} onClose={() => setShownLink(null)} />}
                 <ul className="member-list">
-                    {members.map((member) => {
+                    {shownMembers.map((member) => {
                         const isMe = member.id === user.id;
                         const onlyAdmin = member.isAdmin && adminCount === 1;
 
@@ -183,7 +179,7 @@ export default function GroupPage() {
                             <li key={member.id}>
                                 <span className="member-name">
                                     <Avatar icon={member.avatarIcon} color={member.avatarColor} size={32} />
-                                    <PersonLink person={member} /> <strong className="username">{member.username}</strong>
+                                    <PersonLink person={member} /> <span className="muted">({member.username})</span>
                                     {isMe && <span className="muted"> (du)</span>}
                                     {member.isAdmin && <span className="badge">Admin</span>}
                                     {!member.isActivated && <span className="badge badge-private">Ej aktiverad</span>}
@@ -249,6 +245,34 @@ export default function GroupPage() {
                         );
                     })}
                 </ul>
+                <Pagination page={page} pageCount={memberPageCount} onChange={setMemberPage} label="Sidor med medlemmar" />
+            </section>
+
+            <section className="section">
+                <div className="section-head">
+                    <h2>{showArchive ? "Arkiverade listor i gruppen" : "Listor i gruppen"}</h2>
+                    {/* The archive is shown here, in place of the current lists */}
+                    <button type="button" className="btn btn-ghost" onClick={() => setShowArchive(!showArchive)}>
+                        {showArchive ? (
+                            <>
+                                <ScrollText size={16} aria-hidden="true" /> Aktuella listor{currentLists.length > 0 && ` (${currentLists.length})`}
+                            </>
+                        ) : (
+                            <>
+                                <Archive size={16} aria-hidden="true" /> Arkiv{archivedLists.length > 0 && ` (${archivedLists.length})`}
+                            </>
+                        )}
+                    </button>
+                </div>
+                {shownLists.length === 0 ? (
+                    <Empty>{showArchive ? "Inga arkiverade listor i gruppen." : "Inga publika listor i gruppen än."}</Empty>
+                ) : (
+                    <div className="cards list-cards">
+                        {shownLists.map((list) => (
+                            <ListPanelCard key={list.id} list={list} />
+                        ))}
+                    </div>
+                )}
             </section>
 
             {editingSettings && (

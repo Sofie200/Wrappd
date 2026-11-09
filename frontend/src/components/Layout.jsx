@@ -1,4 +1,5 @@
-import { Link, NavLink, Outlet } from "react-router-dom";
+import { useEffect } from "react";
+import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { Baby, Gift, Heart, House, ScrollText, LogOut, Menu, HatGlasses, UserPen, Users } from "lucide-react";
 import { useAuth } from "../context/AuthContext.jsx";
 import { APP_NAME } from "../config.js";
@@ -7,6 +8,12 @@ import SettingsMenu from "./SettingsMenu.jsx";
 
 export default function Layout() {
     const { user, logout } = useAuth();
+    const { pathname } = useLocation();
+
+    // A new page starts at the top – otherwise you'd land as far down as you were on the last one
+    useEffect(() => {
+        window.scrollTo(0, 0);
+    }, [pathname]);
 
     return (
         <div className="app">

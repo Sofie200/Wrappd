@@ -131,7 +131,8 @@ router.get("/:id", async (req, res) => {
          FROM group_members gm
          JOIN users u ON u.id = gm.user_id
          WHERE gm.group_id = $1
-         ORDER BY gm.is_admin DESC, u.is_child, u.name`,
+         -- Admins first, then everyone (children too) by name
+         ORDER BY gm.is_admin DESC, u.name`,
         [groupId]
     );
 
@@ -142,6 +143,13 @@ router.get("/:id", async (req, res) => {
                 l.end_date < ${TODAY} AS archived,
                 EXISTS (SELECT 1 FROM list_admins WHERE list_id = l.id AND user_id = $2) AS "isAdmin",
                 EXISTS (SELECT 1 FROM list_recipients WHERE list_id = l.id AND user_id = $2) AS "isRecipient",
+                (SELECT count(*)::int FROM wishes WHERE list_id = l.id) AS "wishCount",
+                -- Fully reserved wishes – not on lists to me (that's a surprise)
+                CASE WHEN EXISTS (SELECT 1 FROM list_recipients WHERE list_id = l.id AND user_id = $2) THEN NULL
+                     ELSE (SELECT count(*)::int FROM wishes w
+                           WHERE w.list_id = l.id
+                             AND (SELECT COALESCE(sum(gi.quantity), 0) FROM gifts gi WHERE gi.wish_id = w.id) >= w.quantity)
+                END AS "reservedCount",
                 (SELECT string_agg(u.name, ', ' ORDER BY u.name) FROM list_recipients lr
                  JOIN users u ON u.id = lr.user_id WHERE lr.list_id = l.id) AS recipients
          FROM lists l

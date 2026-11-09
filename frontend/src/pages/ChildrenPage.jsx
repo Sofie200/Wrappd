@@ -69,7 +69,7 @@ export default function ChildrenPage() {
                 </h1>
                 {mode !== "new" && (
                     <button type="button" className="btn btn-primary" onClick={() => setMode("new")}>
-                        <Plus size={16} aria-hidden="true" /> Lägg till barn
+                        <Plus size={16} className="icon-lead" aria-hidden="true" /> Lägg till barn
                     </button>
                 )}
             </div>

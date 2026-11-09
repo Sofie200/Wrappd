@@ -65,8 +65,11 @@ router.get("/", async (req, res) => {
                           FROM group_members gm JOIN groups g ON g.id = gm.group_id
                           WHERE gm.user_id = u.id), '[]') AS groups,
                 -- Every group one of the parents is in. The child is in exactly those with includeChildren.
+                -- isMember: whether I'm in it myself (a co-parent's group I can't open)
                 COALESCE((SELECT json_agg(json_build_object('id', g.id, 'name', g.name,
-                                                            'includeChildren', g.include_children)
+                                                            'includeChildren', g.include_children,
+                                                            'isMember', EXISTS (SELECT 1 FROM group_members mm
+                                                                                WHERE mm.group_id = g.id AND mm.user_id = $1))
                                           ORDER BY g.include_children DESC, g.name)
                           FROM groups g
                           WHERE EXISTS (SELECT 1 FROM group_members pm

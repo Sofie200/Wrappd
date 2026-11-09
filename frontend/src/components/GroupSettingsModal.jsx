@@ -1,3 +1,4 @@
+import { Save } from "lucide-react";
 import { useState } from "react";
 import { api } from "../api.js";
 import { ErrorMessage } from "./Feedback.jsx";
@@ -60,6 +61,7 @@ export default function GroupSettingsModal({ group, onSaved, onClose }) {
 
                 <div className="form-actions">
                     <button type="submit" className="btn btn-primary" disabled={busy}>
+                        <Save size={16} aria-hidden="true" />
                         {busy ? "Sparar…" : "Spara"}
                     </button>
                     <button type="button" className="btn btn-ghost" onClick={onClose} disabled={busy}>

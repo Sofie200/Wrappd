@@ -1,3 +1,4 @@
+import { Plus } from "lucide-react";
 import { useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
@@ -87,6 +88,7 @@ export default function RegisterPage() {
                 </label>
 
                 <button type="submit" className="btn btn-primary btn-block" disabled={busy}>
+                    <Plus size={16} className="icon-lead" aria-hidden="true" />
                     {busy ? "Skapar konto…" : "Skapa konto"}
                 </button>
             </form>

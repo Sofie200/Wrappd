@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Gift } from "lucide-react";
+import { ScrollText } from "lucide-react";
 import { formatDate } from "../format.js";
 import Modal from "./Modal.jsx";
 
@@ -11,9 +11,8 @@ export default function ChildListsModal({ child, onClose }) {
 
     const row = (list) => (
         <li key={list.id} className={list.archived ? "child-list-archived" : undefined}>
-            <Gift size={16} aria-hidden="true" />
             <span className="child-list-main">
-                <Link to={`/lists/${list.id}`} onClick={onClose}>
+                <Link to={`/lists/${list.id}`} className="text-link" onClick={onClose}>
                     {list.title}
                 </Link>
                 <span className="muted small">{formatDate(list.endDate)}</span>
@@ -43,7 +42,7 @@ export default function ChildListsModal({ child, onClose }) {
             )}
             <div className="form-actions">
                 <Link to={`/lists/new?for=${child.id}`} className="btn btn-small btn-primary" onClick={onClose}>
-                    Ny lista till {child.name}
+                    <ScrollText size={16} aria-hidden="true" /> Ny lista till {child.name}
                 </Link>
             </div>
         </Modal>

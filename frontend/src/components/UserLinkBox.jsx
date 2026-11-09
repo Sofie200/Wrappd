@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Check, Copy, X } from "lucide-react";
 
 // Shows an activation/reset link for the admin to copy and send to the person
 export default function UserLinkBox({ user, link, onClose }) {
@@ -24,8 +25,9 @@ export default function UserLinkBox({ user, link, onClose }) {
                         ? `Aktiveringslänk till ${user.name}`
                         : `Länk för nytt lösenord till ${user.name}`}
                 </strong>
-                <button type="button" className="btn btn-small btn-ghost" onClick={onClose} aria-label="Stäng">
-                    ×
+                {/* The same round close button as the modals */}
+                <button type="button" className="modal-close" onClick={onClose} aria-label="Stäng" title="Stäng">
+                    <X size={20} aria-hidden="true" />
                 </button>
             </div>
 
@@ -36,7 +38,15 @@ export default function UserLinkBox({ user, link, onClose }) {
             <div className="link-box-row">
                 <input value={url} readOnly onFocus={(e) => e.target.select()} aria-label="Länk" />
                 <button type="button" className="btn btn-primary" onClick={copy}>
-                    {copied ? "Kopierad!" : "Kopiera"}
+                    {copied ? (
+                        <>
+                            <Check size={16} aria-hidden="true" /> Kopierad!
+                        </>
+                    ) : (
+                        <>
+                            <Copy size={16} aria-hidden="true" /> Kopiera
+                        </>
+                    )}
                 </button>
             </div>
 

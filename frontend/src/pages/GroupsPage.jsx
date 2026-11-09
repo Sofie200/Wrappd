@@ -4,7 +4,7 @@ import { api } from "../api.js";
 import { useFetch } from "../hooks/useFetch.js";
 import { Empty, ErrorMessage, Loading } from "../components/Feedback.jsx";
 import { joinNames } from "../format.js";
-import { Users } from "lucide-react";
+import { Plus, Users } from "lucide-react";
 
 export default function GroupsPage() {
     const navigate = useNavigate();
@@ -72,6 +72,7 @@ export default function GroupsPage() {
                             required
                         />
                         <button type="submit" className="btn btn-primary" disabled={busy}>
+                            <Plus size={16} className="icon-lead" aria-hidden="true" />
                             {busy ? "Skapar…" : "Skapa"}
                         </button>
                     </div>

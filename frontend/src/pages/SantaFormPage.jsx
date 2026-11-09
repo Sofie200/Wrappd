@@ -64,7 +64,7 @@ export default function SantaFormPage() {
     return (
         <div className="page page-narrow">
             <h1 className="title-with-icon">
-                <HatGlasses size={28} aria-hidden="true" /> Ny Secret Santa
+                <HatGlasses size={28} aria-hidden="true" /> Secret Santa
             </h1>
             <p className="muted">
                 Alla som är med lottas till någon annan. Var och en ser bara vem de själva ska ge till – inte ens du

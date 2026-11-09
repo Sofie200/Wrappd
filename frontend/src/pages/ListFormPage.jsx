@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { ScrollText } from "lucide-react";
+import { Plus, Save, ScrollText } from "lucide-react";
 import { api } from "../api.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useFetch } from "../hooks/useFetch.js";
@@ -266,6 +266,7 @@ export default function ListFormPage() {
 
                 <div className="form-actions">
                     <button type="submit" className="btn btn-primary" disabled={busy || candidates.loading}>
+                        {isEdit ? <Save size={16} aria-hidden="true" /> : <Plus size={16} className="icon-lead" aria-hidden="true" />}
                         {busy ? "Sparar…" : isEdit ? "Spara ändringar" : "Skapa lista"}
                     </button>
                     <Link to={isEdit ? `/lists/${id}` : "/"} className="btn btn-ghost">

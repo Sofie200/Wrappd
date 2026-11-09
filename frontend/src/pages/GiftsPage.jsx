@@ -1,6 +1,6 @@
 import { Gift } from "lucide-react";
 import { useFetch } from "../hooks/useFetch.js";
-import { Empty, ErrorMessage, Loading } from "../components/Feedback.jsx";
+import { Empty, ErrorMessage, Loading, Notice } from "../components/Feedback.jsx";
 import { buildEvents, EventRow, sumShares } from "../components/EventRow.jsx";
 import { formatPrice } from "../format.js";
 import AddGiftButton from "../components/AddGiftButton.jsx";
@@ -28,6 +28,13 @@ export default function GiftsPage() {
                 <AddGiftButton className="btn btn-primary" title="Logga egen gåva" onAdded={reload}>
                     <GiftPlusIcon /> Logga egen gåva
                 </AddGiftButton>
+            </div>
+
+            <div className="page-notice">
+                <Notice>
+                    Sidan är under uppbyggnad. Tanken är att du här ska kunna se statistik över dina gåvor – och
+                    filtrera och sortera den – så att du kan följa dina mönster över tid.
+                </Notice>
             </div>
 
             <section className="section">

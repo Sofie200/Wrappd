@@ -1,3 +1,4 @@
+import { Plus, Save, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { api } from "../api.js";
 import { useAuth } from "../context/AuthContext.jsx";
@@ -104,7 +105,7 @@ export default function ChildForm({ child, onSaved, onCancel }) {
                                 {/* When creating I'm always a parent. Later anyone can be removed, as long as one remains. */}
                                 {!(isNew && isMe) && parents.length > 1 && (
                                     <button type="button" className="btn btn-small btn-ghost" onClick={() => removeParent(p.username)}>
-                                        Ta bort
+                                        <Trash2 size={16} aria-hidden="true" /> Ta bort
                                     </button>
                                 )}
                             </li>
@@ -127,7 +128,7 @@ export default function ChildForm({ child, onSaved, onCancel }) {
                             autoCapitalize="none"
                         />
                         <button type="button" className="btn" onClick={addParent}>
-                            Lägg till
+                            <Plus size={16} className="icon-lead" aria-hidden="true" /> Lägg till
                         </button>
                     </div>
                 )}
@@ -138,6 +139,7 @@ export default function ChildForm({ child, onSaved, onCancel }) {
 
             <div className="form-actions">
                 <button type="submit" className="btn btn-primary" disabled={busy}>
+                    {isNew ? <Plus size={16} className="icon-lead" aria-hidden="true" /> : <Save size={16} aria-hidden="true" />}
                     {busy ? "Sparar…" : isNew ? "Lägg till barn" : "Spara"}
                 </button>
                 <button type="button" className="btn btn-ghost" onClick={onCancel} disabled={busy}>

@@ -9,7 +9,7 @@ import ImageField from "../components/ImageField.jsx";
 import ProductLinkField from "../components/ProductLinkField.jsx";
 import PeoplePicker from "../components/PeoplePicker.jsx";
 import { amountText, formatDate, formatPrice, formatShortDate, parseAmount } from "../format.js";
-import { ArrowLeft, ArrowUpRight } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, CircleMinus, Save, Trash2 } from "lucide-react";
 
 // /gifts/:id – a gift ("gåva"), and /gifts/new – a new gift bought outside the wish list.
 //  - A gift on a wish: quantity, price, comment, who shares and how. After the event: price, comment and split.
@@ -509,11 +509,20 @@ function GiftForm({ data, lists, santas, presetListId, presetSantaId, presetEven
 
                 <div className="form-actions">
                     <button type="submit" className="btn btn-primary" disabled={busy}>
+                        <Save size={16} aria-hidden="true" />
                         {busy ? "Sparar…" : isNew ? "Spara gåva" : "Spara"}
                     </button>
                     {!isNew && (isFree || !gift.archived) && (
                         <button type="button" className="btn btn-danger-ghost" onClick={remove} disabled={busy}>
-                            {isFree ? "Ta bort gåva" : "Ångra reservation"}
+                            {isFree ? (
+                                <>
+                                    <Trash2 size={16} aria-hidden="true" /> Ta bort gåva
+                                </>
+                            ) : (
+                                <>
+                                    <CircleMinus size={16} aria-hidden="true" /> Ångra reservation
+                                </>
+                            )}
                         </button>
                     )}
                 </div>

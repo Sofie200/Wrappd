@@ -1,3 +1,4 @@
+import { Plus, Save } from "lucide-react";
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
@@ -96,6 +97,7 @@ export default function LinkPage() {
                 </label>
 
                 <button type="submit" className="btn btn-primary btn-block" disabled={busy}>
+                    {activating ? <Plus size={16} className="icon-lead" aria-hidden="true" /> : <Save size={16} aria-hidden="true" />}
                     {busy ? "Sparar…" : activating ? "Skapa lösenord och logga in" : "Spara och logga in"}
                 </button>
             </form>

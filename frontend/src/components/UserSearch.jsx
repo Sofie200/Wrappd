@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Search } from "lucide-react";
+import { Plus, Search } from "lucide-react";
 import { api } from "../api.js";
 
 // Find someone to add to a group. Two kinds of search, to protect people's privacy:
@@ -111,7 +111,7 @@ export default function UserSearch({ excludeGroupId, onSelect, busy }) {
                                 {user.isActivated === false && <span className="badge badge-private">Ej aktiverad</span>}
                             </span>
                             <button type="button" className="btn btn-small" onClick={() => choose(user)} disabled={busy}>
-                                Lägg till
+                                <Plus size={16} className="icon-lead" aria-hidden="true" /> Lägg till
                             </button>
                         </li>
                     ))}

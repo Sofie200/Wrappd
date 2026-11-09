@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { UserPen } from "lucide-react";
+import { Save, UserPen } from "lucide-react";
 import { useAuth } from "../context/AuthContext.jsx";
 import { AVATAR_COLORS, AVATAR_ICONS, DEFAULT_COLOR, DEFAULT_ICON } from "../profileOptions.js";
 import Avatar from "../components/Avatar.jsx";
@@ -111,6 +111,7 @@ export default function ProfilePage() {
 
                     <div className="form-actions">
                         <button type="submit" className="btn btn-primary" disabled={busy}>
+                            <Save size={16} aria-hidden="true" />
                             {busy ? "Sparar…" : "Spara"}
                         </button>
                         <button type="button" className="btn btn-ghost" onClick={close} disabled={busy}>

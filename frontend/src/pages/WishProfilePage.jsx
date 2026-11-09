@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useParams } from "react-router-dom";
-import { Heart, Sparkles, ThumbsDown, ThumbsUp } from "lucide-react";
+import { Heart, Save, Sparkles, ThumbsDown, ThumbsUp } from "lucide-react";
 import { api } from "../api.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useFetch } from "../hooks/useFetch.js";
@@ -167,6 +167,7 @@ function WishProfileForm({ data, reload }) {
                 <ErrorMessage message={error} />
                 <div className="form-actions">
                     <button type="submit" className="btn btn-primary" disabled={busy}>
+                        <Save size={16} aria-hidden="true" />
                         {busy ? "Sparar…" : "Spara"}
                     </button>
                     {saved && <span className="small reserved-by-me">✓ Sparat</span>}

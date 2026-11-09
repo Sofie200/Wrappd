@@ -1,3 +1,4 @@
+import { ArrowDownToLine } from "lucide-react";
 import { useState } from "react";
 import { fetchProduct } from "../productFetch.js";
 
@@ -28,7 +29,7 @@ export default function ProductLinkField({ value, onChange, onFetched, onError, 
             <div className="input-with-button">
                 <input id={id} name="url" value={value} onChange={onChange} inputMode="url" placeholder="https://…" autoFocus={autoFocus} disabled={disabled} />
                 <button type="button" className="btn btn-small" onClick={handleFetch} disabled={fetching || disabled || !value.trim()}>
-                    {fetching ? "Hämtar…" : "Hämta"}
+                    <ArrowDownToLine size={16} aria-hidden="true" /> {fetching ? "Hämtar…" : "Hämta"}
                 </button>
             </div>
             {result ? (

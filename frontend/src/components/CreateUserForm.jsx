@@ -1,3 +1,4 @@
+import { Plus } from "lucide-react";
 import { useState } from "react";
 import { api } from "../api.js";
 import { ErrorMessage } from "./Feedback.jsx";
@@ -50,6 +51,7 @@ export default function CreateUserForm({ groupId, onCreated }) {
             <ErrorMessage message={error} />
             <div>
                 <button type="submit" className="btn btn-primary" disabled={busy}>
+                    <Plus size={16} className="icon-lead" aria-hidden="true" />
                     {busy ? "Skapar…" : "Skapa användare"}
                 </button>
             </div>

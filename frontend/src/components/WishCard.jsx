@@ -7,7 +7,7 @@ import { ErrorMessage } from "./Feedback.jsx";
 import Modal from "./Modal.jsx";
 import WishForm from "./WishForm.jsx";
 import { GiftEditor } from "../pages/GiftPage.jsx";
-import { ArrowUpRight, CircleMinus, Ellipsis, Pencil, Trash2 } from "lucide-react";
+import { ArrowUpRight, CircleMinus, CirclePlus, Ellipsis, Pencil, Trash2 } from "lucide-react";
 import SettingsMenu from "./SettingsMenu.jsx";
 
 // One wish: a compact row (image, title, price, reserved badge) that opens the full wish in a modal.
@@ -155,7 +155,7 @@ export default function WishCard({ wish, me, listId, onChanged }) {
                         disabled={busy}
                         aria-label={`Reservera ${wish.title}`}
                     >
-                        {busy ? "Reserverar…" : "Reservera"}
+                        <CirclePlus size={16} aria-hidden="true" /> {busy ? "Reserverar…" : "Reservera"}
                     </button>
                 )}
                 {/* My reservation: "…" right after the badge, to edit or release it */}
@@ -256,7 +256,7 @@ export default function WishCard({ wish, me, listId, onChanged }) {
                                         </select>
                                     )}
                                     <button type="button" className="btn btn-small btn-primary" onClick={() => reserve()} disabled={busy}>
-                                        Reservera
+                                        <CirclePlus size={16} aria-hidden="true" /> Reservera
                                     </button>
                                 </div>
                             )}

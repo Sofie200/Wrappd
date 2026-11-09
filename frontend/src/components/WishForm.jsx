@@ -1,3 +1,4 @@
+import { Plus, Save } from "lucide-react";
 import { useState } from "react";
 import { api } from "../api.js";
 import { useImageChoice } from "../hooks/useImageChoice.js";
@@ -93,6 +94,7 @@ export default function WishForm({ listId, createPath, wish, onSaved, onCancel }
 
             <div className="form-actions">
                 <button type="submit" className="btn btn-primary" disabled={busy}>
+                    {wish ? <Save size={16} aria-hidden="true" /> : <Plus size={16} className="icon-lead" aria-hidden="true" />}
                     {busy ? "Sparar…" : wish ? "Spara" : "Lägg till"}
                 </button>
                 <button type="button" className="btn btn-ghost" onClick={onCancel} disabled={busy}>

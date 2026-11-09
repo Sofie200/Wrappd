@@ -282,7 +282,16 @@ export function EventRow({ event, archived = false, onChanged }) {
                     <div className="event-head">
                         {endDate && <DateBadge iso={endDate} />}
                         <div className="event-title">
-                            <h3>{title ?? `Till ${recipients}`}</h3>
+                            <h3>
+                                {/* A list's title opens the list too – it looks the same as before */}
+                                {listId && canOpen ? (
+                                    <Link to={`/lists/${listId}`} className="event-title-link">
+                                        {title}
+                                    </Link>
+                                ) : (
+                                    (title ?? `Till ${recipients}`)
+                                )}
+                            </h3>
                             {endDate && <EventDate iso={endDate} />}
                         </div>
                     </div>

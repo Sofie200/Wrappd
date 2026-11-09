@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { Ellipsis, Pencil, Settings, Sparkles, Trash2 } from "lucide-react";
+import { Ellipsis, GlobeCheck, Pencil, Settings, Sparkles, Trash2 } from "lucide-react";
 import { api } from "../api.js";
 import { useFetch } from "../hooks/useFetch.js";
 import { Empty, ErrorMessage, Loading, Notice } from "../components/Feedback.jsx";
@@ -122,7 +122,7 @@ export default function ListPage() {
                 {me.canEdit && !list.isPublic && (
                     <div className="actions">
                         <button type="button" className="btn btn-primary" onClick={publish} disabled={busy}>
-                            Publicera
+                            <GlobeCheck size={16} aria-hidden="true" /> Publicera
                         </button>
                     </div>
                 )}
