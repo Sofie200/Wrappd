@@ -3,14 +3,11 @@ import { Link, useNavigate } from "react-router-dom";
 import { api } from "../api.js";
 import { useFetch } from "../hooks/useFetch.js";
 import { Empty, ErrorMessage, Loading } from "../components/Feedback.jsx";
-import { joinNames } from "../format.js";
 import { Plus, Users } from "lucide-react";
 
 export default function GroupsPage() {
     const navigate = useNavigate();
     const { data, error, loading, reload } = useFetch("/groups");
-    const children = useFetch("/children");
-    const myChildren = children.data?.data ?? [];
     const [name, setName] = useState("");
     const [includeChildren, setIncludeChildren] = useState(false);
     const [createError, setCreateError] = useState(null);
@@ -62,36 +59,35 @@ export default function GroupsPage() {
                 <p className="muted">Du blir admin och kan lägga till andra.</p>
                 <form onSubmit={handleCreate} className="create-group-form">
                     <ErrorMessage message={createError} />
-                    <div className="inline-form">
-                        <input
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
-                            placeholder="T.ex. Familjen eller Jobbet"
-                            aria-label="Gruppens namn"
-                            maxLength={80}
-                            required
-                        />
+                    <input
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        placeholder="T.ex. Familjen eller Jobbet"
+                        aria-label="Gruppens namn"
+                        maxLength={80}
+                        required
+                    />
+                    {/* The checkbox, with the button beside it */}
+                    <div className="create-group-row">
+                        <div className="check-field">
+                            <label className="check">
+                                <input
+                                    type="checkbox"
+                                    checked={includeChildren}
+                                    onChange={(e) => setIncludeChildren(e.target.checked)}
+                                    disabled={busy}
+                                    aria-describedby="include-children-help"
+                                />
+                                Inkludera barn
+                            </label>
+                            <small id="include-children-help" className="muted">
+                                Alla medlemmars barn kommer då med automatiskt. Kan ändras senare.
+                            </small>
+                        </div>
                         <button type="submit" className="btn btn-primary" disabled={busy}>
                             <Plus size={16} className="icon-lead" aria-hidden="true" />
                             {busy ? "Skapar…" : "Skapa"}
                         </button>
-                    </div>
-                    <div className="check-field">
-                        <label className="check">
-                            <input
-                                type="checkbox"
-                                checked={includeChildren}
-                                onChange={(e) => setIncludeChildren(e.target.checked)}
-                                disabled={busy}
-                                aria-describedby="include-children-help"
-                            />
-                            Inkludera barn
-                        </label>
-                        <small id="include-children-help" className="muted">
-                            Alla medlemmars barn kommer då med automatiskt
-                            {myChildren.length > 0 && <> – dina ({joinNames(myChildren.map((c) => c.name))}) direkt</>}. Utan
-                            det kan inga barn vara med i gruppen. Kan ändras senare.
-                        </small>
                     </div>
                 </form>
             </section>

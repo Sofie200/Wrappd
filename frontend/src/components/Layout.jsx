@@ -4,6 +4,7 @@ import { Baby, Gift, Heart, House, ScrollText, LogOut, Menu, HatGlasses, UserPen
 import { useAuth } from "../context/AuthContext.jsx";
 import { APP_NAME } from "../config.js";
 import Avatar from "./Avatar.jsx";
+import Footer from "./Footer.jsx";
 import SettingsMenu from "./SettingsMenu.jsx";
 
 export default function Layout() {
@@ -84,6 +85,9 @@ export default function Layout() {
                     <Outlet />
                 </main>
             </div>
+
+            {/* Out on the backdrop, below the sheet */}
+            <Footer />
         </div>
     );
 }

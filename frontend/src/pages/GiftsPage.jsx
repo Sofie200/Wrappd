@@ -1,8 +1,7 @@
 import { Gift } from "lucide-react";
 import { useFetch } from "../hooks/useFetch.js";
 import { Empty, ErrorMessage, Loading, Notice } from "../components/Feedback.jsx";
-import { buildEvents, EventRow, sumShares } from "../components/EventRow.jsx";
-import { formatPrice } from "../format.js";
+import { buildEvents, EventRow } from "../components/EventRow.jsx";
 import AddGiftButton from "../components/AddGiftButton.jsx";
 import GiftPlusIcon from "../components/GiftPlusIcon.jsx";
 
@@ -54,12 +53,7 @@ export default function GiftsPage() {
 
             {history.length > 0 && (
                 <section className="section">
-                    <div className="section-head">
-                        <h2>Tidigare</h2>
-                        <span className="event-total">
-                            Totalt <strong>{formatPrice(sumShares(gifts.history))}</strong>
-                        </span>
-                    </div>
+                    <h2>Tidigare</h2>
                     <div className="events">
                         {history.map((event) => (
                             <EventRow key={event.key} event={event} archived onChanged={reload} />

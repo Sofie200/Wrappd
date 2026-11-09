@@ -249,9 +249,10 @@ export default function OverviewPage() {
 
                 {santaNeedsProfile && (
                     <div className="santa-nudge" role="status">
-                        <HatGlasses size={28} aria-hidden="true" />
                         <div>
-                            <p className="santa-nudge-title">Du är med i en Secret Santa!</p>
+                            <p className="santa-nudge-title">
+                                Du är med i en Secret Santa! <HatGlasses size={20} aria-hidden="true" />
+                            </p>
                             <p>Fyll i din önskeprofil, så vet den som har fått dig vad du gillar.</p>
                         </div>
                         <Link to={`/people/${user.id}/edit`} className="btn btn-small btn-primary">

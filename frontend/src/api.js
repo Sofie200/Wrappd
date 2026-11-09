@@ -1,12 +1,19 @@
-// Every call to our backend goes through api(). It adds the token, has a timeout,
-// and turns errors into messages the user can read.
+// Every call to our backend goes through api(). The login travels in an httpOnly cookie that the
+// browser sends along by itself (JavaScript never sees it). api() has a timeout and turns errors
+// into messages the user can read.
 import { API_URL } from "./config.js";
 
-const TOKEN_KEY = "token";
-
-export const getToken = () => localStorage.getItem(TOKEN_KEY);
-export const setToken = (token) => localStorage.setItem(TOKEN_KEY, token);
-export const clearToken = () => localStorage.removeItem(TOKEN_KEY);
+// The old login, from before the cookie: read once, sent along once to move it into a cookie, then removed
+const OLD_TOKEN_KEY = "token";
+function takeOldToken() {
+    try {
+        const token = localStorage.getItem(OLD_TOKEN_KEY);
+        if (token) localStorage.removeItem(OLD_TOKEN_KEY);
+        return token;
+    } catch {
+        return null;
+    }
+}
 
 // AuthContext sets this, so an expired token logs the user out wherever it happens
 let onUnauthorized = () => {};
@@ -25,10 +32,10 @@ export class ApiError extends Error {
  * @param {string} path  e.g. "/groups"
  * @param {{ method?: string, body?: object, formData?: FormData, timeoutMs?: number }} options
  */
-export async function api(path, { method = "GET", body, formData, timeoutMs = 15_000 } = {}) {
-    const token = getToken();
+export async function api(path, { method = "GET", body, formData, timeoutMs = 15_000, migrateOldLogin = false } = {}) {
     const headers = {};
-    if (token) headers.Authorization = `Bearer ${token}`;
+    const oldToken = migrateOldLogin ? takeOldToken() : null;
+    if (oldToken) headers.Authorization = `Bearer ${oldToken}`;
     // With FormData the browser sets Content-Type itself (multipart, with the right boundary)
     if (body !== undefined) headers["Content-Type"] = "application/json";
 
@@ -38,6 +45,7 @@ export async function api(path, { method = "GET", body, formData, timeoutMs = 15
             method,
             headers,
             body: formData ?? (body !== undefined ? JSON.stringify(body) : undefined),
+            credentials: "include", // the login cookie, also locally where the API is on another port
             signal: AbortSignal.timeout(timeoutMs),
         });
     } catch (err) {
@@ -49,10 +57,10 @@ export async function api(path, { method = "GET", body, formData, timeoutMs = 15
         );
     }
 
-    const data = await res.json().catch(() => null);
+    const data = res.status === 204 ? null : await res.json().catch(() => null);
 
     if (!res.ok) {
-        if (res.status === 401 && token) onUnauthorized();
+        if (res.status === 401) onUnauthorized();
         throw new ApiError(data?.error ?? "Något gick fel. Försök igen.", res.status);
     }
     return data;

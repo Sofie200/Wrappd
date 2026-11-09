@@ -20,7 +20,8 @@ const app = express();
 
 // Only our own frontend may call the API from a browser
 const allowedOrigins = ["http://localhost:5173", process.env.CLIENT_URL].filter(Boolean);
-app.use(cors({ origin: allowedOrigins }));
+// credentials: the login cookie may come along (locally the frontend and the API run on different ports)
+app.use(cors({ origin: allowedOrigins, credentials: true }));
 app.use(express.json({ limit: "100kb" }));
 
 app.get("/api/health", (req, res) => res.json({ ok: true }));

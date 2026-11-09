@@ -2,7 +2,7 @@ import { Router } from "express";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { pool, withTransaction } from "../_db/pool.js";
-import { requireAuth, signToken } from "../_middleware/auth.js";
+import { clearAuthCookie, requireAuth, setAuthCookie } from "../_middleware/auth.js";
 import { HttpError, parse } from "../_lib/http.js";
 import { avatarColor, avatarIcon, name, password, username } from "../_lib/userSchema.js";
 import { hashToken, isTokenFormat } from "../_lib/userLinks.js";
@@ -21,7 +21,7 @@ const USER_FIELDS = `id, name, username, avatar_icon AS "avatarIcon", avatar_col
 
 const LINK_INVALID = "Länken är ogiltig, redan använd eller har gått ut. Be en admin i din grupp om en ny länk.";
 
-/* --- POST /api/auth/register  { name, username, password } → { token, user } --- */
+/* --- POST /api/auth/register  { name, username, password } → { user } (+ the login cookie) --- */
 router.post("/register", async (req, res) => {
     const body = parse(Register, req.body);
     const passwordHash = await bcrypt.hash(body.password, 10);
@@ -31,14 +31,15 @@ router.post("/register", async (req, res) => {
             `INSERT INTO users (name, username, password_hash) VALUES ($1, $2, $3) RETURNING ${USER_FIELDS}`,
             [body.name, body.username, passwordHash]
         );
-        res.status(201).json({ token: signToken(user), user });
+        setAuthCookie(res, user);
+        res.status(201).json({ user });
     } catch (err) {
         if (err.code === "23505") throw new HttpError(409, "Användarnamnet är redan upptaget");
         throw err;
     }
 });
 
-/* --- POST /api/auth/login  { username, password } → { token, user } --- */
+/* --- POST /api/auth/login  { username, password } → { user } (+ the login cookie) --- */
 router.post("/login", async (req, res) => {
     const body = parse(Login, req.body);
 
@@ -52,18 +53,30 @@ router.post("/login", async (req, res) => {
     if (!ok) throw new HttpError(401, "Fel användarnamn eller lösenord");
 
     const { password_hash, ...safeUser } = user; // eslint-disable-line no-unused-vars
-    res.json({ token: signToken(safeUser), user: safeUser });
+    setAuthCookie(res, safeUser);
+    res.json({ user: safeUser });
 });
 
-/* --- GET /api/auth/me → { user } – checks that the saved token still works --- */
+/* --- POST /api/auth/logout → 204 – removes the login cookie (JavaScript can't, it's httpOnly) --- */
+router.post("/logout", (req, res) => {
+    clearAuthCookie(res);
+    res.status(204).end();
+});
+
+/* --- GET /api/auth/me → { user } – checks that the login still works --- */
 router.get("/me", requireAuth, async (req, res) => {
     const { rows: [user] } = await pool.query(`SELECT ${USER_FIELDS} FROM users WHERE id = $1`, [req.user.id]);
-    if (!user) throw new HttpError(401, "Kontot finns inte längre. Logga in igen.");
+    if (!user) {
+        clearAuthCookie(res);
+        throw new HttpError(401, "Kontot finns inte längre. Logga in igen.");
+    }
+    // Logged in the old way (a token from localStorage): move the login into the cookie
+    if (req.authFromHeader) setAuthCookie(res, user);
     res.json({ user });
 });
 
-/* --- PUT /api/auth/me  { name, username, avatarIcon, avatarColor } → { token, user } – edit my profile --- */
-// A new token, since the name and username are in it
+/* --- PUT /api/auth/me  { name, username, avatarIcon, avatarColor } → { user } (+ the login cookie) – edit my profile --- */
+// A new cookie, since the name and username are in the token
 const EditProfile = z.object({ name, username, avatarIcon, avatarColor });
 
 router.put("/me", requireAuth, async (req, res) => {
@@ -75,7 +88,8 @@ router.put("/me", requireAuth, async (req, res) => {
             [body.name, body.username, body.avatarIcon, body.avatarColor, req.user.id]
         );
         if (!user) throw new HttpError(401, "Kontot finns inte längre. Logga in igen.");
-        res.json({ token: signToken(user), user });
+        setAuthCookie(res, user);
+        res.json({ user });
     } catch (err) {
         if (err.code === "23505") throw new HttpError(409, "Användarnamnet är redan upptaget");
         throw err;
@@ -99,7 +113,7 @@ router.get("/link/:token", async (req, res) => {
     res.json(link);
 });
 
-/* --- POST /api/auth/link/:token  { password } → { token, user } – choose a password, and log in --- */
+/* --- POST /api/auth/link/:token  { password } → { user } (+ the login cookie) – choose a password, and log in --- */
 const ChoosePassword = z.object({ password });
 
 router.post("/link/:token", async (req, res) => {
@@ -128,7 +142,8 @@ router.post("/link/:token", async (req, res) => {
         return updated;
     });
 
-    res.json({ token: signToken(user), user });
+    setAuthCookie(res, user);
+    res.json({ user });
 });
 
 export default router;

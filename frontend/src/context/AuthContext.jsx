@@ -1,31 +1,32 @@
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
-import { api, clearToken, getToken, setToken, setUnauthorizedHandler } from "../api.js";
+import { api, setUnauthorizedHandler } from "../api.js";
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
     const [user, setUser] = useState(null);
-    // Only "checking" if there is a saved token to check
-    const [checking, setChecking] = useState(() => Boolean(getToken()));
+    // Whether the cookie (if any) still holds a login is only known after asking the server
+    const [checking, setChecking] = useState(true);
     const [error, setError] = useState(null);
 
+    // Forget the user here at once; the server removes the cookie (JavaScript can't – it's httpOnly)
     const logout = useCallback(() => {
-        clearToken();
         setUser(null);
+        api("/auth/logout", { method: "POST" }).catch(() => {});
     }, []);
 
     useEffect(() => {
-        setUnauthorizedHandler(logout);
-    }, [logout]);
+        // A 401 anywhere: the login is gone – just forget the user (the server has already cleared the cookie)
+        setUnauthorizedHandler(() => setUser(null));
+    }, []);
 
-    // A saved token: ask the server who it belongs to. 401 logs out (via api.js);
-    // a network error keeps the token, so the user isn't logged out just because they're offline.
-    const checkToken = useCallback(async () => {
-        if (!getToken()) return;
+    // Ask the server who is logged in. 401 = nobody; a network error keeps trying possible,
+    // so the user isn't logged out just because they're offline.
+    const checkLogin = useCallback(async () => {
         setChecking(true);
         setError(null);
         try {
-            const data = await api("/auth/me");
+            const data = await api("/auth/me", { migrateOldLogin: true });
             setUser(data.user);
         } catch (err) {
             if (err.status !== 401) setError(err.message);
@@ -35,38 +36,35 @@ export function AuthProvider({ children }) {
     }, []);
 
     useEffect(() => {
-        checkToken();
-    }, [checkToken]);
+        checkLogin();
+    }, [checkLogin]);
 
+    // The server sets the login cookie on each of these; here we only keep the user
     async function login(username, password) {
         const data = await api("/auth/login", { method: "POST", body: { username, password } });
-        setToken(data.token);
         setUser(data.user);
     }
 
     async function register(name, username, password) {
         const data = await api("/auth/register", { method: "POST", body: { name, username, password } });
-        setToken(data.token);
         setUser(data.user);
     }
 
     // Choose a password via an activation or reset link – logs in directly afterwards
     async function choosePassword(linkToken, password) {
         const data = await api(`/auth/link/${linkToken}`, { method: "POST", body: { password } });
-        setToken(data.token);
         setUser(data.user);
     }
 
-    // Name, icon and colour. The server sends a new token, since the name is in it.
+    // Name, icon and colour. The server renews the cookie, since the name is in the token.
     async function updateProfile(profile) {
         const data = await api("/auth/me", { method: "PUT", body: profile });
-        setToken(data.token);
         setUser(data.user);
     }
 
     return (
         <AuthContext.Provider
-            value={{ user, checking, error, login, register, choosePassword, logout, updateProfile, retry: checkToken }}
+            value={{ user, checking, error, login, register, choosePassword, logout, updateProfile, retry: checkLogin }}
         >
             {children}
         </AuthContext.Provider>
