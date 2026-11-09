@@ -409,8 +409,10 @@ function GiftForm({ data, lists, santas, presetListId, presetSantaId, presetEven
                 <label className="field">
                     <span>Kommentar</span>
                     <textarea value={form.comment} onChange={set("comment")} rows={3} maxLength={1000} disabled={busy} />
-                    {/* Not for Secret Santa – only I have it anyway */}
-                    {form.santaId === "" && <small>Syns bara för den/de som köpt gåvan.</small>}
+                    {/* Not for Secret Santa. Without a list the gift is only mine – so "dig" */}
+                    {form.santaId === "" && (
+                        <small>{form.listId === "" ? "Syns bara för dig." : "Syns bara för den/de som köpt gåvan."}</small>
+                    )}
                 </label>
 
                 {canShare ? (
@@ -495,11 +497,16 @@ function GiftForm({ data, lists, santas, presetListId, presetSantaId, presetEven
                     (isNew && form.listId !== "" ? (
                         // A new gift on a list: sharing comes after saving – as a banner
                         <Notice>När gåvan är sparad kan du dela den med andra.</Notice>
+                    ) : form.listId === "" ? (
+                        // Only while choosing what a new gift is for – an existing one can't be relinked anyway
+                        isNew && (
+                            <p className="small muted">
+                                En gåva utan lista kan inte delas med andra. Välj en lista för att kunna dela den.
+                            </p>
+                        )
                     ) : (
                         <p className="small muted">
-                            {form.listId === ""
-                                ? "En gåva utan lista kan inte delas med andra. Välj en lista för att kunna dela den."
-                                : "Spara först – sedan kan du välja vilka i den nya listans grupper som delar på gåvan."}
+                            Spara först – sedan kan du välja vilka i den nya listans grupper som delar på gåvan.
                         </p>
                     ))
                 )}

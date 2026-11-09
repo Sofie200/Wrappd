@@ -997,6 +997,12 @@ select {
     margin-bottom: 1rem;
 }
 
+/* Inside a member's row: on a line of its own under the name */
+.member-list .link-box {
+    flex-basis: 100%;
+    margin: 0.25rem 0 0.25rem;
+}
+
 .link-box p {
     margin: 0.5rem 0;
 }
@@ -2701,25 +2707,25 @@ button.event-edit {
 
 /* "🎁 Överraskningsgåva" straight on the background – no border, a soft rose behind it on hover.
    A bit more compact, so it fits beside "Mina inköp". */
-.event-gifts-bar .btn {
+.event-gifts-bar > .btn {
     padding-inline: 0.7rem;
     font-size: 0.85rem;
     border-color: transparent;
     background: none;
 }
 
-.event-gifts-bar .btn:hover {
+.event-gifts-bar > .btn:hover {
     border-color: transparent;
     background: none;
 }
 
 /* Hover: the gift gives a little shake, like the icons in the menus */
-.event-gifts-bar .btn:hover .icon-gift-plus {
+.event-gifts-bar > .btn:hover .icon-gift-plus {
     animation: icon-shake 0.5s ease-in-out;
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .event-gifts-bar .btn:hover .icon-gift-plus {
+    .event-gifts-bar > .btn:hover .icon-gift-plus {
         animation: none;
     }
 }

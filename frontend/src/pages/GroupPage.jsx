@@ -29,6 +29,12 @@ export default function GroupPage() {
     const [editingSettings, setEditingSettings] = useState(false); // the group settings modal
     const [shownLink, setShownLink] = useState(null); // { user, link } – a link to copy and send
     const [addingMember, setAddingMember] = useState(false); // the "add member" modal
+    const [createdLink, setCreatedLink] = useState(null); // { user, link } for a user just created there
+
+    function closeAddMember() {
+        setAddingMember(false);
+        setCreatedLink(null);
+    }
     const [showArchive, setShowArchive] = useState(false); // the group's past lists instead of the current ones
     const [memberPage, setMemberPage] = useState(0); // the members are shown MEMBERS_PER_PAGE at a time
 
@@ -156,7 +162,6 @@ export default function GroupPage() {
                         </button>
                     )}
                 </div>
-                {shownLink && <UserLinkBox {...shownLink} onClose={() => setShownLink(null)} />}
                 <ul className="member-list">
                     {shownMembers.map((member) => {
                         const isMe = member.id === user.id;
@@ -241,6 +246,10 @@ export default function GroupPage() {
                                         )}
                                     </SettingsMenu>
                                 )}
+                                {/* The link right under the member it's for, so there's no scrolling up */}
+                                {shownLink?.user.id === member.id && (
+                                    <UserLinkBox {...shownLink} onClose={() => setShownLink(null)} />
+                                )}
                             </li>
                         );
                     })}
@@ -287,33 +296,35 @@ export default function GroupPage() {
             )}
 
             {addingMember && (
-                <Modal title="Lägg till medlem" onClose={() => setAddingMember(false)}>
-                    <p className="muted small">
-                        Har personen redan ett konto? Personer i dina grupper dyker upp medan du skriver. Andra hittar
-                        du genom att skriva hela användarnamnet och trycka på Sök.
-                    </p>
-                    <UserSearch
-                        excludeGroupId={group.id}
-                        onSelect={(member) => {
-                            setAddingMember(false);
-                            addMember(member);
-                        }}
-                        busy={busy}
-                    />
+                <Modal title="Lägg till medlem" onClose={closeAddMember}>
+                    {createdLink ? (
+                        // Just created: the link to send them, right here (the modal's X closes it)
+                        <UserLinkBox {...createdLink} />
+                    ) : (
+                        <>
+                            <p className="muted small">
+                                Har personen redan ett konto? Personer i dina grupper dyker upp medan du skriver. Andra
+                                hittar du genom att skriva hela användarnamnet och trycka på Sök.
+                            </p>
+                            <UserSearch
+                                excludeGroupId={group.id}
+                                onSelect={(member) => {
+                                    setAddingMember(false);
+                                    addMember(member);
+                                }}
+                                busy={busy}
+                            />
 
-                    <h3 className="subhead">Eller skapa en ny användare</h3>
-                    <CreateUserForm
-                        groupId={group.id}
-                        onCreated={(result) => {
-                            setAddingMember(false);
-                            setShownLink(result);
-                            reload();
-                            // Scroll to the link, so it isn't missed
-                            setTimeout(() => {
-                                document.getElementById("user-link")?.scrollIntoView({ behavior: "smooth", block: "center" });
-                            }, 0);
-                        }}
-                    />
+                            <h3 className="subhead">Eller skapa en ny användare</h3>
+                            <CreateUserForm
+                                groupId={group.id}
+                                onCreated={(result) => {
+                                    setCreatedLink(result);
+                                    reload();
+                                }}
+                            />
+                        </>
+                    )}
                 </Modal>
             )}
         </div>

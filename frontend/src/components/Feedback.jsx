@@ -1,5 +1,5 @@
 // Small shared pieces for loading, errors and empty states
-import { Gift, RotateCcw } from "lucide-react";
+import { Gift, RotateCw } from "lucide-react";
 
 export function Loading({ text = "Laddar…" }) {
     return (
@@ -21,7 +21,7 @@ export function ErrorMessage({ message, onRetry }) {
             <span>{message}</span>
             {onRetry && (
                 <button type="button" className="btn btn-small btn-ghost" onClick={onRetry}>
-                    <RotateCcw size={16} aria-hidden="true" /> Försök igen
+                    <RotateCw size={16} aria-hidden="true" /> Försök igen
                 </button>
             )}
         </div>
