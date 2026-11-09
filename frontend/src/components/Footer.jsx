@@ -41,7 +41,7 @@ export default function Footer() {
                     </a>
                 </span>
                 <span>
-                    Kontakt: <a href="mailto:info@wrappd.se">info@wrappd.se</a>
+                    Kontakt: <a href="mailto:hej@wrappd.se">hej@wrappd.se</a>
                 </span>
             </p>
         </footer>
