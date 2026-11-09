@@ -1414,11 +1414,14 @@ select {
     align-items: center;
 }
 
+/* Centred without transform: .btn:active's translateY(1px) would replace it and make the button jump */
 .wish-quick-reserve {
     position: absolute;
-    top: 50%;
+    top: 0;
+    bottom: 0;
     right: 1rem;
-    transform: translateY(-50%);
+    height: fit-content;
+    margin-block: auto;
 }
 
 .wish-title {
