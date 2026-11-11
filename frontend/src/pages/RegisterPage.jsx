@@ -133,6 +133,11 @@ export default function RegisterPage() {
                 </button>
             </form>
 
+            <p className="muted small auth-hint">
+                När du skapar ett konto sparar vi uppgifterna ovan. Läs hur vi hanterar dem i vår{" "}
+                <Link to="/integritet">integritetspolicy</Link>.
+            </p>
+
             <p className="auth-switch">
                 Har du redan ett konto? <Link to="/login">Logga in</Link>
             </p>

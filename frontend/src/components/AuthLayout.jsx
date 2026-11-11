@@ -13,6 +13,9 @@ export default function AuthLayout({ title, children }) {
                 </p>
                 <h1>{title}</h1>
                 {children}
+                <p className="auth-legal">
+                    <Link to="/integritet">Integritet och cookies</Link>
+                </p>
             </div>
         </div>
     );
