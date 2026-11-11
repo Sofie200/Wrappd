@@ -3,9 +3,10 @@ import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 import AuthLayout from "../components/AuthLayout.jsx";
 import { ErrorMessage } from "../components/Feedback.jsx";
+import GoogleButton from "../components/GoogleButton.jsx";
 
 export default function LoginPage() {
-    const { user, login } = useAuth();
+    const { user, login, loginWithGoogle } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
     const [username, setUsername] = useState("");
@@ -25,6 +26,21 @@ export default function LoginPage() {
         try {
             await login(username, password);
             navigate(from, { replace: true });
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setBusy(false);
+        }
+    }
+
+    async function handleGoogle(credential) {
+        setBusy(true);
+        setError(null);
+        try {
+            const signup = await loginWithGoogle(credential);
+            // No account yet: choose a username first
+            if (signup) navigate("/register/google", { state: { credential, signup, from } });
+            else navigate(from, { replace: true });
         } catch (err) {
             setError(err.message);
         } finally {
@@ -63,6 +79,8 @@ export default function LoginPage() {
                     {busy ? "Loggar in…" : "Logga in"}
                 </button>
             </form>
+
+            <GoogleButton text="signin_with" onCredential={handleGoogle} />
 
             <p className="auth-switch">
                 Inget konto? <Link to="/register">Skapa ett</Link>

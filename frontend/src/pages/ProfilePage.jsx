@@ -5,6 +5,7 @@ import { useAuth } from "../context/AuthContext.jsx";
 import { AVATAR_COLORS, AVATAR_ICONS, DEFAULT_COLOR, DEFAULT_ICON } from "../profileOptions.js";
 import Avatar from "../components/Avatar.jsx";
 import { ErrorMessage } from "../components/Feedback.jsx";
+import GoogleConnect from "../components/GoogleConnect.jsx";
 
 // /profile – edit my profile: name, icon and colour – with a live preview
 export default function ProfilePage() {
@@ -132,6 +133,8 @@ export default function ProfilePage() {
                     </div>
                 </aside>
             </div>
+
+            <GoogleConnect />
         </div>
     );
 }

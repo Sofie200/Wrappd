@@ -4,11 +4,13 @@ import { Link, Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 import AuthLayout from "../components/AuthLayout.jsx";
 import { ErrorMessage } from "../components/Feedback.jsx";
+import GoogleButton from "../components/GoogleButton.jsx";
+import { GOOGLE_CLIENT_ID } from "../config.js";
 
 export default function RegisterPage() {
-    const { user, register } = useAuth();
+    const { user, register, loginWithGoogle } = useAuth();
     const navigate = useNavigate();
-    const [form, setForm] = useState({ name: "", username: "", password: "", confirm: "" });
+    const [form, setForm] = useState({ name: "", username: "", email: "", password: "", confirm: "" });
     const [error, setError] = useState(null);
     const [busy, setBusy] = useState(false);
 
@@ -25,8 +27,23 @@ export default function RegisterPage() {
         setBusy(true);
         setError(null);
         try {
-            await register(form.name, form.username, form.password);
+            await register(form.name, form.username, form.email, form.password);
             navigate("/", { replace: true });
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setBusy(false);
+        }
+    }
+
+    async function handleGoogle(credential) {
+        setBusy(true);
+        setError(null);
+        try {
+            const signup = await loginWithGoogle(credential);
+            // No account yet (the usual case here): choose a username first
+            if (signup) navigate("/register/google", { state: { credential, signup } });
+            else navigate("/", { replace: true });
         } catch (err) {
             setError(err.message);
         } finally {
@@ -36,8 +53,17 @@ export default function RegisterPage() {
 
     return (
         <AuthLayout title="Skapa konto">
+            <ErrorMessage message={error} />
+
+            {/* Quickest: an account straight from Google – name and email come from there */}
+            <GoogleButton text="signup_with" divider={false} onCredential={handleGoogle} />
+            {GOOGLE_CLIENT_ID && (
+                <div className="auth-divider">
+                    <span>eller fyll i själv</span>
+                </div>
+            )}
+
             <form onSubmit={handleSubmit} className="form">
-                <ErrorMessage message={error} />
 
                 <label className="field">
                     <span>Namn</span>
@@ -58,6 +84,20 @@ export default function RegisterPage() {
                         required
                     />
                     <small>3–30 tecken: a–z, siffror, punkt, bindestreck eller understreck.</small>
+                </label>
+
+                <label className="field">
+                    <span>E-post</span>
+                    <input
+                        type="email"
+                        name="email"
+                        value={form.email}
+                        onChange={update}
+                        autoComplete="email"
+                        autoCapitalize="none"
+                        maxLength={254}
+                        required
+                    />
                 </label>
 
                 <label className="field">

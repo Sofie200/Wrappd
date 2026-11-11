@@ -16,6 +16,12 @@ export const username = z
         "Användarnamnet ska vara 3–30 tecken: a–z, siffror, punkt, bindestreck eller understreck"
     );
 
+export const email = z
+    .string({ error: "Ange en e-postadress" })
+    .trim()
+    .toLowerCase()
+    .pipe(z.email("Ange en giltig e-postadress").max(254, "E-postadressen får vara högst 254 tecken"));
+
 export const password = z
     .string({ error: "Ange ett lösenord" })
     .min(8, "Lösenordet ska vara minst 8 tecken")

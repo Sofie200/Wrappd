@@ -7,6 +7,9 @@ CREATE TABLE users (
     id            SERIAL PRIMARY KEY,
     name          TEXT NOT NULL CHECK (length(trim(name)) > 0),
     username      TEXT UNIQUE CHECK (username = lower(username)),
+    email         TEXT UNIQUE CHECK (email = lower(email)), -- optional, always lowercase
+    email_verified BOOLEAN NOT NULL DEFAULT false, -- true only when the email came from Google (typed-in emails are unchecked)
+    google_sub    TEXT UNIQUE, -- Google's fixed account id, set when the user logs in with Google
     password_hash TEXT,
     is_child      BOOLEAN NOT NULL DEFAULT false,
     -- Profile icon in the top menu (same values in api/_lib/userSchema.js and frontend/src/profileOptions.js)
@@ -26,7 +29,9 @@ CREATE TABLE users (
     created_by    INT REFERENCES users(id) ON DELETE SET NULL,
     created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
     CONSTRAINT users_adult_has_username CHECK (is_child OR username IS NOT NULL),
-    CONSTRAINT users_child_cannot_log_in CHECK (NOT is_child OR (username IS NULL AND password_hash IS NULL))
+    CONSTRAINT users_child_cannot_log_in CHECK (NOT is_child OR (username IS NULL AND password_hash IS NULL)),
+    CONSTRAINT users_child_has_no_email CHECK (NOT is_child OR email IS NULL),
+    CONSTRAINT users_child_has_no_google CHECK (NOT is_child OR google_sub IS NULL)
 );
 
 -- 1–2 parents per child (the maximum of two is checked in children-routes.js)

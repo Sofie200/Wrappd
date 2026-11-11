@@ -38,7 +38,7 @@ router.get("/search", async (req, res) => {
     }
 
     const { rows } = await pool.query(
-        `SELECT u.id, u.name, u.username, u.password_hash IS NOT NULL AS "isActivated"
+        `SELECT u.id, u.name, u.username, (u.password_hash IS NOT NULL OR u.google_sub IS NOT NULL) AS "isActivated"
          FROM users u
          WHERE NOT u.is_child -- children are managed by their parents, never added by search
            AND u.id <> $3

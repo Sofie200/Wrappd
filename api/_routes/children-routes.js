@@ -76,7 +76,7 @@ router.get("/", async (req, res) => {
                                         JOIN child_parents pc ON pc.parent_id = pm.user_id
                                         WHERE pm.group_id = g.id AND pc.child_id = u.id)), '[]') AS "parentGroups",
                 (SELECT json_agg(json_build_object('id', p.id, 'name', p.name, 'username', p.username,
-                                                   'isActivated', p.password_hash IS NOT NULL) ORDER BY p.name)
+                                                   'isActivated', p.password_hash IS NOT NULL OR p.google_sub IS NOT NULL) ORDER BY p.name)
                  FROM child_parents cp2 JOIN users p ON p.id = cp2.parent_id
                  WHERE cp2.child_id = u.id) AS parents,
                 (SELECT count(*)::int FROM list_recipients WHERE user_id = u.id) AS "listCount",

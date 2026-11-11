@@ -6,6 +6,7 @@ import { APP_NAME } from "../config.js";
 import Avatar from "./Avatar.jsx";
 import Footer from "./Footer.jsx";
 import SettingsMenu from "./SettingsMenu.jsx";
+import EmailPrompt from "./EmailPrompt.jsx";
 
 export default function Layout() {
     const { user, logout } = useAuth();
@@ -88,6 +89,8 @@ export default function Layout() {
 
             {/* Out on the backdrop, below the sheet */}
             <Footer />
+            {/* Asks for an email (or Google) if the account has neither */}
+            <EmailPrompt />
         </div>
     );
 }

@@ -3,6 +3,7 @@ import Layout from "./components/Layout.jsx";
 import RequireAuth from "./components/RequireAuth.jsx";
 import LoginPage from "./pages/LoginPage.jsx";
 import RegisterPage from "./pages/RegisterPage.jsx";
+import GoogleSignupPage from "./pages/GoogleSignupPage.jsx";
 import OverviewPage from "./pages/OverviewPage.jsx";
 import GroupsPage from "./pages/GroupsPage.jsx";
 import GroupPage from "./pages/GroupPage.jsx";
@@ -24,6 +25,7 @@ export default function App() {
         <Routes>
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
+            <Route path="/register/google" element={<GoogleSignupPage />} />
             {/* Activation and reset links – open without being logged in */}
             <Route path="/link/:token" element={<LinkPage />} />
 

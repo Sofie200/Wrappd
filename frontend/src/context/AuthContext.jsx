@@ -45,8 +45,38 @@ export function AuthProvider({ children }) {
         setUser(data.user);
     }
 
-    async function register(name, username, password) {
-        const data = await api("/auth/register", { method: "POST", body: { name, username, password } });
+    // credential = the ID token from Google's button. Returns nothing when logged in, or – for someone
+    // without an account – { name, username, email }: suggestions for the last step (GoogleSignupPage)
+    async function loginWithGoogle(credential) {
+        const data = await api("/auth/google", { method: "POST", body: { credential } });
+        if (data.signup) return data.signup;
+        setUser(data.user);
+    }
+
+    // The last step: the account is created only now, with the username the user chose
+    async function signupWithGoogle(credential, name, username) {
+        const data = await api("/auth/google/signup", { method: "POST", body: { credential, name, username } });
+        setUser(data.user);
+    }
+
+    // Connect / disconnect Google on the profile page – the login cookie stays as it is
+    async function connectGoogle(credential) {
+        const data = await api("/auth/google/connect", { method: "POST", body: { credential } });
+        setUser(data.user);
+    }
+
+    async function updateEmail(email) {
+        const data = await api("/auth/me/email", { method: "PUT", body: { email } });
+        setUser(data.user);
+    }
+
+    async function disconnectGoogle() {
+        const data = await api("/auth/google", { method: "DELETE" });
+        setUser(data.user);
+    }
+
+    async function register(name, username, email, password) {
+        const data = await api("/auth/register", { method: "POST", body: { name, username, email, password } });
         setUser(data.user);
     }
 
@@ -64,7 +94,7 @@ export function AuthProvider({ children }) {
 
     return (
         <AuthContext.Provider
-            value={{ user, checking, error, login, register, choosePassword, logout, updateProfile, retry: checkLogin }}
+            value={{ user, checking, error, login, loginWithGoogle, signupWithGoogle, connectGoogle, disconnectGoogle, updateEmail, register, choosePassword, logout, updateProfile, retry: checkLogin }}
         >
             {children}
         </AuthContext.Provider>
