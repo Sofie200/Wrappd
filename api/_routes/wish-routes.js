@@ -4,9 +4,10 @@ import { pool, withTransaction } from "../_db/pool.js";
 import { HttpError, parse, parseId } from "../_lib/http.js";
 import { getWishAccess, requireEditor, requireReserver } from "../_lib/access.js";
 import { WishBody } from "../_lib/wishSchema.js";
-import { giftDate } from "../_lib/giftSchema.js";
+import { giftDate, optionalId } from "../_lib/giftSchema.js";
 import { receiveImage } from "../_middleware/imageUpload.js";
 import { removeWishImages } from "../_integrations/storageAdapter.js";
+import { removeUnusedImages } from "../_lib/imageCleanup.js";
 import { uploadNewProfileWishImage, uploadNewWishImage } from "../_lib/wishImage.js";
 
 const router = Router();
@@ -72,7 +73,7 @@ router.patch("/:id", receiveImage, async (req, res) => {
 
     // 2. The wish is saved – now the old image can go
     if (wish.image_url && wish.image_url !== imageUrl) {
-        await removeWishImages([wish.image_url]).catch((err) => console.warn("[WISH] Could not delete old image:", err));
+        await removeUnusedImages([wish.image_url], "WISH");
     }
 
     res.json({ id: wishId, imageUrl });
@@ -91,16 +92,18 @@ router.delete("/:id", async (req, res) => {
     });
 
     if (wish.image_url) {
-        await removeWishImages([wish.image_url]).catch((err) => console.warn("[WISH] Could not delete image:", err));
+        await removeUnusedImages([wish.image_url], "WISH");
     }
     res.json({ deleted: wishId });
 });
 
 /* --- POST /api/wishes/:id/gifts  { quantity } → { id } – reserve: creates a gift with me in it --- */
 // The gift gets a copy of the title, and the price = the wish's price × quantity. Both are then the gift's own.
-// giftDate: when the gift is to be given – required on a wish profile (it has no list with a date)
+// giftDate: when the gift is to be given – required on a wish profile (it has no list with a date) …
+// santaId: … unless it's for a Secret Santa where I give to the profile's owner – then it's the draw's date
 const Reserve = z.object({
     giftDate,
+    santaId: optionalId,
     quantity: z.coerce
         .number({ error: "Ange hur många du vill reservera" })
         .int("Antalet måste vara ett heltal")
@@ -110,7 +113,7 @@ const Reserve = z.object({
 
 router.post("/:id/gifts", async (req, res) => {
     const wishId = parseId(req.params.id);
-    const { quantity, giftDate: date } = parse(Reserve, req.body);
+    const { quantity, giftDate: date, santaId } = parse(Reserve, req.body);
     const { access } = await loadWish(pool, wishId, req.user.id);
     requireReserver(access);
 
@@ -120,9 +123,19 @@ router.post("/:id/gifts", async (req, res) => {
             "SELECT quantity, title, price, user_id FROM wishes WHERE id = $1 FOR UPDATE",
             [wishId]
         );
-        // A wish on a wish profile: the gift needs its own date (a list's wishes use the list's date)
+        // A wish on a wish profile: the gift needs its own date (a list's wishes use the list's date) –
+        // or a Secret Santa where I'm the giver and the profile's owner is the one I give to
         const onProfile = wish.user_id !== null;
-        if (onProfile && !date) throw new HttpError(400, "Ange när gåvan ska ges");
+        if (santaId) {
+            if (!onProfile) throw new HttpError(400, "Bara önskningar på en önskeprofil kan reserveras till en Secret Santa");
+            const { rowCount } = await db.query(
+                "SELECT 1 FROM secret_santa_pairs WHERE santa_id = $1 AND giver_id = $2 AND receiver_id = $3",
+                [santaId, req.user.id, wish.user_id]
+            );
+            if (rowCount === 0) throw new HttpError(403, "Du ger inte till den här personen i den Secret Santan");
+        } else if (onProfile && !date) {
+            throw new HttpError(400, "Ange när gåvan ska ges");
+        }
 
         const { rows: [mine] } = await db.query(
             `SELECT g.id FROM gifts g JOIN gift_members gm ON gm.gift_id = g.id
@@ -144,9 +157,9 @@ router.post("/:id/gifts", async (req, res) => {
         }
 
         const { rows: [gift] } = await db.query(
-            `INSERT INTO gifts (wish_id, created_by, quantity, title, price, gift_date)
-             VALUES ($1, $2, $3, $4, $5::numeric * $3::int, $6) RETURNING id`,
-            [wishId, req.user.id, quantity, wish.title, wish.price, onProfile ? date : null]
+            `INSERT INTO gifts (wish_id, created_by, quantity, title, price, gift_date, santa_id)
+             VALUES ($1, $2, $3, $4, $5::numeric * $3::int, $6, $7) RETURNING id`,
+            [wishId, req.user.id, quantity, wish.title, wish.price, onProfile && !santaId ? date : null, santaId]
         );
         await db.query("INSERT INTO gift_members (gift_id, user_id) VALUES ($1, $2)", [gift.id, req.user.id]);
         return gift.id;

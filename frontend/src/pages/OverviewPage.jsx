@@ -30,6 +30,8 @@ function SantaRow({ santa, gifts = [], onChanged }) {
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState(null);
     const { receiver } = santa;
+    // The receiver's wish profile opened from here: what I reserve there counts for this Secret Santa
+    const santaLink = { id: santa.id, title: santa.title, date: santa.date };
 
     function reveal() {
         setShown(true);
@@ -117,7 +119,7 @@ function SantaRow({ santa, gifts = [], onChanged }) {
                                     Shown: the name itself opens the wish profile. */}
                                 <span className="santa-name-wrap" ref={nameRef} aria-live="polite">
                                     {shown ? (
-                                        <PersonLink person={receiver} className="santa-name text-link santa-name-link" title="Se vad hen önskar sig">
+                                        <PersonLink person={receiver} santa={santaLink} onReserved={onChanged} className="santa-name text-link santa-name-link" title="Se vad hen önskar sig">
                                             {receiver.name}
                                         </PersonLink>
                                     ) : (
@@ -165,7 +167,7 @@ function SantaRow({ santa, gifts = [], onChanged }) {
                                         <br />
                                         {/* Own title, so the tooltip doesn't give away who it is */}
                                         Reservera något från{" "}
-                                        <PersonLink person={receiver} className="text-link" title="Se vad hen önskar sig">
+                                        <PersonLink person={receiver} santa={santaLink} onReserved={onChanged} className="text-link" title="Se vad hen önskar sig">
                                             önskeprofilen
                                         </PersonLink>{" "}
                                         eller lägg till en{" "}

@@ -6,6 +6,7 @@ import { checkListPeople, getListAccess, requireEditor } from "../_lib/access.js
 import { WishBody, MAX_WISHES_PER_LIST, TOO_MANY_WISHES } from "../_lib/wishSchema.js";
 import { receiveImage } from "../_middleware/imageUpload.js";
 import { removeWishImages } from "../_integrations/storageAdapter.js";
+import { removeUnusedImages } from "../_lib/imageCleanup.js";
 import { uploadNewWishImage } from "../_lib/wishImage.js";
 
 const router = Router();
@@ -230,7 +231,9 @@ router.post("/:id/publish", async (req, res) => {
     res.json({ id: listId, isPublic: true });
 });
 
-/* --- DELETE /api/lists/:id – only if nothing on it is reserved (admin, also when archived) --- */
+/* --- DELETE /api/lists/:id – delete the list (admin, also when archived) --- */
+// Gifts on it are NOT deleted: the database turns them into gifts for an own event (the list's name, date and
+// recipients – see migration 018), so those who bought something keep it. Their images stay too.
 router.delete("/:id", async (req, res) => {
     const listId = parseId(req.params.id);
 
@@ -239,26 +242,17 @@ router.delete("/:id", async (req, res) => {
         const access = await getListAccess(db, listId, req.user.id);
         if (!access.isAdmin) throw new HttpError(403, "Bara listans admins kan radera listan");
 
-        const { rows: [{ count }] } = await db.query(
-            `SELECT count(*)::int AS count FROM gifts g
-             JOIN wishes w ON w.id = g.wish_id WHERE w.list_id = $1`,
-            [listId]
-        );
-        if (count > 0) throw new HttpError(409, "Listan har reserverade gåvor och kan inte raderas");
-
         const { rows } = await db.query(
-            // Wishes' images, and the images of gifts bought outside the list – they are deleted with it
-            `SELECT image_url FROM wishes WHERE list_id = $1 AND image_url IS NOT NULL
-             UNION ALL
-             SELECT image_url FROM gifts WHERE list_id = $1 AND image_url IS NOT NULL`,
+            // The wishes' images – deleted afterwards unless a gift now uses them
+            "SELECT image_url FROM wishes WHERE list_id = $1 AND image_url IS NOT NULL",
             [listId]
         );
         await db.query("DELETE FROM lists WHERE id = $1", [listId]);
         return rows.map((r) => r.image_url);
     });
 
-    // After the list is gone: remove its images. A failure only leaves files behind.
-    await removeWishImages(imageUrls).catch((err) => console.warn("[LIST] Could not delete images:", err));
+    // After the list is gone: remove the images no gift kept. A failure only leaves files behind.
+    await removeUnusedImages(imageUrls, "LIST");
 
     res.json({ deleted: listId });
 });

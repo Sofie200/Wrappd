@@ -10,7 +10,7 @@ const quantity = z.coerce
     .min(1, "Antalet måste vara minst 1")
     .max(99, "Antalet får vara högst 99");
 
-const optionalId = z
+export const optionalId = z
     .union([z.string(), z.number()])
     .nullish()
     .transform((value, ctx) => {
@@ -50,7 +50,11 @@ const FreeFields = z.object({
     santaId: optionalId,
     // Without a list or Secret Santa: who it's for, as a link to a user in my groups (optional)
     recipientId: optionalId,
-    // Without a list or Secret Santa: the event's name, e.g. "Farmors 80-årsdag" (stored in gifts.recipient)
+    // ...or a name in free text, e.g. after the recipient's account was deleted ("Okänd mottagare")
+    recipientText: z.string().trim().max(100, "Namnet får vara högst 100 tecken").nullish().transform((v) => v || null),
+    // A logged gift: an event of my own that already exists (adding another gift to it) …
+    eventId: optionalId,
+    // … or a new one: its name, e.g. "Farmors 80-årsdag" (gift_events.name), and giftDate (gift_events.event_date)
     recipient: z.string().trim().max(100, "Händelsens namn får vara högst 100 tecken").optional().transform((v) => v || null),
     giftDate,
 });

@@ -9,6 +9,7 @@ import ImageField from "../components/ImageField.jsx";
 import Breadcrumbs from "../components/Breadcrumbs.jsx";
 import ProductLinkField from "../components/ProductLinkField.jsx";
 import PeoplePicker from "../components/PeoplePicker.jsx";
+import EventFields from "../components/EventFields.jsx";
 import { amountText, formatDate, formatPrice, formatShortDate, parseAmount } from "../format.js";
 import { ArrowUpRight, Check, CircleMinus, Save, Trash2 } from "lucide-react";
 
@@ -26,7 +27,8 @@ export default function GiftPage() {
 // The gift editor itself – used by the page, and in a modal (e.g. from the overview).
 // With `onDone` it runs in modal mode: no page chrome, and onDone() is called after
 // a save or a delete instead of navigating.
-export function GiftEditor({ id, presetListId = "", presetSantaId = "", presetEvent = null, onDone }) {
+// onChangeEvent: with presetEvent – an "Ändra" link after "Loggas på …" (back to choosing the event)
+export function GiftEditor({ id, presetListId = "", presetSantaId = "", presetEvent = null, onDone, onChangeEvent }) {
     const isNew = id === "new";
     const gift = useFetch(isNew ? null : `/gifts/${id}`);
     const isFree = isNew || gift.data?.gift.kind === "free";
@@ -46,6 +48,7 @@ export function GiftEditor({ id, presetListId = "", presetSantaId = "", presetEv
             presetListId={presetListId}
             presetSantaId={presetSantaId}
             presetEvent={presetEvent}
+            onChangeEvent={onChangeEvent}
             onDone={onDone}
             justSaved={justSaved}
             onSaved={() => {
@@ -57,7 +60,7 @@ export function GiftEditor({ id, presetListId = "", presetSantaId = "", presetEv
     );
 }
 
-function GiftForm({ data, lists, santas, presetListId, presetSantaId, presetEvent, justSaved, onSaved, onEdit, onDone }) {
+function GiftForm({ data, lists, santas, presetListId, presetSantaId, presetEvent, onChangeEvent, justSaved, onSaved, onEdit, onDone }) {
     // "Till vem?" for an own event: a link to someone in my groups
     const myGroups = useFetch("/groups");
     const groupIds = (myGroups.data?.data ?? []).map((g) => g.id).join(",");
@@ -100,6 +103,8 @@ function GiftForm({ data, lists, santas, presetListId, presetSantaId, presetEven
         // An own event: its name, linked person and date – from the gift, or from the event it's added to
         recipient: gift?.recipient ?? presetEvent?.name ?? "",
         recipientId: String(gift?.recipientId ?? presetEvent?.recipientId ?? ""),
+        // A name in free text – used when nobody is linked (e.g. the recipient's account was deleted)
+        recipientText: gift?.recipientText ?? presetEvent?.recipientText ?? "",
         giftDate: gift?.giftDate ?? presetEvent?.date ?? "",
     });
     const image = useImageChoice(gift?.imageUrl);
@@ -124,7 +129,8 @@ function GiftForm({ data, lists, santas, presetListId, presetSantaId, presetEven
     // Sharing: on a gift on a wish, or a gift outside the list that is saved with a list.
     // Who can share depends on the list – so after changing the list, it must be saved first.
     const listChanged = isFree && !isNew && form.listId !== savedListId;
-    const canShare = !isNew && (!isFree || (form.listId !== "" && !listChanged));
+    // (Not a Secret Santa gift – only the giver knows who it's for)
+    const canShare = !isNew && !gift?.santaId && (!isFree || (form.listId !== "" && !listChanged));
     const people = data ? [...data.members, ...data.candidates.filter((c) => !data.members.some((m) => m.id === c.id))] : [];
     const selectedIds = canShare ? people.map((p) => p.id).filter((pid) => pid in form.members) : [];
 
@@ -149,7 +155,10 @@ function GiftForm({ data, lists, santas, presetListId, presetSantaId, presetEven
 
     // What is sent as members. Without a list, only I remain. After a list change, the same people (checked by the server).
     function membersToSend() {
-        if (isFree && form.listId === "") return [{ userId: user.id, amount: null }];
+        // Without a list only I can be in it – except a saved logged gift, which keeps everyone already in it
+        // (e.g. a shared gift whose list was deleted). Nobody new can join it.
+        const keepsMembers = !isNew && Boolean(gift?.eventId);
+        if (isFree && form.listId === "" && !keepsMembers) return [{ userId: user.id, amount: null }];
         const ids = canShare ? selectedIds : Object.keys(form.members).map(Number);
         const custom = form.split === "custom";
         return ids.map((pid) => ({ userId: pid, amount: custom ? form.members[pid] : null }));
@@ -181,13 +190,18 @@ function GiftForm({ data, lists, santas, presetListId, presetSantaId, presetEven
         formData.append("members", JSON.stringify(members.length > 1 ? members : members.map((m) => ({ ...m, amount: null }))));
         if (isFree) {
             for (const key of ["title", "description", "url", "listId", "santaId"]) formData.append(key, form[key]);
-            if (freeText) {
+            if (forEvent && presetEvent.eventId) {
+                // Another gift on an event of my own that exists – it already has a name, date and recipient
+                formData.append("eventId", presetEvent.eventId);
+            } else if (freeText && isNew) {
+                // A new event (typed in here, or in step 1 of "Logga gåva" – then form holds presetEvent's fields)
                 formData.append("recipient", form.recipient);
                 formData.append("recipientId", form.recipientId);
+                formData.append("recipientText", form.recipientId ? "" : form.recipientText);
                 formData.append("giftDate", form.giftDate);
             }
             image.appendTo(formData);
-        } else if (data?.person) {
+        } else if (data?.person && !data.santa) {
             // A gift from a wish profile: its own date (a list's wish uses the list's date)
             formData.append("giftDate", form.giftDate);
         }
@@ -250,14 +264,31 @@ function GiftForm({ data, lists, santas, presetListId, presetSantaId, presetEven
                           ? `Secret Santa: ${santa.title} · ${formatDate(santa.date)}`
                           : person
                             ? `Gåva till ${person.name} · från önskeprofilen`
-                            : `${gift.recipient}${gift.recipientName ? ` · till ${gift.recipientName}` : ""} · ${formatDate(gift.giftDate)}`}
+                            : `${gift.recipient}${
+                                  gift.recipientName
+                                      ? ` · till ${gift.recipientName}`
+                                      : gift.recipientText
+                                        ? ` · till ${gift.recipientText}`
+                                        : gift.recipientUnknown
+                                          ? " · till okänd mottagare"
+                                          : ""
+                              } · ${formatDate(gift.giftDate)}`}
                 </p>
             )}
 
             {forEvent ? (
                 <p className="muted small gift-for-event">
-                    Loggas på <strong>{presetEvent.name}</strong>
+                    Loggas på {presetEvent.isNew && "en ny händelse: "}
+                    <strong>{presetEvent.name}</strong>
                     {presetEvent.recipientName && ` · till ${presetEvent.recipientName}`} · {formatDate(presetEvent.date)}
+                    {onChangeEvent && (
+                        <>
+                            {" "}
+                            <button type="button" className="text-link" onClick={onChangeEvent} disabled={busy}>
+                                Ändra
+                            </button>
+                        </>
+                    )}
                 </p>
             ) : lockedLink ? (
                 <>
@@ -360,34 +391,31 @@ function GiftForm({ data, lists, santas, presetListId, presetSantaId, presetEven
                         </label>
                         )}
 
-                        {!forEvent && form.listId === "" && form.santaId === "" && (
+                        {/* A new gift on a new event: the event's fields. A saved logged gift only edits the gift –
+                            the event (name, date, recipient) is edited from its "…" menu on Mina gåvor */}
+                        {isNew && !forEvent && form.listId === "" && form.santaId === "" && (
                             <>
-                                <div className="field-row">
-                                    <label className="field">
-                                        <span>Händelse</span>
-                                        <input
-                                            value={form.recipient}
-                                            onChange={set("recipient")}
-                                            maxLength={100}
-                                            required
-                                            disabled={busy}
-                                            placeholder="t.ex. Farmors 80-årsdag"
-                                        />
-                                    </label>
-                                    <label className="field">
-                                        <span>Datum</span>
-                                        <input type="date" value={form.giftDate} onChange={set("giftDate")} required disabled={busy} />
-                                    </label>
-                                </div>
-                                {/* A link to a real person in my groups – not free text. Search, pick one. */}
-                                <PeoplePicker
-                                    legend="Till vem? (valfritt)"
-                                    hint="Sök bland personerna i dina grupper. Hen ser aldrig gåvan."
+                                {/* Name, date and who it's for – the same fields as in "Logga gåva" and "Redigera händelse"
+                                    (with the names I've typed in before suggested under "…eller skriv ett namn") */}
+                                <EventFields
+                                    draft={{
+                                        name: form.recipient,
+                                        date: form.giftDate,
+                                        recipientId: form.recipientId,
+                                        recipientName: gift?.recipientName ?? "",
+                                        recipientText: form.recipientText,
+                                    }}
+                                    onChange={(d) =>
+                                        change({
+                                            recipient: d.name,
+                                            giftDate: d.date,
+                                            recipientId: d.recipientId,
+                                            recipientText: d.recipientText,
+                                        })
+                                    }
                                     people={groupPeople}
-                                    selected={form.recipientId ? [Number(form.recipientId)] : []}
-                                    onChange={(ids) => change({ recipientId: ids.length ? String(ids[0]) : "" })}
-                                    emptyText="Det finns inga andra i dina grupper än."
-                                    single
+                                    unknown={Boolean(gift?.recipientUnknown)}
+                                    disabled={busy}
                                 />
                             </>
                         )}
@@ -395,7 +423,7 @@ function GiftForm({ data, lists, santas, presetListId, presetSantaId, presetEven
                 )}
 
                 {/* A gift from a wish profile: when it's to be given – there's no list with a date */}
-                {!isFree && data?.person && (
+                {!isFree && data?.person && !data.santa && (
                     <label className="field">
                         <span>När ska gåvan ges?</span>
                         <input type="date" value={form.giftDate} onChange={set("giftDate")} required disabled={busy} />

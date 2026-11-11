@@ -11,7 +11,7 @@ import { pool, TODAY, withTransaction } from "../_db/pool.js";
 import { HttpError, parse, parseId } from "../_lib/http.js";
 import { name } from "../_lib/userSchema.js";
 import { syncChildGroups } from "../_lib/childGroups.js";
-import { removeWishImages } from "../_integrations/storageAdapter.js";
+import { removeUnusedImages } from "../_lib/imageCleanup.js";
 
 const router = Router();
 
@@ -209,7 +209,7 @@ router.delete("/:id", async (req, res) => {
         return { imageUrls: images.map((r) => r.image_url), listsDeleted: listIds.length };
     });
 
-    await removeWishImages(imageUrls).catch((err) => console.warn("[CHILD] Could not delete images:", err));
+    await removeUnusedImages(imageUrls, "CHILD");
     res.json({ deleted: childId, listsDeleted });
 });
 

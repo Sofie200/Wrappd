@@ -7,7 +7,7 @@ import { z } from "zod";
 import { pool, withTransaction } from "../_db/pool.js";
 import { HttpError, parse, parseId, todayInSweden } from "../_lib/http.js";
 import { money } from "../_lib/money.js";
-import { removeWishImages } from "../_integrations/storageAdapter.js";
+import { removeUnusedImages } from "../_lib/imageCleanup.js";
 
 const router = Router();
 
@@ -78,24 +78,16 @@ router.post("/", async (req, res) => {
 });
 
 /* --- DELETE /api/santas/:id – cancel the draw (the one who made it) --- */
-// The givers' gifts linked to it go too (ON DELETE CASCADE) – and so do their images.
+// The givers' gifts are kept: the database makes them gifts for an own event, to the one they drew (migration 018).
 router.delete("/:id", async (req, res) => {
     const santaId = parseId(req.params.id);
-    const imageUrls = await withTransaction(async (db) => {
-        const { rows: images } = await db.query(
-            "SELECT image_url FROM gifts WHERE santa_id = $1 AND image_url IS NOT NULL",
-            [santaId]
-        );
+    await withTransaction(async (db) => {
         const { rowCount } = await db.query(
             "DELETE FROM secret_santas WHERE id = $1 AND created_by = $2",
             [santaId, req.user.id]
         );
         if (rowCount === 0) throw new HttpError(404, "Secret Santa finns inte, eller så är det inte du som har lottat den");
-        return images.map((r) => r.image_url);
     });
-    if (imageUrls.length > 0) {
-        await removeWishImages(imageUrls).catch((err) => console.warn("[SANTA] Could not delete gift images:", err));
-    }
     res.json({ deleted: santaId });
 });
 

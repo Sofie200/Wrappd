@@ -3,8 +3,9 @@
 //
 // Goes:
 //  - my account, and my children where I'm the only parent (with their wish profiles)
-//  - lists to only us (every recipient is me or one of those children), with wishes, gifts and images
+//  - lists to only us (every recipient is me or one of those children), with their wishes
 //  - lists I created that have no other admin
+//    (others' gifts on those lists are kept – the database makes them gifts for an own event, migration 018)
 //  - gifts only I am in, my wish profile, my links, my place in Secret Santa draws (ON DELETE CASCADE)
 //  - groups where nobody else is left
 // Handed over:

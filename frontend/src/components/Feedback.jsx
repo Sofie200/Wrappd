@@ -28,8 +28,14 @@ export function ErrorMessage({ message, onRetry }) {
     );
 }
 
+// The text in one <span>: .alert is a flex row (for a message + a button), and loose text mixed with
+// e.g. <strong> would otherwise become separate items, pushed apart
 export function Notice({ children }) {
-    return <div className="alert alert-info">{children}</div>;
+    return (
+        <div className="alert alert-info">
+            <span>{children}</span>
+        </div>
+    );
 }
 
 export function Empty({ children }) {

@@ -63,14 +63,18 @@ router.get("/", async (req, res) => {
                     l.id AS "listId", l.title AS "listTitle",
                     wo.id AS "personId",
                     ss.id AS "santaId", ss.title AS "santaTitle",
-                    COALESCE(l.end_date, g.gift_date, ss.event_date) AS "endDate",
+                    sp.receiver_id AS "santaReceiverId", -- who I give to: "Från önskeprofilen" under the Secret Santa
+                    COALESCE(l.end_date, g.gift_date, ss.event_date, ge.event_date) AS "endDate",
                     -- A gift from a wish profile has no date, so it stays current until it's removed
-                    COALESCE(COALESCE(l.end_date, g.gift_date, ss.event_date) < ${TODAY}, false) AS archived,
+                    COALESCE(COALESCE(l.end_date, g.gift_date, ss.event_date, ge.event_date) < ${TODAY}, false) AS archived,
                     -- Who it's for: the list's recipients, the linked person, the wish profile's owner or my Santa match
-                    COALESCE(${RECIPIENTS}, ru.name, wo.name, sr.name) AS recipients,
+                    -- (a logged gift: the event's person, its name in free text, or "Okänd mottagare")
+                    COALESCE(${RECIPIENTS}, ru.name, ge.recipient_text, wo.name, sr.name,
+                             CASE WHEN ge.recipient_unknown THEN 'Okänd mottagare' END) AS recipients,
                     -- A gift for an event (no list, no Santa): the event's name
-                    CASE WHEN g.wish_id IS NULL AND g.list_id IS NULL AND g.santa_id IS NULL THEN g.recipient END AS "eventName",
-                    g.recipient_id AS "recipientId"
+                    -- A logged gift ("Loggade gåvor"): its event – the gifts page groups on eventId
+                    g.event_id AS "eventId", ge.name AS "eventName",
+                    ge.recipient_id AS "recipientId"
              FROM gift_members me
              JOIN gifts g ON g.id = me.gift_id
              LEFT JOIN wishes w ON w.id = g.wish_id
@@ -79,7 +83,8 @@ router.get("/", async (req, res) => {
              LEFT JOIN secret_santas ss ON ss.id = g.santa_id
              LEFT JOIN secret_santa_pairs sp ON sp.santa_id = g.santa_id AND sp.giver_id = $1
              LEFT JOIN users sr ON sr.id = sp.receiver_id
-             LEFT JOIN users ru ON ru.id = g.recipient_id
+             LEFT JOIN gift_events ge ON ge.id = g.event_id
+             LEFT JOIN users ru ON ru.id = ge.recipient_id
              WHERE me.user_id = $1
              ORDER BY "endDate" DESC, l.title, g.title`,
             [me]

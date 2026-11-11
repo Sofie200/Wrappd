@@ -9,7 +9,7 @@ import { hashToken, isTokenFormat } from "../_lib/userLinks.js";
 import { verifyGoogleIdToken } from "../_lib/googleAuth.js";
 import { deleteAccount, planAccountDeletion } from "../_lib/deleteAccount.js";
 import { syncChildGroups } from "../_lib/childGroups.js";
-import { removeWishImages } from "../_integrations/storageAdapter.js";
+import { removeUnusedImages } from "../_lib/imageCleanup.js";
 
 const router = Router();
 
@@ -327,7 +327,7 @@ router.delete("/me", requireAuth, async (req, res) => {
     });
 
     clearAuthCookie(res);
-    await removeWishImages(imageUrls).catch((err) => console.warn("[ACCOUNT] Could not delete images:", err));
+    await removeUnusedImages(imageUrls, "ACCOUNT");
     res.status(204).end();
 });
 

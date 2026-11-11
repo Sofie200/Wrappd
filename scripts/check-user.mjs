@@ -23,7 +23,7 @@ const checks = {
   "list_recipients": "SELECT count(*) FROM list_recipients WHERE user_id = $1",
   "wishes (önskeprofil)": "SELECT count(*) FROM wishes WHERE user_id = $1",
   "gifts.created_by": "SELECT count(*) FROM gifts WHERE created_by = $1",
-  "gifts.recipient_id": "SELECT count(*) FROM gifts WHERE recipient_id = $1",
+  "gift_events (mottagare/skapare)": "SELECT count(*) FROM gift_events WHERE recipient_id = $1 OR created_by = $1",
   "gift_members": "SELECT count(*) FROM gift_members WHERE user_id = $1",
   "secret_santas.created_by": "SELECT count(*) FROM secret_santas WHERE created_by = $1",
   "secret_santa_pairs": "SELECT count(*) FROM secret_santa_pairs WHERE giver_id = $1 OR receiver_id = $1",

@@ -67,7 +67,13 @@ export default function ListPage() {
     }
 
     async function remove() {
-        if (!window.confirm(`Radera listan "${list.title}" och alla dess önskningar?`)) return;
+        // Gifts bought from the list are kept for those who bought them – as gifts for an own event
+        if (
+            !window.confirm(
+                `Radera listan "${list.title}" och alla dess önskningar?\n\nDe som har köpt något från listan behåller sina gåvor.`
+            )
+        )
+            return;
         setBusy(true);
         setActionError(null);
         try {

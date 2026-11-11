@@ -5,7 +5,7 @@ import { HttpError, parse, parseId } from "../_lib/http.js";
 import { name, username } from "../_lib/userSchema.js";
 import { createUserLink } from "../_lib/userLinks.js";
 import { syncChildGroups } from "../_lib/childGroups.js";
-import { removeWishImages } from "../_integrations/storageAdapter.js";
+import { removeUnusedImages } from "../_lib/imageCleanup.js";
 
 const router = Router();
 
@@ -353,7 +353,7 @@ router.delete("/:id/members/:userId", async (req, res) => {
     });
 
     if (imageUrls) {
-        await removeWishImages(imageUrls).catch((err) => console.warn("[GROUP] Could not delete images:", err));
+        await removeUnusedImages(imageUrls, "GROUP");
     }
     res.json({ removed: userId, accountDeleted: Boolean(imageUrls) });
 });

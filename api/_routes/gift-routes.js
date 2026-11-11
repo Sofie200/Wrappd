@@ -3,8 +3,10 @@
 //  - On a wish (wish_id): created by reserving the wish. Title and price are copied from the wish.
 //  - Outside the wish list (wish_id NULL): created here, with its own title, description, link and image.
 //    Linked to a list (list_id), to a Secret Santa I'm a giver in (santa_id – recipient and date come
-//    from the draw), or to an event: a name (free text, stored in `recipient`) and a date – and optionally
-//    who it's for, as a link to a user in my groups (recipient_id). NEVER shown on the list.
+//    from the draw), or logged on an event of my own (event_id → gift_events, "Loggade gåvor"): a name,
+//    a date and one recipient (a user in my groups, a name in free text, or "Okänd mottagare").
+//    NEVER shown on the list. The API still calls the event's fields recipient (name), giftDate,
+//    recipientId, recipientText and recipientUnknown – as before they moved to gift_events.
 // Rules:
 //  - Everyone who shares a gift has the same rights to it. Others don't see it at all
 //    (a gift on a wish only shows as "Reserverad av …" on the list).
@@ -25,6 +27,7 @@ import { GiftBody } from "../_lib/giftSchema.js";
 import { uploadNewGiftImage } from "../_lib/wishImage.js";
 import { receiveImage } from "../_middleware/imageUpload.js";
 import { removeWishImages } from "../_integrations/storageAdapter.js";
+import { removeUnusedImages } from "../_lib/imageCleanup.js";
 
 const router = Router();
 
@@ -32,17 +35,19 @@ const router = Router();
 async function loadGift(db, giftId, userId, { lock = false } = {}) {
     const { rows: [gift] } = await db.query(
         `SELECT g.id, g.wish_id, g.quantity, g.title, g.price, g.comment, g.split,
-                g.list_id AS own_list_id, g.santa_id, g.recipient, g.recipient_id, g.gift_date, g.description, g.url, g.image_url,
-                (SELECT name FROM users WHERE id = g.recipient_id) AS recipient_name,
+                g.list_id AS own_list_id, g.santa_id, g.event_id, g.gift_date, g.description, g.url, g.image_url,
+                ge.name AS recipient, ge.event_date, ge.recipient_id, ge.recipient_text, ge.recipient_unknown,
+                (SELECT name FROM users WHERE id = ge.recipient_id) AS recipient_name,
                 g.wish_id IS NULL AS is_free,
                 COALESCE(w.list_id, g.list_id) AS list_id,
                 w.user_id AS wish_owner_id,
                 w.quantity AS wish_quantity,
-                COALESCE(l.end_date, g.gift_date, ss.event_date) < ${TODAY} AS archived
+                COALESCE(l.end_date, g.gift_date, ss.event_date, ge.event_date) < ${TODAY} AS archived
          FROM gifts g
          LEFT JOIN wishes w ON w.id = g.wish_id
          LEFT JOIN lists l ON l.id = COALESCE(w.list_id, g.list_id)
          LEFT JOIN secret_santas ss ON ss.id = g.santa_id
+         LEFT JOIN gift_events ge ON ge.id = g.event_id
          WHERE g.id = $1
            AND EXISTS (SELECT 1 FROM gift_members WHERE gift_id = g.id AND user_id = $2)
          ${lock ? "FOR UPDATE OF g" : ""}`,
@@ -110,6 +115,16 @@ async function requireLinkablePerson(db, personId, userId) {
     if (rowCount === 0) throw new HttpError(404, "Personen finns inte i dina grupper");
 }
 
+// ...or to an event of my own that I'm in – through a gift on it. 404 otherwise.
+async function requireMyEvent(db, eventId, userId) {
+    const { rowCount } = await db.query(
+        `SELECT 1 FROM gifts g JOIN gift_members gm ON gm.gift_id = g.id
+         WHERE g.event_id = $1 AND gm.user_id = $2 LIMIT 1`,
+        [eventId, userId]
+    );
+    if (rowCount === 0) throw new HttpError(404, "Händelsen finns inte");
+}
+
 // ...or to a Secret Santa where I'm a giver. 404 otherwise – others don't learn it exists.
 async function requireMySanta(db, santaId, userId) {
     const { rowCount } = await db.query(
@@ -151,6 +166,94 @@ router.get("/lists", async (req, res) => {
         [req.user.id]
     );
     res.json({ data: rows, santas });
+});
+
+/* --- GET /api/gifts/events → { data } – my events of my own ("Loggade gåvor"), to log another gift on --- */
+// Mine = an event with a gift I'm in. Coming ones first (soonest first), then past ones (latest first).
+router.get("/events", async (req, res) => {
+    const { rows } = await pool.query(
+        `SELECT e.id, e.name, e.event_date AS "date", e.recipient_id AS "recipientId",
+                e.recipient_text AS "recipientText", e.recipient_unknown AS "recipientUnknown",
+                COALESCE(u.name, e.recipient_text, CASE WHEN e.recipient_unknown THEN 'Okänd mottagare' END) AS "recipientName",
+                e.event_date < ${TODAY} AS archived
+         FROM gift_events e
+         LEFT JOIN users u ON u.id = e.recipient_id
+         WHERE EXISTS (SELECT 1 FROM gifts g JOIN gift_members gm ON gm.gift_id = g.id
+                       WHERE g.event_id = e.id AND gm.user_id = $1)
+         ORDER BY archived, CASE WHEN e.event_date >= ${TODAY} THEN e.event_date END,
+                  e.event_date DESC, e.name`,
+        [req.user.id]
+    );
+    res.json({ data: rows });
+});
+
+/* --- GET /api/gifts/recipient-names → { data: ["Farmor", …] } – the 10 latest names I've typed in as a recipient --- */
+// For the suggestions under "…eller skriv ett namn". From events with a gift I'm in, the most recent first.
+router.get("/recipient-names", async (req, res) => {
+    const { rows } = await pool.query(
+        `SELECT e.recipient_text AS name
+         FROM gift_events e
+         WHERE e.recipient_text IS NOT NULL
+           AND EXISTS (SELECT 1 FROM gifts g JOIN gift_members gm ON gm.gift_id = g.id
+                       WHERE g.event_id = e.id AND gm.user_id = $1)
+         GROUP BY e.recipient_text
+         ORDER BY max(e.updated_at) DESC
+         LIMIT 10`,
+        [req.user.id]
+    );
+    res.json({ data: rows.map((r) => r.name) });
+});
+
+/* --- PUT /api/gifts/events/:id  { name, giftDate, recipientId?, recipientText? } – change an event of my own --- */
+// Anyone in one of its gifts may. It changes for all the event's gifts.
+const EventBody = GiftBody.pick({ recipient: true, giftDate: true, recipientId: true, recipientText: true });
+
+router.put("/events/:id", async (req, res) => {
+    const eventId = parseId(req.params.id);
+    const body = parse(EventBody, req.body ?? {});
+    if (!body.recipient) throw new HttpError(400, "Ange händelsens namn");
+    if (!body.giftDate) throw new HttpError(400, "Ange ett datum");
+    await requireMyEvent(pool, eventId, req.user.id);
+
+    const { rows: [current] } = await pool.query("SELECT recipient_id FROM gift_events WHERE id = $1", [eventId]);
+    if (body.recipientId && body.recipientId !== current?.recipient_id) {
+        await requireLinkablePerson(pool, body.recipientId, req.user.id);
+    }
+    const recipientText = body.recipientId ? null : body.recipientText;
+    await pool.query(
+        `UPDATE gift_events SET name = $1, event_date = $2, recipient_id = $3::int, recipient_text = $4::text,
+                -- "Okänd mottagare" stays until someone is linked or a name is written
+                recipient_unknown = recipient_unknown AND $3::int IS NULL AND $4::text IS NULL,
+                updated_at = now()
+         WHERE id = $5`,
+        [body.recipient, body.giftDate, body.recipientId, recipientText, eventId]
+    );
+    res.json({ id: eventId });
+});
+
+/* --- DELETE /api/gifts/events/:id → { deleted, giftsDeleted } – delete an event of my own and all its gifts --- */
+// Only for someone who is in EVERY gift on it – nobody deletes a gift they can't see. The gifts go for
+// everyone who shares them; the event goes with its last gift (trigger), and so do images nothing else uses.
+router.delete("/events/:id", async (req, res) => {
+    const eventId = parseId(req.params.id);
+    await requireMyEvent(pool, eventId, req.user.id);
+
+    const { imageUrls, count } = await withTransaction(async (db) => {
+        const { rows: gifts } = await db.query(
+            `SELECT g.id, g.image_url,
+                    EXISTS (SELECT 1 FROM gift_members WHERE gift_id = g.id AND user_id = $2) AS mine
+             FROM gifts g WHERE g.event_id = $1 FOR UPDATE OF g`,
+            [eventId, req.user.id]
+        );
+        if (gifts.some((g) => !g.mine)) {
+            throw new HttpError(403, "Händelsen har gåvor som du inte är med i, så du kan inte ta bort den.");
+        }
+        await db.query("DELETE FROM gifts WHERE event_id = $1", [eventId]);
+        return { imageUrls: gifts.map((g) => g.image_url), count: gifts.length };
+    });
+
+    await removeUnusedImages(imageUrls, "EVENT");
+    res.json({ deleted: eventId, giftsDeleted: count });
 });
 
 /* --- GET /api/gifts/:id → { gift, wish, list, person, members, candidates } (member) --- */
@@ -222,10 +325,15 @@ router.get("/:id", async (req, res) => {
             imageUrl: gift.image_url,
             listId: gift.own_list_id,
             santaId: gift.santa_id,
+            eventId: gift.event_id,
             recipient: gift.recipient, // the event's name
             recipientId: gift.recipient_id,
             recipientName: gift.recipient_name,
-            giftDate: gift.gift_date,
+            // A name in free text, and "the recipient's account was deleted" (then shown as "Okänd mottagare")
+            recipientText: gift.recipient_text,
+            recipientUnknown: gift.recipient_unknown,
+            // The event's date – or, for a gift from a wish profile, its own
+            giftDate: gift.event_id ? gift.event_date : gift.gift_date,
         },
         wish: wish.rows[0],
         list: list.rows[0],
@@ -236,11 +344,11 @@ router.get("/:id", async (req, res) => {
     });
 });
 
-// A gift outside the list: a title, and a list OR a Secret Santa OR an event (a name and a date)
+// A gift outside the list: a title, and a list OR a Secret Santa OR an event (an existing one, or a name and a date)
 function checkFreeGift(body) {
     if (!body.title) throw new HttpError(400, "Ange en titel");
     if (body.listId && body.santaId) throw new HttpError(400, "Välj en lista eller en Secret Santa – inte båda");
-    if (!body.listId && !body.santaId) {
+    if (!body.listId && !body.santaId && !body.eventId) {
         if (!body.recipient) throw new HttpError(400, "Välj en lista, eller skriv vad det är för händelse");
         if (!body.giftDate) throw new HttpError(400, "Ange ett datum för gåvan");
     }
@@ -277,23 +385,32 @@ router.post("/", receiveImage, async (req, res) => {
     checkFreeGift(body);
     if (body.listId) await requireLinkableList(pool, body.listId, req.user.id);
     if (body.santaId) await requireMySanta(pool, body.santaId, req.user.id);
-    const freeText = !body.listId && !body.santaId; // event name, date and person only without a list or a Secret Santa
-    if (freeText && body.recipientId) await requireLinkablePerson(pool, body.recipientId, req.user.id);
+    if (body.listId || body.santaId) body.eventId = null;
+    if (body.eventId) await requireMyEvent(pool, body.eventId, req.user.id);
+    // A new event of my own: its name, date and person – only without a list, a Secret Santa or an existing event
+    const newEvent = !body.listId && !body.santaId && !body.eventId;
+    if (newEvent && body.recipientId) await requireLinkablePerson(pool, body.recipientId, req.user.id);
 
     const imageUrl = await uploadNewGiftImage(req.file, body.imageFromUrl);
     try {
         const id = await withTransaction(async (db) => {
+            let eventId = body.eventId;
+            if (newEvent) {
+                const { rows: [event] } = await db.query(
+                    `INSERT INTO gift_events (name, event_date, recipient_id, recipient_text, created_by)
+                     VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+                    // A linked person wins over a name in free text
+                    [body.recipient, body.giftDate, body.recipientId, body.recipientId ? null : body.recipientText, req.user.id]
+                );
+                eventId = event.id;
+            }
             const { rows: [gift] } = await db.query(
                 `INSERT INTO gifts (created_by, quantity, title, price, comment, description, url, image_url,
-                                    list_id, santa_id, recipient, recipient_id, gift_date)
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING id`,
+                                    list_id, santa_id, event_id)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id`,
                 [
                     req.user.id, body.quantity, body.title, body.price, body.comment, body.description, body.url, imageUrl,
-                    body.listId,
-                    body.santaId,
-                    freeText ? body.recipient : null,
-                    freeText ? body.recipientId : null,
-                    freeText ? body.giftDate : null,
+                    body.listId, body.santaId, eventId,
                 ]
             );
             await db.query("INSERT INTO gift_members (gift_id, user_id) VALUES ($1, $2)", [gift.id, req.user.id]);
@@ -308,8 +425,8 @@ router.post("/", receiveImage, async (req, res) => {
 
 /* --- PUT /api/gifts/:id  (JSON or multipart) – change the gift (member) ---
    All gifts:     { quantity, price, comment, split, members: [{ userId, amount }] }
-   Outside list:  + { title, description, url, (recipient = event name, giftDate, recipientId? – own events only),
-                      image / imageFromUrl / removeImage }. The link (list / Secret Santa / own event) never changes. */
+   Outside list:  + { title, description, url, image / imageFromUrl / removeImage }.
+                  The link (list / Secret Santa / event of my own) never changes – an event is edited on its own route. */
 router.put("/:id", receiveImage, async (req, res) => {
     const giftId = parseId(req.params.id);
     const body = parse(GiftBody, req.body ?? {});
@@ -320,13 +437,21 @@ router.put("/:id", receiveImage, async (req, res) => {
     if (before.is_free) {
         // What it's linked to (a list, a Secret Santa or an own event) is decided when it's created and
         // can't change – whatever arrives is replaced by what it already has
+        // A logged gift stays on its event; the event itself is changed with PUT /api/gifts/events/:id
         body.listId = before.own_list_id;
         body.santaId = before.santa_id;
+        body.eventId = before.event_id;
         checkFreeGift(body);
-        if (!body.listId && !body.santaId && body.recipientId && body.recipientId !== before.recipient_id) {
-            await requireLinkablePerson(pool, body.recipientId, req.user.id);
+        if (body.santaId && userIds.length > 1) throw new HttpError(400, "En gåva till en Secret Santa kan inte delas.");
+        // Without a list nobody new can join – but those already in it may stay (a gift whose list or
+        // Secret Santa was deleted keeps everyone who shared it)
+        if (!body.listId && !body.santaId) {
+            const { rows: current } = await pool.query("SELECT user_id FROM gift_members WHERE gift_id = $1", [giftId]);
+            const currentIds = current.map((r) => r.user_id);
+            if (userIds.some((id) => !currentIds.includes(id))) {
+                throw new HttpError(400, "En gåva utan lista kan inte delas med fler. Välj en lista, eller ta bort de nya.");
+            }
         }
-        if (!body.listId && userIds.length > 1) throw new HttpError(400, "En gåva utan lista kan inte delas. Välj en lista, eller ta bort de andra.");
     }
 
     const newImageUrl = before.is_free ? await uploadNewGiftImage(req.file, body.imageFromUrl) : null;
@@ -376,30 +501,26 @@ router.put("/:id", receiveImage, async (req, res) => {
             if (gift.is_free) {
                 const imageUrl = newImageUrl ?? (body.removeImage ? null : gift.image_url);
                 if (gift.image_url && gift.image_url !== imageUrl) oldImageUrl = gift.image_url;
-                const santaId = listId ? null : body.santaId;
-                const freeText = !listId && !santaId;
                 await db.query(
                     `UPDATE gifts SET quantity = $1, price = $2, comment = $3, split = $4,
-                            title = $5, description = $6, url = $7, image_url = $8,
-                            list_id = $9, santa_id = $10, recipient = $11, gift_date = $12, recipient_id = $13,
-                            updated_at = now()
-                     WHERE id = $14`,
+                            title = $5, description = $6, url = $7, image_url = $8, updated_at = now()
+                     WHERE id = $9`,
                     [
                         body.quantity, body.price, body.comment, body.split,
                         body.title, body.description, body.url, imageUrl,
-                        listId, santaId, freeText ? body.recipient : null, freeText ? body.giftDate : null,
-                        freeText ? body.recipientId : null,
                         giftId,
                     ]
                 );
             } else {
-                // A gift from a wish profile has its own date, and must keep one; on a list it's the list's date
-                const onProfile = gift.wish_owner_id !== null;
-                if (onProfile && !body.giftDate) throw new HttpError(400, "Ange när gåvan ska ges");
+                // A gift from a wish profile has its own date, and must keep one – unless it's for a Secret Santa
+                // (the draw's date). On a list it's the list's date.
+                const ownDate = gift.wish_owner_id !== null && !gift.santa_id;
+                if (ownDate && !body.giftDate) throw new HttpError(400, "Ange när gåvan ska ges");
+                if (gift.santa_id && userIds.length > 1) throw new HttpError(400, "En gåva till en Secret Santa kan inte delas.");
                 await db.query(
                     `UPDATE gifts SET quantity = $1, price = $2, comment = $3, split = $4, gift_date = $5, updated_at = now()
                      WHERE id = $6`,
-                    [body.quantity, body.price, body.comment, body.split, onProfile ? body.giftDate : null, giftId]
+                    [body.quantity, body.price, body.comment, body.split, ownDate ? body.giftDate : null, giftId]
                 );
             }
             await replaceMembers(db, giftId, body, userIds);
@@ -410,7 +531,7 @@ router.put("/:id", receiveImage, async (req, res) => {
     }
 
     if (oldImageUrl) {
-        await removeWishImages([oldImageUrl]).catch((err) => console.warn("[GIFT] Could not delete old image:", err));
+        await removeUnusedImages([oldImageUrl], "GIFT");
     }
     res.json({ id: giftId, stillMember: userIds.includes(req.user.id) });
 });
@@ -427,7 +548,8 @@ router.delete("/:id", async (req, res) => {
         return gift.image_url;
     });
 
-    if (imageUrl) await removeWishImages([imageUrl]).catch((err) => console.warn("[GIFT] Could not delete image:", err));
+    // Several gifts can share an image (copies of the same wish) – only delete it when none uses it
+    if (imageUrl) await removeUnusedImages([imageUrl], "GIFT");
     res.json({ deleted: giftId });
 });
 

@@ -15,7 +15,8 @@ import SettingsMenu from "./SettingsMenu.jsx";
 //  - seesReservations: who has reserved it, per gift (never for recipients)
 //  - canReserve: reserve (creates a gift), or go to my gift
 //  - canEdit: edit and delete (list admins, not archived) – not once someone has reserved it
-export default function WishCard({ wish, me, listId, onChanged }) {
+// santa: { id } – on a wish profile opened from a Secret Santa: the reservation counts for it (no date to choose)
+export default function WishCard({ wish, me, listId, santa = null, onChanged }) {
     const { user } = useAuth();
     // "dig och Ted" – me first, as "dig"
     const whoNames = (people) =>
@@ -28,8 +29,9 @@ export default function WishCard({ wish, me, listId, onChanged }) {
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState(null);
     const [qty, setQty] = useState(1);
-    // A wish on a wish profile (no list): the gift needs a date – when it's to be given
-    const onProfile = !listId;
+    // A wish on a wish profile (no list): the gift needs a date – when it's to be given –
+    // unless it's reserved for a Secret Santa (then it's the draw's date)
+    const onProfile = !listId && !santa;
     const [giftDate, setGiftDate] = useState("");
     const [editingGift, setEditingGift] = useState(false); // my reservation, in a modal on top
 
@@ -61,7 +63,7 @@ export default function WishCard({ wish, me, listId, onChanged }) {
             // The gift is created as a straight copy of the wish – price, comment and sharing can be changed later
             await api(`/wishes/${wish.id}/gifts`, {
                 method: "POST",
-                body: { quantity: Number(quantity), ...(onProfile && { giftDate }) },
+                body: { quantity: Number(quantity), ...(onProfile && { giftDate }), ...(santa && { santaId: santa.id }) },
             });
             setBusy(false);
             onChanged();

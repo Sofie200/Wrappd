@@ -25,7 +25,7 @@ export const sumPrices = (rows) =>
 // One event per wish list, with my gifts for it. `lists` are the public, coming lists in my groups
 // (mine and others') – they're shown even when I haven't bought anything yet. Gifts for a list that
 // isn't among them, gifts for a Secret Santa (one event per draw), gifts from someone's wish profile
-// (one event per person, without a date), and gifts without a list (grouped by recipient and date)
+// (one event per person), and logged gifts (one per event of my own – "Loggade gåvor", eventId)
 // get an event of their own.
 export function buildEvents(lists, gifts, { newestFirst = false } = {}) {
     const events = new Map();
@@ -52,15 +52,18 @@ export function buildEvents(lists, gifts, { newestFirst = false } = {}) {
               ? `santa:${g.santaId}`
               : g.personId
                 ? `person:${g.personId}`
-                : `off:${g.eventName}|${g.recipients ?? ""}|${g.endDate}`; // an own event: name, person and date
+                : `event:${g.eventId}`; // a logged gift: its event of my own
         if (!events.has(key)) {
             events.set(key, {
                 key,
                 listId: g.listId,
                 santaId: g.listId ? null : g.santaId,
+                // A Secret Santa: who I give to – "Från önskeprofilen" opens their wish profile
+                santaReceiverId: g.listId ? null : g.santaReceiverId,
                 personId: g.listId || g.santaId ? null : g.personId,
                 title: g.listTitle ?? g.santaTitle ?? g.eventName,
-                // An own event: its name and linked person – so more gifts can be added to it
+                // An event of my own: its id, name and linked person – so more gifts can be logged on it
+                eventId: g.eventId,
                 eventName: g.eventName,
                 recipientId: g.recipientId,
                 endDate: g.endDate,
@@ -229,7 +232,7 @@ export function GiftsCollapse({ count = null, actions = null, children }) {
 // for an own event (name, person and date filled in). Nothing for wish profiles or past events.
 // Used on the overview's rows and on the gifts page.
 export function EventAddButtons({ event, archived = false, onChanged, className = "btn btn-small btn-ghost" }) {
-    const { listId, santaId, personId, eventName, recipientId, recipients, endDate } = event;
+    const { listId, santaId, personId, eventId, eventName, recipientId, recipients, endDate } = event;
     if (archived) return null;
     return (
         <>
@@ -238,9 +241,9 @@ export function EventAddButtons({ event, archived = false, onChanged, className 
                     <GiftPlusIcon /> Överraskningsgåva
                 </AddGiftButton>
             )}
-            {!listId && !santaId && !personId && eventName && (
+            {eventId && (
                 <AddGiftButton
-                    presetEvent={{ name: eventName, recipientId, recipientName: recipients, date: endDate }}
+                    presetEvent={{ eventId, name: eventName, recipientId, recipientName: recipients, date: endDate }}
                     title="Logga en gåva"
                     className={className}
                     onAdded={onChanged}
@@ -264,7 +267,7 @@ export function EventRow({ event, archived = false, onChanged }) {
     // The kind of event decides the colour; past events keep it, toned down (event-archived)
     const kind = isRecipient ? " event-to-me" : santaId ? " event-santa" : !listId ? " event-no-list" : "";
     const variant = kind + (archived ? " event-archived" : "");
-    const kicker = listId ? "Önskelista" : santaId ? "Secret Santa" : personId ? "Önskeprofil" : "Egen lista";
+    const kicker = listId ? "Önskelista" : santaId ? "Secret Santa" : personId ? "Önskeprofil" : "Loggade gåvor";
     const KickerIcon = listId ? ScrollText : santaId ? HatGlasses : personId ? null : Table2;
 
     // The buttons for adding a gift: in the section's head – on phones up in the "Mina inköp" bar

@@ -6,9 +6,10 @@
 // What goes:
 //  - the users, with everything that hangs on them by ON DELETE CASCADE: memberships, admin roles,
 //    their gifts (and their share in others' gifts), their wish profile, Secret Santa pairs, links …
-//  - lists they created, and lists where all the recipients are among them (with wishes and gifts on them)
+//  - lists they created, and lists where all the recipients are among them (with their wishes) – others'
+//    gifts on them are kept as gifts for an own event (migration 018)
 //  - groups that no one is left in
-//  - the images (Vercel Blob) of the wishes and gifts that are deleted
+//  - the images (Vercel Blob) of the wishes and gifts that are deleted – unless a kept gift still uses them
 // What's kept, but handed over:
 //  - groups with other members left: another member becomes the creator, and admin if no admin is left
 import "dotenv/config";
@@ -106,7 +107,14 @@ try {
     await client.query("COMMIT");
     console.log("\nKlart – borttaget.");
 
-    await removeWishImages(images.map((r) => r.image_url)).catch((err) =>
+    // Gifts keep the images of deleted wishes (migration 018) – only delete what nothing uses any more
+    const unused = await q(
+        `SELECT u.url AS image_url FROM unnest($1::text[]) AS u(url)
+         WHERE NOT EXISTS (SELECT 1 FROM wishes WHERE image_url = u.url)
+           AND NOT EXISTS (SELECT 1 FROM gifts WHERE image_url = u.url)`,
+        [images.map((r) => r.image_url)]
+    );
+    await removeWishImages(unused.map((r) => r.image_url)).catch((err) =>
         console.warn("Kunde inte ta bort alla bilder (databasen är redan klar):", err.message)
     );
     console.log(images.length ? "Bilderna är borttagna.\n" : "");

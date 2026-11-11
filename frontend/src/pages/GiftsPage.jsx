@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Archive, Coins, Gift, HatGlasses, Table2 } from "lucide-react";
+import { Archive, Coins, Ellipsis, Gift, Pencil, Trash2 } from "lucide-react";
+import { api } from "../api.js";
 import { useFetch } from "../hooks/useFetch.js";
-import { Empty, ErrorMessage, Loading, Notice } from "../components/Feedback.jsx";
+import { Empty, ErrorMessage, Loading } from "../components/Feedback.jsx";
 import { buildEvents, GiftTable, sumPrices } from "../components/EventRow.jsx";
-import AddGiftButton from "../components/AddGiftButton.jsx";
+import LogGiftButton from "../components/LogGiftButton.jsx";
 import GiftPlusIcon from "../components/GiftPlusIcon.jsx";
 import GiftCard from "../components/GiftCard.jsx";
 import AddGiftCard from "../components/AddGiftCard.jsx";
@@ -12,6 +13,8 @@ import SpendingChart from "../components/SpendingChart.jsx";
 import DateBadge, { EventDate } from "../components/DateBadge.jsx";
 import { formatPrice } from "../format.js";
 import Modal from "../components/Modal.jsx";
+import SettingsMenu from "../components/SettingsMenu.jsx";
+import EditEventModal from "../components/EditEventModal.jsx";
 
 // /gifts – everything I've bought or share, as cards grouped by event: the coming events (soonest first,
 // gifts from wish profiles last) – or, switched with the Arkiv button (like on Mina listor), the past ones
@@ -34,10 +37,10 @@ export default function GiftsPage() {
                     <Gift size={28} aria-hidden="true" /> Mina gåvor
                 </h1>
                 <div className="actions">
-                    {/* Any gift I've bought: on a list (a surprise gift) or for an own event */}
-                    <AddGiftButton className="btn btn-primary" title="Logga egen gåva" onAdded={reload}>
-                        <GiftPlusIcon /> Logga egen gåva
-                    </AddGiftButton>
+                    {/* A gift on an event of my own: first the event (an existing one or a new), then the gift */}
+                    <LogGiftButton className="btn btn-primary" onAdded={reload}>
+                        <GiftPlusIcon /> Logga gåva
+                    </LogGiftButton>
                     {/* The archive is shown here, in place of the current gifts */}
                     <button type="button" className="btn btn-ghost" onClick={() => setShowArchive(!showArchive)}>
                         {showArchive ? (
@@ -51,13 +54,6 @@ export default function GiftsPage() {
                         )}
                     </button>
                 </div>
-            </div>
-
-            <div className="page-notice">
-                <Notice>
-                    Sidan är under uppbyggnad. Tanken är att du här ska kunna se statistik över dina gåvor – och
-                    filtrera och sortera den – så att du kan följa dina mönster över tid.
-                </Notice>
             </div>
 
             {showArchive ? (
@@ -98,23 +94,37 @@ export default function GiftsPage() {
 // One event: a head (the kind of event as a coloured tab, title, date, who it's for, my total)
 // and my gifts for it as cards underneath
 function GiftEvent({ event, archived = false, onChanged }) {
-    const { listId, santaId, personId, title, endDate, recipients, canOpen, gifts } = event;
-    // The same colours as the overview's rows
-    const kind = santaId ? " event-santa" : !listId ? " event-no-list" : "";
-    // Wish lists are the usual case and get no tab – only the other kinds are marked
-    const kicker = listId ? null : santaId ? "Secret Santa" : personId ? "Önskeprofil" : "Egen lista";
-    const KickerIcon = santaId ? HatGlasses : personId ? null : Table2;
+    const { listId, santaId, personId, eventId, title, endDate, recipients, canOpen, gifts } = event;
+    // The surface's colour by kind: wish lists beige-pink, logged gifts pale blue, Secret Santa pale yellow
+    // (the tab colours for Secret Santa / Önskeprofil come from the same classes as on the overview)
+    const kind = santaId ? " event-santa" : eventId ? " event-logged" : !listId ? " event-no-list" : "";
+    // Only gifts from a wish profile get a tab – the surface's colour tells the other kinds apart
+    // (wish lists beige-pink, logged gifts blue, Secret Santa yellow)
+    const kicker = personId ? "Önskeprofil" : null;
     const name = title ?? `Till ${recipients}`;
     const [showingSplit, setShowingSplit] = useState(false);
+    const [editingEvent, setEditingEvent] = useState(false);
+    const [error, setError] = useState(null);
+
+    // The whole event – and all its gifts, for everyone who shares them
+    async function removeEvent() {
+        const giftsText = gifts.length === 1 ? "dess gåva" : `alla dess ${gifts.length} gåvor`;
+        if (!window.confirm(`Ta bort "${name}" och ${giftsText}?\n\nGåvorna tas bort för alla som delar på dem. Det går inte att ångra.`)) return;
+        setError(null);
+        try {
+            await api(`/gifts/events/${eventId}`, { method: "DELETE" });
+            onChanged();
+        } catch (err) {
+            setError(err.message);
+        }
+    }
     const total = sumPrices(gifts);
 
     return (
         <section className={`gift-event event-group${kind}${archived ? " is-archived" : ""}`}>
             {kicker && (
                 <div className="event-tab-row">
-                    <p className="event-kicker">
-                        {KickerIcon && <KickerIcon size={14} aria-hidden="true" />} {kicker}
-                    </p>
+                    <p className="event-kicker">{kicker}</p>
                 </div>
             )}
 
@@ -130,6 +140,17 @@ function GiftEvent({ event, archived = false, onChanged }) {
                                 <span className="visually-hidden">Till: </span>
                                 {recipients}
                             </span>
+                        )}
+                        {/* An event of my own: a "…" menu after the title and the name tag, to edit it */}
+                        {eventId && (
+                            <SettingsMenu label={`Alternativ för ${name}`} icon={Ellipsis} buttonClassName="santa-menu-btn">
+                                <button type="button" className="menu-item" role="menuitem" onClick={() => setEditingEvent(true)}>
+                                    <Pencil size={16} aria-hidden="true" /> Redigera händelse
+                                </button>
+                                <button type="button" className="menu-item menu-item-danger" role="menuitem" onClick={removeEvent}>
+                                    <Trash2 size={16} aria-hidden="true" /> Ta bort händelse
+                                </button>
+                            </SettingsMenu>
                         )}
                     </h3>
                     {endDate && <EventDate iso={endDate} />}
@@ -151,12 +172,25 @@ function GiftEvent({ event, archived = false, onChanged }) {
                 </button>
             </div>
 
+            {editingEvent && (
+                <EditEventModal
+                    eventId={eventId}
+                    onClose={() => setEditingEvent(false)}
+                    onSaved={() => {
+                        setEditingEvent(false);
+                        onChanged();
+                    }}
+                />
+            )}
+
             {showingSplit && (
                 <Modal title={`Fördelning – ${name}`} onClose={() => setShowingSplit(false)}>
                     {/* The same table as on the overview: Gåva, Antal, Pris, Min del – with edit and release */}
                     <GiftTable rows={gifts} onChanged={onChanged} />
                 </Modal>
             )}
+
+            <ErrorMessage message={error} />
 
             <div className="gift-cards">
                 {gifts.map((g) => (
