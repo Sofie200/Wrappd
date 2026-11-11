@@ -130,8 +130,18 @@ function GiftForm({ data, lists, santas, presetListId, presetSantaId, presetEven
     // Who can share depends on the list – so after changing the list, it must be saved first.
     const listChanged = isFree && !isNew && form.listId !== savedListId;
     // (Not a Secret Santa gift – only the giver knows who it's for)
-    const canShare = !isNew && !gift?.santaId && (!isFree || (form.listId !== "" && !listChanged));
-    const people = data ? [...data.members, ...data.candidates.filter((c) => !data.members.some((m) => m.id === c.id))] : [];
+    // A new surprise gift on a list can be shared right away: who can share depends on the chosen list
+    const sharingNew = isNew && isFree && !forEvent && form.listId !== "";
+    const newCandidates = useFetch(sharingNew ? `/gifts/candidates?listId=${form.listId}` : null);
+    const canShare = sharingNew || (!isNew && !gift?.santaId && (!isFree || (form.listId !== "" && !listChanged)));
+    const people = data
+        ? [...data.members, ...data.candidates.filter((c) => !data.members.some((m) => m.id === c.id))]
+        : sharingNew
+          ? [
+                { id: user.id, name: user.name, username: user.username, avatarIcon: user.avatarIcon, avatarColor: user.avatarColor },
+                ...(newCandidates.data?.data ?? []),
+            ]
+          : [];
     const selectedIds = canShare ? people.map((p) => p.id).filter((pid) => pid in form.members) : [];
 
     const price = parseAmount(form.price);
@@ -304,11 +314,11 @@ function GiftForm({ data, lists, santas, presetListId, presetSantaId, presetEven
                         )}
                     </p>
                     {/* The same banner as when picking a list in the form */}
-                    {presetList && <Notice>En överraskningsgåva syns bara för dem som delar på den.</Notice>}
+                    {presetList && <Notice>En överraskning syns bara för dem som delar på den.</Notice>}
                 </>
             ) : isFree ? (
                 // Only about lists – an own event or a Secret Santa gift isn't a surprise on anyone's list
-                form.listId !== "" && <Notice>En överraskningsgåva syns bara för dem som delar på den.</Notice>
+                form.listId !== "" && <Notice>En överraskning syns bara för dem som delar på den.</Notice>
             ) : (
                 gift.archived && <Notice>Datumet har passerat. Du kan fortfarande ändra pris, kommentar och fördelning.</Notice>
             )}
@@ -464,9 +474,10 @@ function GiftForm({ data, lists, santas, presetListId, presetSantaId, presetEven
                 <label className="field">
                     <span>Kommentar</span>
                     <textarea value={form.comment} onChange={set("comment")} rows={3} maxLength={1000} disabled={busy} />
-                    {/* Not for Secret Santa. Without a list the gift is only mine – so "dig" */}
-                    {form.santaId === "" && (
-                        <small>{form.listId === "" ? "Syns bara för dig." : "Syns bara för den/de som köpt gåvan."}</small>
+                    {/* Who sees the comment – said for gifts that can be shared: on a list, or a reservation
+                        (not for a Secret Santa gift or a logged one, which are only mine) */}
+                    {form.santaId === "" && !gift?.santaId && (form.listId !== "" || !isFree) && (
+                        <small>Syns bara för den/de som köpt gåvan.</small>
                     )}
                 </label>
 
@@ -562,10 +573,7 @@ function GiftForm({ data, lists, santas, presetListId, presetSantaId, presetEven
                 ) : (
                     !forEvent &&
                     form.santaId === "" &&
-                    (isNew && form.listId !== "" ? (
-                        // A new gift on a list: sharing comes after saving – as a banner
-                        <Notice>När gåvan är sparad kan du dela den med andra.</Notice>
-                    ) : form.listId === "" ? (
+                    (form.listId === "" ? (
                         // Only while choosing what a new gift is for – an existing one can't be relinked anyway
                         isNew && (
                             <p className="small muted">
@@ -618,10 +626,10 @@ function GiftForm({ data, lists, santas, presetListId, presetSantaId, presetEven
                         : list
                           ? { label: list.title, to: `/lists/${list.id}` }
                           : { label: "Översikten", to: "/" },
-                    { label: isNew ? "Ny överraskningsgåva" : gift.title },
+                    { label: isNew ? "Ny överraskning" : gift.title },
                 ]}
             />
-            <h1>{isNew ? "Ny överraskningsgåva" : gift.title}</h1>
+            <h1>{isNew ? "Ny överraskning" : gift.title}</h1>
             {content}
         </div>
     );

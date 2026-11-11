@@ -117,7 +117,7 @@ export function GiftTable({ rows, onChanged, totalLabel = "Totalt" }) {
                             <th>Gåva</th>
                             <th className="num col-optional">Antal</th>
                             <th className="num col-optional">Pris</th>
-                            <th className="num">Min del</th>
+                            <th className="num">Min utgift</th>
                             <th>
                                 <span className="visually-hidden">Åtgärder</span>
                             </th>
@@ -128,7 +128,7 @@ export function GiftTable({ rows, onChanged, totalLabel = "Totalt" }) {
                             <tr key={g.id}>
                                 <td>
                                     {g.title}
-                                    {g.offList && g.listId && <span className="muted small"> · överraskningsgåva</span>}
+                                    {g.offList && g.listId && <span className="muted small"> · överraskning</span>}
                                     {/* Shared: everyone's avatars next to the name, like on a reservation */}
                                     {g.people?.length > 1 && (
                                         <span className="avatar-stack gift-people" title={`Delas av ${joinNames(g.people.map((p) => p.name))}`}>
@@ -201,7 +201,7 @@ export function GiftTable({ rows, onChanged, totalLabel = "Totalt" }) {
     );
 }
 
-// "Mina inköp" on a card. On phones it starts folded away behind a bar with a down arrow and
+// "Mina gåvor" on a card. On phones it starts folded away behind a bar with a down arrow and
 // rolls out when tapped; on wider screens the bar is hidden and the section always shows
 // (the wrappers are display: contents there).
 export function GiftsCollapse({ count = null, actions = null, children }) {
@@ -216,7 +216,7 @@ export function GiftsCollapse({ count = null, actions = null, children }) {
                     aria-expanded={open}
                     onClick={() => setOpen(!open)}
                 >
-                    Mina inköp {count !== null && <span className="muted small">({count})</span>}
+                    Mina gåvor {count !== null && <span className="muted small">({count})</span>}
                     <ChevronDown size={18} aria-hidden="true" />
                 </button>
                 {actions}
@@ -238,7 +238,7 @@ export function EventAddButtons({ event, archived = false, onChanged, className 
         <>
             {listId && (
                 <AddGiftButton listId={listId} className={className} onAdded={onChanged}>
-                    <GiftPlusIcon /> Överraskningsgåva
+                    <GiftPlusIcon /> Överraskning
                 </AddGiftButton>
             )}
             {eventId && (
@@ -248,12 +248,12 @@ export function EventAddButtons({ event, archived = false, onChanged, className 
                     className={className}
                     onAdded={onChanged}
                 >
-                    <GiftPlusIcon /> Ytterligare gåva
+                    <GiftPlusIcon /> Ny gåva
                 </AddGiftButton>
             )}
             {santaId && (
                 <AddGiftButton santaId={santaId} className={className} onAdded={onChanged}>
-                    <GiftPlusIcon /> Överraskningsgåva
+                    <GiftPlusIcon /> Överraskning
                 </AddGiftButton>
             )}
         </>
@@ -270,7 +270,7 @@ export function EventRow({ event, archived = false, onChanged }) {
     const kicker = listId ? "Önskelista" : santaId ? "Secret Santa" : personId ? "Önskeprofil" : "Loggade gåvor";
     const KickerIcon = listId ? ScrollText : santaId ? HatGlasses : personId ? null : Table2;
 
-    // The buttons for adding a gift: in the section's head – on phones up in the "Mina inköp" bar
+    // The buttons for adding a gift: in the section's head – on phones up in the "Mina gåvor" bar
     const actions = isRecipient ? null : <EventAddButtons event={event} archived={archived} onChanged={onChanged} />;
 
     return (
@@ -342,10 +342,10 @@ export function EventRow({ event, archived = false, onChanged }) {
                         </p>
                     ) : (
                         <>
-                            {/* Always the same head: "Mina inköp" on the left, the button on the right */}
+                            {/* Always the same head: "Mina gåvor" on the left, the button on the right */}
                             <div className="event-gifts-head">
                                 <h4>
-                                    Mina inköp {gifts.length > 0 && <span className="muted small">({gifts.length})</span>}
+                                    Mina gåvor {gifts.length > 0 && <span className="muted small">({gifts.length})</span>}
                                 </h4>
                                 {actions}
                             </div>
@@ -368,7 +368,7 @@ export function EventRow({ event, archived = false, onChanged }) {
                                                 )}{" "}
                                                 eller lägg till en{" "}
                                                 <AddGiftButton listId={listId} className="text-link" onAdded={onChanged}>
-                                                    överraskningsgåva
+                                                    överraskning
                                                 </AddGiftButton>
                                                 .
                                             </>

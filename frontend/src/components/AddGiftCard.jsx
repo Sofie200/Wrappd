@@ -8,7 +8,7 @@ import GiftPlusIcon from "./GiftPlusIcon.jsx";
 import { AddGiftModal } from "./AddGiftButton.jsx";
 
 // The last card in an event's row on the gifts page: an empty card saying "Logga gåva".
-//  - A wish list: a menu – "Från önskelistan" (opens the list to reserve a wish) or "Överraskningsgåva".
+//  - A wish list: a menu – "Från önskelistan" (opens the list to reserve a wish) or "Överraskning".
 //  - A Secret Santa: a menu – "Från önskeprofilen" (the wish profile of the one I give to – reserving there
 //    counts for the Secret Santa) or "Egen gåva". An own event: straight to another gift for it.
 //  - Wish profiles and past events: no card (returns null).
@@ -33,7 +33,7 @@ export default function AddGiftCard({ event, archived = false, onChanged }) {
             listId={listId ?? ""}
             santaId={santaId ?? ""}
             presetEvent={eventId ? { eventId, name: eventName, recipientId, recipientName: recipients, date: endDate } : null}
-            title={listId || santaId ? "Ny överraskningsgåva" : "Logga en gåva"}
+            title={listId || santaId ? "Ny överraskning" : "Logga en gåva"}
             onClose={() => setAdding(false)}
             onAdded={onChanged}
         />
@@ -88,7 +88,7 @@ export default function AddGiftCard({ event, archived = false, onChanged }) {
                         <ScrollText size={16} aria-hidden="true" /> Från önskelistan
                     </Link>
                     <button type="button" className="menu-item" role="menuitem" onClick={() => setAdding(true)}>
-                        <Sparkles size={16} aria-hidden="true" /> Överraskningsgåva
+                        <Sparkles size={16} aria-hidden="true" /> Överraskning
                     </button>
                 </SettingsMenu>
             </div>

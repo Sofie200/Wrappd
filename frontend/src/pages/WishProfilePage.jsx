@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useParams } from "react-router-dom";
-import { Heart, Save, Sparkles, ThumbsDown, ThumbsUp } from "lucide-react";
+import { Check, Heart, Save, Sparkles, ThumbsDown, ThumbsUp } from "lucide-react";
 import { api } from "../api.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useFetch } from "../hooks/useFetch.js";
@@ -166,11 +166,11 @@ function WishProfileForm({ data, reload }) {
 
                 <ErrorMessage message={error} />
                 <div className="form-actions">
-                    <button type="submit" className="btn btn-primary" disabled={busy}>
-                        <Save size={16} aria-hidden="true" />
-                        {busy ? "Sparar…" : "Spara"}
+                    {/* "Sparat" shows in the button itself, until something is changed again (like on the gift page) */}
+                    <button type="submit" className="btn btn-primary" disabled={busy} aria-live="polite">
+                        {saved && !busy ? <Check size={16} aria-hidden="true" /> : <Save size={16} aria-hidden="true" />}
+                        {busy ? "Sparar…" : saved ? "Sparat" : "Spara"}
                     </button>
-                    {saved && <span className="small reserved-by-me">✓ Sparat</span>}
                 </div>
             </form>
 

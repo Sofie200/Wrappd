@@ -2941,7 +2941,7 @@ button.event-edit {
     margin-top: 0.5rem;
 }
 
-/* ---------- Event cards: the coloured panel on top, "Mina inköp" folded away under it ---------- */
+/* ---------- Event cards: the coloured panel on top, "Mina gåvor" folded away under it ---------- */
 /* (Trying it on all screen sizes – it used to be panel left, gifts right on wide screens) */
 .events .event {
     grid-template-columns: minmax(0, 1fr);
@@ -3008,7 +3008,7 @@ button.event-edit {
     }
 }
 
-/* "Mina inköp (2) ⌄" – a bar under the panel; tap to roll the section out.
+/* "Mina gåvor (2) ⌄" – a bar under the panel; tap to roll the section out.
    The add buttons sit on the right of the same bar. */
 .event-gifts-bar {
     display: flex;
@@ -3019,8 +3019,8 @@ button.event-edit {
     padding: 0.3rem 0.75rem 0.3rem 1.25rem; /* left: in line with the panel's text */
 }
 
-/* "🎁 Överraskningsgåva" straight on the background – no border, a soft rose behind it on hover.
-   A bit more compact, so it fits beside "Mina inköp". */
+/* "🎁 Överraskning" straight on the background – no border, a soft rose behind it on hover.
+   A bit more compact, so it fits beside "Mina gåvor". */
 .event-gifts-bar > .btn {
     padding-inline: 0.7rem;
     font-size: 0.85rem;
@@ -3790,9 +3790,10 @@ button.event-edit {
        --event-line at rest, --event-line-strong on hover */
     --event-line: var(--line);
     --event-line-strong: #dcbcad; /* the beige of "Avbryt" and the dashed card – as before */
+    --event-surface: var(--surface-soft); /* also behind the presents picture on cards without an image */
     padding: 1.1rem 1.25rem 1.25rem;
     border-radius: var(--radius);
-    background: var(--surface-soft);
+    background: var(--event-surface);
 }
 
 /* The event's head: calendar and title straight on the page background, my total on the right */
@@ -3945,9 +3946,17 @@ button.event-edit {
     outline-offset: 2px;
 }
 
+/* "Överraskning" on the picture's top-left corner, on a white pill so it shows on any picture */
 .gift-card-badge {
-    align-self: flex-start;
-    margin-left: 0;
+    position: absolute;
+    z-index: 1;
+    top: 0.6rem;
+    left: 0.6rem;
+    margin: 0;
+    background: rgba(255, 255, 255, 0.92);
+    color: var(--ink);
+    box-shadow: 0 1px 4px rgba(63, 25, 17, 0.15);
+    pointer-events: none; /* the card's link stays clickable underneath */
 }
 
 .gift-card-meta {
@@ -4066,13 +4075,18 @@ button.event-edit {
 .gift-event.event-logged {
     --event-line: #cfe0f2;
     --event-line-strong: #a9c6e6;
-    background: #e6f0fa;
+    --event-surface: #e6f0fa;
 }
 
 .gift-event.event-santa {
     --event-line: #f6e2a8;
     --event-line-strong: #e6c56f;
-    background: var(--yellow-soft);
+    --event-surface: var(--yellow-soft);
+}
+
+/* No picture: the presents illustration on the event's colour */
+.gift-event .gift-card-image.is-empty {
+    background: var(--event-surface);
 }
 
 /* The frames, in the surface's colour */

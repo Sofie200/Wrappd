@@ -191,7 +191,7 @@ export default function SpendingChart({ gifts }) {
                             <tr>
                                 <th>Till</th>
                                 <th className="num">Gåvor</th>
-                                <th className="num">Min del</th>
+                                <th className="num">Min utgift</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -213,7 +213,7 @@ export default function SpendingChart({ gifts }) {
                     </table>
                 </div>
             ) : (
-                <div className="bar-chart" role="list" aria-label="Min del per mottagare">
+                <div className="bar-chart" role="list" aria-label="Min utgift per mottagare">
                     {/* Hairline gridlines behind the bars, their values under the last row */}
                     <div className="bar-chart-grid" aria-hidden="true">
                         {ticks.map((t) => (

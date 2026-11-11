@@ -41,6 +41,8 @@ export default function GiftCard({ gift: g, onChanged }) {
                 alt=""
                 loading="lazy"
             />
+            {/* On the picture's top-left corner (the "…" menu has the top-right) */}
+            {g.offList && g.listId && <span className="badge gift-card-badge">Överraskning</span>}
 
             <div className="gift-card-body">
                 <h4 className="gift-card-title">
@@ -49,7 +51,6 @@ export default function GiftCard({ gift: g, onChanged }) {
                         {g.title}
                     </Link>
                 </h4>
-                {g.offList && g.listId && <span className="badge gift-card-badge">Överraskningsgåva</span>}
 
                 <p className="gift-card-meta">
                     {g.quantity > 1 && <span>{g.quantity} st</span>}
@@ -58,7 +59,7 @@ export default function GiftCard({ gift: g, onChanged }) {
 
                 <div className="gift-card-foot">
                     <p className="gift-card-share">
-                        <span className="muted small">{shared ? "Min del" : "Jag betalar"}</span>
+                        <span className="muted small">Min utgift</span>
                         <strong>{g.myShare === null ? "–" : formatPrice(g.myShare)}</strong>
                     </p>
                     {shared && (

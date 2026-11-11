@@ -5,7 +5,7 @@ import { APP_NAME } from "../config.js";
 
 // /integritet – privacy policy and cookies. Open without logging in.
 // Change the policy here, and update UPDATED. The facts (where data is stored, which services)
-// must match reality – check them when the setup changes (e.g. moving the database to the EU).
+// must match reality – check them when the setup changes (e.g. moving the Vercel functions or Blob store to the EU).
 const UPDATED = "11 november 2026";
 const CONTROLLER = "Kirakira"; // who is responsible for the personal data – check that this is right
 const CONTACT = "hej@wrappd.se";
@@ -100,8 +100,10 @@ export default function PrivacyPage() {
                     </li>
                 </ul>
                 <p>
-                    Uppgifterna lagras i USA. Överföringen skyddas av EU:s och USA:s ramverk för dataskydd (Data Privacy
-                    Framework) och/eller EU-kommissionens standardavtalsklausuler.
+                    Databasen ligger inom EU (Frankfurt, Tyskland). Vercel och Google kan behandla uppgifter i USA,
+                    till exempel när servern körs, när bilder lagras och när du loggar in med Google. Den överföringen
+                    skyddas av EU:s och USA:s ramverk för dataskydd (Data Privacy Framework) och/eller
+                    EU-kommissionens standardavtalsklausuler.
                 </p>
 
                 <h2>Hur länge sparar vi dem?</h2>

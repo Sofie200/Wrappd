@@ -168,6 +168,15 @@ router.get("/lists", async (req, res) => {
     res.json({ data: rows, santas });
 });
 
+/* --- GET /api/gifts/candidates?listId=5 → { data } – who a new surprise gift on the list can be shared with --- */
+// Adults in the list's groups who aren't its recipients – the same rule as for a saved gift
+router.get("/candidates", async (req, res) => {
+    const listId = parseId(req.query.listId);
+    await requireLinkableList(pool, listId, req.user.id);
+    const people = await shareCandidates(pool, { listId });
+    res.json({ data: people.filter((p) => p.id !== req.user.id) });
+});
+
 /* --- GET /api/gifts/events → { data } – my events of my own ("Loggade gåvor"), to log another gift on --- */
 // Mine = an event with a gift I'm in. Coming ones first (soonest first), then past ones (latest first).
 router.get("/events", async (req, res) => {
@@ -381,9 +390,25 @@ async function replaceMembers(db, giftId, body, userIds) {
 
 /* --- POST /api/gifts  (multipart) → { id } – a gift outside the wish list. Only me to begin with. --- */
 router.post("/", receiveImage, async (req, res) => {
-    const body = parse(GiftBody, { ...req.body, members: [{ userId: req.user.id }], split: "equal" });
+    // A surprise gift on a list can be shared right away (members + split, like when changing a gift).
+    // Anything else starts with only me.
+    let body = parse(GiftBody, req.body ?? {});
+    if (!body.listId || !body.members?.length) {
+        body = { ...body, members: [{ userId: req.user.id, amount: null }], split: "equal" };
+    }
     checkFreeGift(body);
-    if (body.listId) await requireLinkableList(pool, body.listId, req.user.id);
+    const userIds = checkSplit(body);
+    if (!userIds.includes(req.user.id)) throw new HttpError(400, "Du måste själv vara med i gåvan du skapar");
+    if (body.listId) {
+        await requireLinkableList(pool, body.listId, req.user.id);
+        const others = userIds.filter((id) => id !== req.user.id);
+        if (others.length > 0) {
+            const allowed = (await shareCandidates(pool, { listId: body.listId }, others)).map((u) => u.id);
+            if (others.some((id) => !allowed.includes(id))) {
+                throw new HttpError(400, "Du kan bara dela med vuxna i listans grupper som inte är mottagare");
+            }
+        }
+    }
     if (body.santaId) await requireMySanta(pool, body.santaId, req.user.id);
     if (body.listId || body.santaId) body.eventId = null;
     if (body.eventId) await requireMyEvent(pool, body.eventId, req.user.id);
@@ -406,14 +431,14 @@ router.post("/", receiveImage, async (req, res) => {
             }
             const { rows: [gift] } = await db.query(
                 `INSERT INTO gifts (created_by, quantity, title, price, comment, description, url, image_url,
-                                    list_id, santa_id, event_id)
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id`,
+                                    list_id, santa_id, event_id, split)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING id`,
                 [
                     req.user.id, body.quantity, body.title, body.price, body.comment, body.description, body.url, imageUrl,
-                    body.listId, body.santaId, eventId,
+                    body.listId, body.santaId, eventId, body.split,
                 ]
             );
-            await db.query("INSERT INTO gift_members (gift_id, user_id) VALUES ($1, $2)", [gift.id, req.user.id]);
+            await replaceMembers(db, gift.id, body, userIds);
             return gift.id;
         });
         res.status(201).json({ id });

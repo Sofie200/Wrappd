@@ -57,10 +57,10 @@ function SantaRow({ santa, gifts = [], onChanged }) {
         }
     }
 
-    // In the section's head – on phones up in the "Mina inköp" bar
+    // In the section's head – on phones up in the "Mina gåvor" bar
     const addGift = (
         <AddGiftButton santaId={santa.id} className="btn btn-small btn-ghost" onAdded={onChanged}>
-            <GiftPlusIcon /> Överraskningsgåva
+            <GiftPlusIcon /> Överraskning
         </AddGiftButton>
     );
 
@@ -154,7 +154,7 @@ function SantaRow({ santa, gifts = [], onChanged }) {
                         <>
                             <div className="event-gifts-head">
                                 <h4>
-                                    Mina inköp {gifts.length > 0 && <span className="muted small">({gifts.length})</span>}
+                                    Mina gåvor {gifts.length > 0 && <span className="muted small">({gifts.length})</span>}
                                 </h4>
                                 {addGift}
                             </div>
@@ -172,7 +172,7 @@ function SantaRow({ santa, gifts = [], onChanged }) {
                                         </PersonLink>{" "}
                                         eller lägg till en{" "}
                                         <AddGiftButton santaId={santa.id} className="text-link" onAdded={onChanged}>
-                                            överraskningsgåva
+                                            överraskning
                                         </AddGiftButton>
                                         .
                                     </p>

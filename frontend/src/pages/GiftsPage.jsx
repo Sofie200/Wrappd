@@ -185,7 +185,7 @@ function GiftEvent({ event, archived = false, onChanged }) {
 
             {showingSplit && (
                 <Modal title={`Fördelning – ${name}`} onClose={() => setShowingSplit(false)}>
-                    {/* The same table as on the overview: Gåva, Antal, Pris, Min del – with edit and release */}
+                    {/* The same table as on the overview: Gåva, Antal, Pris, Min utgift – with edit and release */}
                     <GiftTable rows={gifts} onChanged={onChanged} />
                 </Modal>
             )}

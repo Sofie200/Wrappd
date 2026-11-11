@@ -179,7 +179,7 @@ export default function ListPage() {
                         {/* A gift bought outside the list – only those who share it ever see it. Only once it's published. */}
                         {me.seesReservations && list.isPublic && (
                             <AddGiftButton listId={list.id} onAdded={reload}>
-                                <GiftPlusIcon /> Överraskningsgåva
+                                <GiftPlusIcon /> Överraskning
                             </AddGiftButton>
                         )}
                     </div>
@@ -227,7 +227,7 @@ export default function ListPage() {
             {myGifts.length > 0 && (
                 <section className="section">
                     <h3 className="subhead">
-                        Mina överraskningsgåvor <span className="muted small">({myGifts.length})</span>
+                        Mina överraskningar <span className="muted small">({myGifts.length})</span>
                     </h3>
                     <div className="wishes">
                         {myGifts.map((gift) => (
