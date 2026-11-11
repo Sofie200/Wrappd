@@ -681,11 +681,55 @@ select {
     margin-top: 0.5rem;
 }
 
+/* A few short choices side by side ("Bara mig / Vi ska dela", "Lika / Egna belopp"): each only as wide
+   as its text, instead of the 200px columns of .checks */
+.checks.checks-inline {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 0.5rem 2rem;
+}
+
 .check {
     display: flex;
     align-items: center;
     gap: 0.5rem;
     cursor: pointer;
+}
+
+/* The gift page: the name tags and search field under "Bara mig / Vi ska dela" */
+.sharers {
+    margin-top: 0.75rem;
+}
+
+.sharers-hint {
+    margin: 0 0 0.5rem;
+}
+
+/* A checkbox with a hint under it: the box in the first column, its text and the hint in the second,
+   so the hint starts exactly where the text does – whatever size the browser draws the box */
+.check-with-hint {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    column-gap: 0.5rem; /* the same gap as .check */
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+/* The label's own box steps aside, so its checkbox and text become cells of the grid */
+.check-with-hint > .check {
+    display: contents;
+}
+
+.check-with-hint > .check-hint {
+    grid-column: 2;
+    margin: 0;
+}
+
+/* Among other choices (.checks) the grid's own gap does the spacing */
+.checks > .check-with-hint {
+    margin-bottom: 0;
+    align-self: start;
 }
 
 .check-disabled {
@@ -1813,6 +1857,53 @@ select {
     font-size: 1.1rem;
 }
 
+/* /gifts/:id: the wish the gift was reserved from – some air before the form under it */
+.gift-wish {
+    margin-bottom: 2rem;
+}
+
+.card.gift-wish-card {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 1.1rem;
+}
+
+.gift-wish-image {
+    flex: none;
+    width: 120px;
+    height: 120px;
+    object-fit: cover;
+    border-radius: var(--radius-small);
+    background: var(--surface-soft);
+}
+
+/* No picture: the presents illustration, whole and with some air around it */
+.gift-wish-image.is-empty {
+    object-fit: contain;
+    padding: 0.75rem;
+}
+
+.gift-wish-text {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+/* Phones: the picture on top, full width */
+@media (max-width: 520px) {
+    .card.gift-wish-card {
+        flex-direction: column;
+    }
+
+    .gift-wish-image {
+        width: 100%;
+        height: auto;
+        aspect-ratio: 4 / 3;
+    }
+}
+
 .wish-description {
     white-space: pre-line;
 }
@@ -1843,6 +1934,19 @@ select {
     gap: 0.5rem;
     align-items: center;
     flex-wrap: wrap;
+}
+
+/* "När ska gåvan ges?" on a wish profile: the label on a row of its own, then the date field,
+   the quantity and "Reservera" on one row, centred on each other (.wish-actions: align-items center) */
+.wish-actions .wish-gift-date-label {
+    flex-basis: 100%;
+    margin-bottom: -0.15rem;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.wish-actions .wish-gift-date {
+    width: auto;
 }
 
 .wish-actions {
@@ -2029,18 +2133,20 @@ select {
 }
 
 /* ---------- Gift: split per person ---------- */
+/* "Egna belopp": a two-column grid – the names as wide as the longest one, the amounts right after
+   them, all lined up (instead of the amounts pushed to the far right edge) */
 .split-rows {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    margin: 0.75rem 0 0.5rem;
+    display: grid;
+    grid-template-columns: max-content auto;
+    justify-content: start;
+    align-items: center;
+    gap: 0.5rem 1rem;
+    margin: 1.25rem 0 0.5rem;
 }
 
+/* Each row's name and field become cells of the grid above */
 .split-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
+    display: contents;
 }
 
 .split-row input {
@@ -3655,6 +3761,510 @@ button.event-edit {
     flex: none;
     flex-wrap: nowrap;
     gap: 0.25rem;
+}
+
+/* ---------- Mina gåvor: gift cards grouped by event ---------- */
+.gift-events {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+/* Each event on a softly tinted surface – no border or shadow, so the white gift cards on it
+   stand out and it doesn't become a box in a box */
+.gift-event {
+    padding: 1.1rem 1.25rem 1.25rem;
+    border-radius: var(--radius);
+    background: var(--surface-soft);
+}
+
+/* The event's head: calendar and title straight on the page background, my total on the right */
+.gift-event-head {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.75rem 1rem;
+}
+
+/* The calendar close to the title (the head's gap is for the total on the right) */
+.gift-event-head .date-badge {
+    margin-right: -0.5rem;
+}
+
+/* Without a bar to sit on, the kind of event (Secret Santa, …) is a small label instead of a tab */
+.gift-event .event-kicker {
+    border-radius: 999px;
+}
+
+.gift-event .event-tab-row {
+    margin-bottom: 0.5rem;
+}
+
+.gift-event-title {
+    flex: 1;
+    min-width: 12rem;
+}
+
+.gift-event-title h3 {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.35rem 0.6rem;
+}
+
+/* Who it's for ("Sam") – a lavender tag right after the event's title */
+.gift-event-to {
+    display: inline-block;
+    padding: 0.2rem 0.65rem;
+    border-radius: 999px;
+    background: var(--blue-soft);
+    border: 1px solid #e3d2f3;
+    color: var(--blue);
+    font-size: 0.78rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.gift-event-title h3 a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.gift-event-title h3 a:hover {
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+}
+
+/* "Totalt 358 kr" – an ordinary small ghost button (like "Avbryt") that opens the split */
+.gift-event-total {
+    gap: 0.5rem;
+}
+
+.gift-event-total-amount {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2rem;
+}
+
+.gift-event-total-label {
+    color: var(--muted);
+    font-size: 0.85rem;
+}
+
+/* The cards under the head */
+.gift-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.gift-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    transition: box-shadow 0.15s ease;
+}
+
+/* Only the shadow lifts – a transform here would break the "…" menu, which is position: fixed */
+.gift-card:hover {
+    box-shadow: var(--shadow-lift);
+}
+
+.gift-card-image {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+    background: var(--surface-soft);
+    display: block;
+}
+
+/* No picture: the presents illustration, whole and with some air around it */
+.gift-card-image.is-empty {
+    object-fit: contain;
+    padding: 1.25rem;
+}
+
+.gift-card-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    padding: 0.8rem 0.9rem 0.9rem;
+}
+
+.gift-card-title {
+    margin: 0;
+    padding-right: 1.75rem; /* room for the "…" button */
+    font-size: 1rem;
+    line-height: 1.3;
+    overflow-wrap: anywhere;
+}
+
+.gift-card-title a {
+    color: inherit;
+    text-decoration: none;
+}
+
+/* The whole card opens the gift – the menu sits above that layer */
+.gift-card-title a::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+}
+
+.gift-card-title a:focus-visible {
+    outline: none;
+}
+
+.gift-card:has(.gift-card-title a:focus-visible) {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+.gift-card-badge {
+    align-self: flex-start;
+    margin-left: 0;
+}
+
+.gift-card-meta {
+    display: flex;
+    gap: 0.6rem;
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.85rem;
+}
+
+.gift-card-foot {
+    margin-top: auto;
+    padding-top: 0.4rem;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+
+.gift-card-share {
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    line-height: 1.25;
+}
+
+/* "…" in the picture's top-right corner, on a white circle so it shows on any picture */
+.gift-card-menu {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    z-index: 1;
+}
+
+.gift-card-menu-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.92);
+    color: var(--ink);
+    box-shadow: 0 1px 4px rgba(63, 25, 17, 0.15);
+    cursor: pointer;
+}
+
+.gift-card-menu-btn:hover,
+.gift-card-menu-btn[aria-expanded="true"] {
+    background: #ffffff;
+}
+
+/* "Logga gåva": an empty card with a dashed border, last in the row */
+.gift-add-wrap,
+.gift-add-wrap > .menu {
+    display: flex;
+}
+
+.gift-add-wrap > .menu {
+    flex: 1;
+}
+
+.gift-add-card {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    width: 100%;
+    min-height: 180px;
+    padding: 1rem;
+    border: 2px dashed #dcbcad;
+    border-radius: var(--radius);
+    background: rgba(255, 255, 255, 0.45);
+    color: var(--accent-text);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.gift-add-card:hover,
+.gift-add-card[aria-expanded="true"] {
+    background: var(--surface);
+    border-color: var(--accent);
+}
+
+/* Centred in its circle: no room for text after it here */
+.gift-add-icon .icon-gift-plus {
+    margin-right: 0;
+}
+
+.gift-add-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 3rem;
+    height: 3rem;
+    border-radius: 50%;
+    background: var(--accent-soft);
+}
+
+/* Past events: toned down, like the overview's archived rows */
+.gift-event.is-archived .gift-card {
+    opacity: 0.85;
+}
+
+.gift-event.is-archived .gift-card-image {
+    filter: saturate(0.6);
+}
+
+@media (max-width: 640px) {
+    .gift-event {
+        padding: 0.9rem 0.85rem 1rem;
+    }
+
+    /* Two cards side by side on phones */
+    .gift-cards {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.75rem;
+    }
+
+    .gift-event-head .date-badge {
+        display: none;
+    }
+
+    .gift-event-head .event-date {
+        display: block;
+        margin-top: 0.15rem;
+    }
+
+}
+
+/* ---------- Mina gåvor: "Vem har jag köpt till?" – a horizontal bar chart ---------- */
+.spending-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 0.75rem 1rem;
+    margin-bottom: 1.25rem;
+}
+
+.spending-sub {
+    margin: 0.2rem 0 0;
+}
+
+.spending-controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.spending-range {
+    max-width: 26rem;
+    margin: -0.5rem 0 1.25rem;
+}
+
+/* A row of choices where one is on (the period) */
+.segmented {
+    display: inline-flex;
+    flex-wrap: wrap; /* six choices may not fit on a phone */
+    padding: 3px;
+    border-radius: 18px;
+    background: var(--surface-soft);
+}
+
+.segmented-option {
+    padding: 0.3rem 0.8rem;
+    border: none;
+    border-radius: 999px;
+    background: none;
+    color: var(--muted);
+    font: inherit;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.segmented-option:hover {
+    color: var(--ink);
+}
+
+.segmented-option.is-active {
+    background: var(--surface);
+    color: var(--ink);
+    box-shadow: 0 1px 3px rgba(63, 25, 17, 0.12);
+}
+
+/* The chart. --label: the names' column; --value-room: space kept right of the longest bar
+   for its value, so the value never overflows. Bars and gridlines use the same scale. */
+.bar-chart {
+    --label: 9rem;
+    --gap: 0.75rem;
+    --value-room: 5.5rem;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 1.25rem 1.25rem 2.25rem;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+}
+
+.bar-chart-grid {
+    position: absolute;
+    top: 1rem;
+    bottom: 2rem;
+    left: calc(1.25rem + var(--label) + var(--gap));
+    right: 1.25rem;
+    pointer-events: none;
+}
+
+.bar-chart-tick {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: calc((100% - var(--value-room)) * var(--v));
+    border-left: 1px solid var(--line);
+}
+
+.bar-chart-tick-label {
+    position: absolute;
+    top: 100%;
+    margin-top: 0.3rem;
+    transform: translateX(-50%);
+    color: var(--muted);
+    font-size: 0.72rem;
+    white-space: nowrap;
+}
+
+.bar-row {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: var(--gap);
+    min-height: 2rem;
+    border-radius: 6px;
+    outline-offset: 2px;
+}
+
+.bar-label {
+    flex: none;
+    width: var(--label);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: right;
+    font-size: 0.9rem;
+}
+
+.bar-track {
+    position: relative;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+/* <= 24px thick, square at the baseline, a 4px rounded data end */
+.bar {
+    display: block;
+    width: calc((100% - var(--value-room)) * var(--v));
+    min-width: 2px;
+    height: 20px;
+    border-radius: 0 4px 4px 0;
+    background: var(--accent-strong);
+    transition: width 0.25s ease;
+}
+
+/* "Övriga": the same hue, toned down – it's a sum of many */
+.bar.bar-rest {
+    background: #e7a2b3;
+}
+
+.bar-value {
+    font-size: 0.85rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+/* Tooltip: on hover, and on keyboard focus of the row */
+.bar-tooltip {
+    position: absolute;
+    z-index: 2;
+    bottom: calc(100% + 6px);
+    left: 0;
+    padding: 0.45rem 0.65rem;
+    border-radius: 8px;
+    background: var(--ink);
+    color: #fff;
+    font-size: 0.8rem;
+    line-height: 1.35;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.12s ease;
+    pointer-events: none;
+}
+
+.bar-row:hover .bar-tooltip,
+.bar-row:focus-visible .bar-tooltip {
+    opacity: 1;
+    visibility: visible;
+}
+
+.bar-row:hover .bar {
+    filter: brightness(0.92);
+}
+
+.spending-empty {
+    padding: 1.5rem;
+    text-align: center;
+    background: var(--surface);
+    border: 1px dashed var(--line);
+    border-radius: var(--radius);
+}
+
+@media (max-width: 640px) {
+    .bar-chart {
+        --label: 6rem;
+        --value-room: 4.75rem;
+        padding-inline: 0.85rem;
+    }
+
+    .bar-chart-grid {
+        left: calc(0.85rem + var(--label) + var(--gap));
+        right: 0.85rem;
+    }
 }
 
 /* ---------- Wish profiles ---------- */

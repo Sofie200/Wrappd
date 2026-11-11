@@ -24,6 +24,22 @@ const optionalId = z
     });
 
 // The fields only gifts outside the list have. Title is required for them – checked below.
+// A date "YYYY-MM-DD", or null when empty. Own events and gifts from a wish profile need one
+// (checked in the routes); shared with wish-routes.js (reserving on a wish profile).
+export const giftDate = z
+    .string()
+    .trim()
+    .optional()
+    .nullable()
+    .transform((value, ctx) => {
+        if (!value) return null;
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(value) || Number.isNaN(Date.parse(value))) {
+            ctx.addIssue({ code: "custom", message: "Ange ett giltigt datum" });
+            return z.NEVER;
+        }
+        return value;
+    });
+
 const FreeFields = z.object({
     title: z.string().trim().max(200, "Titeln får vara högst 200 tecken").optional().transform((v) => v || null),
     description: WishBody.shape.description,
@@ -36,18 +52,7 @@ const FreeFields = z.object({
     recipientId: optionalId,
     // Without a list or Secret Santa: the event's name, e.g. "Farmors 80-årsdag" (stored in gifts.recipient)
     recipient: z.string().trim().max(100, "Händelsens namn får vara högst 100 tecken").optional().transform((v) => v || null),
-    giftDate: z
-        .string()
-        .trim()
-        .optional()
-        .transform((value, ctx) => {
-            if (!value) return null;
-            if (!/^\d{4}-\d{2}-\d{2}$/.test(value) || Number.isNaN(Date.parse(value))) {
-                ctx.addIssue({ code: "custom", message: "Ange ett giltigt datum" });
-                return z.NEVER;
-            }
-            return value;
-        }),
+    giftDate,
 });
 
 export const GiftBody = FreeFields.extend({

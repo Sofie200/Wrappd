@@ -157,8 +157,9 @@ CREATE TABLE gifts (
     image_url   TEXT,
     created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+    -- A gift on a wish may have a gift_date: required by the app for wishes on a wish profile (they have no list date)
     CONSTRAINT gifts_wish_or_free CHECK (
-        (wish_id IS NOT NULL AND list_id IS NULL AND santa_id IS NULL AND recipient IS NULL AND gift_date IS NULL
+        (wish_id IS NOT NULL AND list_id IS NULL AND santa_id IS NULL AND recipient IS NULL
             AND description IS NULL AND url IS NULL AND image_url IS NULL)
         OR (wish_id IS NULL AND list_id IS NOT NULL AND santa_id IS NULL AND recipient IS NULL AND gift_date IS NULL)
         OR (wish_id IS NULL AND list_id IS NULL AND santa_id IS NOT NULL AND recipient IS NULL AND gift_date IS NULL)

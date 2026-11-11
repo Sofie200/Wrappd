@@ -1,15 +1,16 @@
 import { useState } from "react";
-import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { api } from "../api.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useFetch } from "../hooks/useFetch.js";
 import { useImageChoice } from "../hooks/useImageChoice.js";
 import { ErrorMessage, Loading, Notice } from "../components/Feedback.jsx";
 import ImageField from "../components/ImageField.jsx";
+import Breadcrumbs from "../components/Breadcrumbs.jsx";
 import ProductLinkField from "../components/ProductLinkField.jsx";
 import PeoplePicker from "../components/PeoplePicker.jsx";
 import { amountText, formatDate, formatPrice, formatShortDate, parseAmount } from "../format.js";
-import { ArrowLeft, ArrowUpRight, CircleMinus, Save, Trash2 } from "lucide-react";
+import { ArrowUpRight, Check, CircleMinus, Save, Trash2 } from "lucide-react";
 
 // /gifts/:id – a gift ("gåva"), and /gifts/new – a new gift bought outside the wish list.
 //  - A gift on a wish: quantity, price, comment, who shares and how. After the event: price, comment and split.
@@ -63,6 +64,10 @@ function GiftForm({ data, lists, santas, presetListId, presetSantaId, presetEven
     const groupMembers = useFetch(groupIds ? `/groups/members?ids=${groupIds}` : null);
     const { user } = useAuth();
     const navigate = useNavigate();
+    // Where the user came from decides where "back" goes: Mina gåvor if opened from there
+    // (GiftCard sets state.from = "gifts"), otherwise the gift's list – or the overview
+    const fromGifts = useLocation().state?.from === "gifts";
+    const backTo = fromGifts ? "/gifts" : data?.list ? `/lists/${data.list.id}` : "/";
     const isNew = !data;
     const gift = data?.gift;
     // The people to choose from – plus the saved one, if they're no longer in my groups
@@ -142,13 +147,6 @@ function GiftForm({ data, lists, santas, presetListId, presetSantaId, presetEven
         }
     }
 
-    function toggle(personId) {
-        const members = { ...form.members };
-        if (personId in members) delete members[personId];
-        else members[personId] = "";
-        change({ members });
-    }
-
     // What is sent as members. Without a list, only I remain. After a list change, the same people (checked by the server).
     function membersToSend() {
         if (isFree && form.listId === "") return [{ userId: user.id, amount: null }];
@@ -189,6 +187,9 @@ function GiftForm({ data, lists, santas, presetListId, presetSantaId, presetEven
                 formData.append("giftDate", form.giftDate);
             }
             image.appendTo(formData);
+        } else if (data?.person) {
+            // A gift from a wish profile: its own date (a list's wish uses the list's date)
+            formData.append("giftDate", form.giftDate);
         }
 
         setBusy(true);
@@ -196,11 +197,14 @@ function GiftForm({ data, lists, santas, presetListId, presetSantaId, presetEven
             if (isNew) {
                 const { id } = await api("/gifts", { method: "POST", formData, timeoutMs: 30_000 });
                 if (onDone) return onDone(); // in a modal: just close it
-                return navigate(`/gifts/${id}`, { replace: true });
+                return navigate(`/gifts/${id}`, { replace: true, state: fromGifts ? { from: "gifts" } : undefined });
             }
             const result = await api(`/gifts/${gift.id}`, { method: "PUT", formData, timeoutMs: 30_000 });
             if (onDone) return onDone();
-            if (!result.stillMember) return navigate(data.list ? `/lists/${data.list.id}` : "/");
+            if (!result.stillMember) return navigate(backTo);
+            // The form is rebuilt from the server's answer only when something changed (its key is the data).
+            // Saving without changes keeps this form – so the button must be released here, or it stays "Sparar…".
+            setBusy(false);
             onSaved();
         } catch (err) {
             setError(err.message);
@@ -218,7 +222,7 @@ function GiftForm({ data, lists, santas, presetListId, presetSantaId, presetEven
         try {
             await api(`/gifts/${gift.id}`, { method: "DELETE" });
             if (onDone) return onDone();
-            navigate(!isFree && data.list ? `/lists/${data.list.id}` : "/");
+            navigate(fromGifts ? "/gifts" : !isFree && data.list ? `/lists/${data.list.id}` : "/");
         } catch (err) {
             setError(err.message);
             setBusy(false);
@@ -280,19 +284,27 @@ function GiftForm({ data, lists, santas, presetListId, presetSantaId, presetEven
 
             {/* A gift on a wish: the wish, as the recipient wrote it */}
             {wish && (
-                <section className="section">
-                    <div className="card">
-                        <div className="card-top">
-                            <h3>Önskningen: {wish.title}</h3>
-                            {wish.price !== null && <span className="price">{formatPrice(wish.price)}/st</span>}
+                <section className="section gift-wish">
+                    {/* The wish's picture on the left (the presents illustration if it has none), the text beside it */}
+                    <div className="card gift-wish-card">
+                        <img
+                            className={`gift-wish-image${wish.imageUrl ? "" : " is-empty"}`}
+                            src={wish.imageUrl ?? "/gift-placeholder.png"}
+                            alt=""
+                        />
+                        <div className="gift-wish-text">
+                            <div className="card-top">
+                                <h3>Önskningen: {wish.title}</h3>
+                                {wish.price !== null && <span className="price">{formatPrice(wish.price)}/st</span>}
+                            </div>
+                            {wish.description && <p className="wish-description">{wish.description}</p>}
+                            {wish.url && (
+                                <a href={wish.url} target="_blank" rel="noopener noreferrer" className="wish-link">
+                                    Se produkten <ArrowUpRight size={16} aria-hidden="true" />
+                                </a>
+                            )}
+                            <p className="muted small">Önskat antal: {wish.quantity}</p>
                         </div>
-                        {wish.description && <p className="wish-description">{wish.description}</p>}
-                        {wish.url && (
-                            <a href={wish.url} target="_blank" rel="noopener noreferrer" className="wish-link">
-                                Se produkten <ArrowUpRight size={16} aria-hidden="true" />
-                            </a>
-                        )}
-                        <p className="muted small">Önskat antal: {wish.quantity}</p>
                     </div>
                 </section>
             )}
@@ -382,13 +394,28 @@ function GiftForm({ data, lists, santas, presetListId, presetSantaId, presetEven
                     </>
                 )}
 
+                {/* A gift from a wish profile: when it's to be given – there's no list with a date */}
+                {!isFree && data?.person && (
+                    <label className="field">
+                        <span>När ska gåvan ges?</span>
+                        <input type="date" value={form.giftDate} onChange={set("giftDate")} required disabled={busy} />
+                    </label>
+                )}
+
                 <div className="field-row">
                     <label className="field">
                         <span>Antal</span>
                         {isFree ? (
                             <input type="number" min="1" max="99" value={form.quantity} onChange={set("quantity")} required disabled={busy} />
                         ) : gift.archived || quantityOptions.length <= 1 ? (
-                            <span>{gift.quantity} st</span>
+                            // Nothing to choose (the wish is fully reserved, or the event has passed):
+                            // the quantity still shows in a field, just locked
+                            <>
+                                <input type="number" value={gift.quantity} disabled aria-describedby="quantity-locked" />
+                                <small id="quantity-locked">
+                                    {gift.archived ? "Kan inte ändras efter eventet." : "Inga fler finns kvar att reservera."}
+                                </small>
+                            </>
                         ) : (
                             <select value={form.quantity} onChange={set("quantity")} disabled={busy}>
                                 {quantityOptions.map((n) => (
@@ -419,26 +446,35 @@ function GiftForm({ data, lists, santas, presetListId, presetSantaId, presetEven
                     <>
                         <fieldset className="fieldset">
                             <legend>Vem är gåvan från?</legend>
-                            {/* "Bara mig" by default – uncheck it to pick others to share with */}
-                            <label className="check">
-                                <input type="checkbox" checked={!sharing} onChange={toggleOnlyMe} disabled={busy} />
-                                Bara mig
-                            </label>
+                            {/* "Bara mig" or "Vi ska dela" – like "Lika / Egna belopp" further down */}
+                            <div className="checks checks-inline">
+                                <label className="check">
+                                    <input type="radio" name="sharing" checked={!sharing} onChange={() => sharing && toggleOnlyMe()} disabled={busy} />
+                                    Bara mig
+                                </label>
+                                <label className="check">
+                                    <input type="radio" name="sharing" checked={sharing} onChange={() => !sharing && toggleOnlyMe()} disabled={busy} />
+                                    Vi ska dela
+                                </label>
+                            </div>
+                            {/* Sharing: the hint, then the name tags and the search field – together under the choices */}
                             {sharing && (
-                                <>
-                                    <small className="muted">
+                                <div className="sharers">
+                                    <p className="small muted sharers-hint">
                                         Alla valda användare kan se gåvan bland sina inköp och ändra den.
-                                    </small>
-                                    <div className="checks">
-                                        {people.map((person) => (
-                                            <label key={person.id} className="check">
-                                                <input type="checkbox" checked={person.id in form.members} onChange={() => toggle(person.id)} disabled={busy} />
-                                                {person.name}
-                                                {person.id === user.id && <span className="muted"> (du)</span>}
-                                            </label>
-                                        ))}
-                                    </div>
-                                </>
+                                    </p>
+                                    <PeoplePicker
+                                        bare
+                                        legend="Vi ska dela"
+                                        people={people}
+                                        selected={selectedIds}
+                                        onChange={(ids) =>
+                                            // Keep the amounts already typed in for those still chosen
+                                            change({ members: Object.fromEntries(ids.map((pid) => [pid, form.members[pid] ?? ""])) })
+                                        }
+                                        emptyText="Det finns ingen att dela gåvan med."
+                                    />
+                                </div>
                             )}
                         </fieldset>
 
@@ -446,24 +482,28 @@ function GiftForm({ data, lists, santas, presetListId, presetSantaId, presetEven
                         {selectedIds.length > 1 && (
                             <fieldset className="fieldset">
                                 <legend>Hur delas kostnaden?</legend>
-                                <div className="checks">
-                                    <label className="check">
-                                        <input type="radio" name="split" value="equal" checked={form.split === "equal"} onChange={set("split")} disabled={busy} />
-                                        Lika
-                                    </label>
+                                <div className="checks checks-inline">
+                                    {/* "Lika" with what each pays under it – starting where its text starts, like "Bara mig" */}
+                                    <div className="check-with-hint">
+                                        <label className="check">
+                                            <input type="radio" name="split" value="equal" checked={form.split === "equal"} onChange={set("split")} disabled={busy} />
+                                            Lika
+                                        </label>
+                                        {form.split === "equal" && (
+                                            <p className="small check-hint">
+                                                {equalShare === null
+                                                    ? "Ange ett pris för att se vad var och en betalar."
+                                                    : `${formatPrice(Math.round(equalShare * 100) / 100)} per person (${selectedIds.length} st).`}
+                                            </p>
+                                        )}
+                                    </div>
                                     <label className="check">
                                         <input type="radio" name="split" value="custom" checked={form.split === "custom"} onChange={set("split")} disabled={busy} />
                                         Egna belopp
                                     </label>
                                 </div>
 
-                                {form.split === "equal" ? (
-                                    <p className="small">
-                                        {equalShare === null
-                                            ? "Ange ett pris för att se vad var och en betalar."
-                                            : `${formatPrice(Math.round(equalShare * 100) / 100)} per person (${selectedIds.length} st).`}
-                                    </p>
-                                ) : (
+                                {form.split === "custom" && (
                                     <>
                                         <div className="split-rows">
                                             {people
@@ -512,12 +552,12 @@ function GiftForm({ data, lists, santas, presetListId, presetSantaId, presetEven
                 )}
 
                 <ErrorMessage message={error} />
-                {justSaved && <p className="small reserved-by-me">✓ Sparat</p>}
-
                 <div className="form-actions">
-                    <button type="submit" className="btn btn-primary" disabled={busy}>
-                        <Save size={16} aria-hidden="true" />
-                        {busy ? "Sparar…" : isNew ? "Spara gåva" : "Spara"}
+                    {/* "Sparat" shows in the button itself, until something is changed again.
+                        aria-live: screen readers hear it too. */}
+                    <button type="submit" className="btn btn-primary" disabled={busy} aria-live="polite">
+                        {justSaved && !busy ? <Check size={16} aria-hidden="true" /> : <Save size={16} aria-hidden="true" />}
+                        {busy ? "Sparar…" : justSaved ? "Sparat" : isNew ? "Spara gåva" : "Spara"}
                     </button>
                     {!isNew && (isFree || !gift.archived) && (
                         <button type="button" className="btn btn-danger-ghost" onClick={remove} disabled={busy}>
@@ -542,17 +582,17 @@ function GiftForm({ data, lists, santas, presetListId, presetSantaId, presetEven
 
     return (
         <div className="page page-narrow">
-            <p>
-                {list ? (
-                    <Link to={`/lists/${list.id}`} className="back-link">
-                        <ArrowLeft size={16} aria-hidden="true" /> {list.title}
-                    </Link>
-                ) : (
-                    <Link to="/" className="back-link">
-                        <ArrowLeft size={16} aria-hidden="true" /> Översikten
-                    </Link>
-                )}
-            </p>
+            {/* Like the rest of the app: "Mina gåvor › Lego" – the first step is where the user came from */}
+            <Breadcrumbs
+                items={[
+                    fromGifts
+                        ? { label: "Mina gåvor", to: "/gifts" }
+                        : list
+                          ? { label: list.title, to: `/lists/${list.id}` }
+                          : { label: "Översikten", to: "/" },
+                    { label: isNew ? "Ny överraskningsgåva" : gift.title },
+                ]}
+            />
             <h1>{isNew ? "Ny överraskningsgåva" : gift.title}</h1>
             {content}
         </div>

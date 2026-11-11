@@ -4,6 +4,7 @@ import { pool, withTransaction } from "../_db/pool.js";
 import { HttpError, parse, parseId } from "../_lib/http.js";
 import { getWishAccess, requireEditor, requireReserver } from "../_lib/access.js";
 import { WishBody } from "../_lib/wishSchema.js";
+import { giftDate } from "../_lib/giftSchema.js";
 import { receiveImage } from "../_middleware/imageUpload.js";
 import { removeWishImages } from "../_integrations/storageAdapter.js";
 import { uploadNewProfileWishImage, uploadNewWishImage } from "../_lib/wishImage.js";
@@ -97,7 +98,9 @@ router.delete("/:id", async (req, res) => {
 
 /* --- POST /api/wishes/:id/gifts  { quantity } → { id } – reserve: creates a gift with me in it --- */
 // The gift gets a copy of the title, and the price = the wish's price × quantity. Both are then the gift's own.
+// giftDate: when the gift is to be given – required on a wish profile (it has no list with a date)
 const Reserve = z.object({
+    giftDate,
     quantity: z.coerce
         .number({ error: "Ange hur många du vill reservera" })
         .int("Antalet måste vara ett heltal")
@@ -107,16 +110,19 @@ const Reserve = z.object({
 
 router.post("/:id/gifts", async (req, res) => {
     const wishId = parseId(req.params.id);
-    const { quantity } = parse(Reserve, req.body);
+    const { quantity, giftDate: date } = parse(Reserve, req.body);
     const { access } = await loadWish(pool, wishId, req.user.id);
     requireReserver(access);
 
     const giftId = await withTransaction(async (db) => {
         // Lock the wish, so two people can't reserve the last copy at the same time
         const { rows: [wish] } = await db.query(
-            "SELECT quantity, title, price FROM wishes WHERE id = $1 FOR UPDATE",
+            "SELECT quantity, title, price, user_id FROM wishes WHERE id = $1 FOR UPDATE",
             [wishId]
         );
+        // A wish on a wish profile: the gift needs its own date (a list's wishes use the list's date)
+        const onProfile = wish.user_id !== null;
+        if (onProfile && !date) throw new HttpError(400, "Ange när gåvan ska ges");
 
         const { rows: [mine] } = await db.query(
             `SELECT g.id FROM gifts g JOIN gift_members gm ON gm.gift_id = g.id
@@ -138,9 +144,9 @@ router.post("/:id/gifts", async (req, res) => {
         }
 
         const { rows: [gift] } = await db.query(
-            `INSERT INTO gifts (wish_id, created_by, quantity, title, price)
-             VALUES ($1, $2, $3, $4, $5::numeric * $3::int) RETURNING id`,
-            [wishId, req.user.id, quantity, wish.title, wish.price]
+            `INSERT INTO gifts (wish_id, created_by, quantity, title, price, gift_date)
+             VALUES ($1, $2, $3, $4, $5::numeric * $3::int, $6) RETURNING id`,
+            [wishId, req.user.id, quantity, wish.title, wish.price, onProfile ? date : null]
         );
         await db.query("INSERT INTO gift_members (gift_id, user_id) VALUES ($1, $2)", [gift.id, req.user.id]);
         return gift.id;

@@ -28,6 +28,9 @@ export default function WishCard({ wish, me, listId, onChanged }) {
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState(null);
     const [qty, setQty] = useState(1);
+    // A wish on a wish profile (no list): the gift needs a date – when it's to be given
+    const onProfile = !listId;
+    const [giftDate, setGiftDate] = useState("");
     const [editingGift, setEditingGift] = useState(false); // my reservation, in a modal on top
 
     async function run(action) {
@@ -46,11 +49,20 @@ export default function WishCard({ wish, me, listId, onChanged }) {
     // Reserving creates a gift – and stays here; the gift can be edited later (Gåvor / the overview)
     // quantity: from the row it's always 1, from the modal what's chosen there
     async function reserve(quantity = qty) {
+        // On a wish profile the date comes from the field in the modal – from the row, open the modal for it
+        if (onProfile && !giftDate) {
+            setOpen(true);
+            if (open) setError("Ange när gåvan ska ges");
+            return;
+        }
         setBusy(true);
         setError(null);
         try {
             // The gift is created as a straight copy of the wish – price, comment and sharing can be changed later
-            await api(`/wishes/${wish.id}/gifts`, { method: "POST", body: { quantity: Number(quantity) } });
+            await api(`/wishes/${wish.id}/gifts`, {
+                method: "POST",
+                body: { quantity: Number(quantity), ...(onProfile && { giftDate }) },
+            });
             setBusy(false);
             onChanged();
         } catch (err) {
@@ -244,8 +256,35 @@ export default function WishCard({ wish, me, listId, onChanged }) {
                             <ErrorMessage message={error} />
 
                             {/* Only while there's something left to reserve */}
+                            {/* A form, so reserving counts as "saved" in the modal: closing it afterwards doesn't
+                                ask about unsaved changes (the date and quantity are what was saved) */}
                             {me.canReserve && !wish.myGiftId && available > 0 && (
-                                <div className="wish-actions">
+                                <form
+                                    className="wish-actions"
+                                    onSubmit={(e) => {
+                                        e.preventDefault();
+                                        reserve();
+                                    }}
+                                >
+                                    {/* A wish on a wish profile: when the gift is to be given (there's no list date).
+                                        The label on its own row above, so the date field, the quantity and
+                                        "Reservera" share one row – centred on each other. */}
+                                    {onProfile && (
+                                        <>
+                                            <label htmlFor={`gift-date-${wish.id}`} className="wish-gift-date-label">
+                                                När ska gåvan ges?
+                                            </label>
+                                            <input
+                                                id={`gift-date-${wish.id}`}
+                                                type="date"
+                                                className="wish-gift-date"
+                                                value={giftDate}
+                                                onChange={(e) => setGiftDate(e.target.value)}
+                                                required
+                                                disabled={busy}
+                                            />
+                                        </>
+                                    )}
                                     {available > 1 && (
                                         <select value={qty} onChange={(e) => setQty(e.target.value)} aria-label="Antal" disabled={busy}>
                                             {options.map((n) => (
@@ -255,10 +294,16 @@ export default function WishCard({ wish, me, listId, onChanged }) {
                                             ))}
                                         </select>
                                     )}
-                                    <button type="button" className="btn btn-small btn-primary" onClick={() => reserve()} disabled={busy}>
+                                    <button
+                                        type="submit"
+                                        className="btn btn-small btn-primary"
+                                        // Not greyed out without a date: the browser points at the empty date field
+                                        // ("required") when it's pressed, which says what's missing
+                                        disabled={busy}
+                                    >
                                         <CirclePlus size={16} aria-hidden="true" /> Reservera
                                     </button>
-                                </div>
+                                </form>
                             )}
 
                             {me.canEdit && (

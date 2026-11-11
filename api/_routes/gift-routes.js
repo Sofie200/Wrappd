@@ -59,7 +59,7 @@ async function loadGift(db, giftId, userId, { lock = false } = {}) {
 async function shareCandidates(db, { listId, wishId = null, giftId = null, ownerId = null }, onlyIds = null) {
     if (!listId && ownerId) {
         const { rows } = await db.query(
-            `SELECT DISTINCT u.id, u.name, u.username
+            `SELECT DISTINCT u.id, u.name, u.username, u.avatar_icon AS "avatarIcon", u.avatar_color AS "avatarColor"
              FROM users u
              JOIN group_members gm ON gm.user_id = u.id
              JOIN group_members om ON om.group_id = gm.group_id AND om.user_id = $1
@@ -74,7 +74,7 @@ async function shareCandidates(db, { listId, wishId = null, giftId = null, owner
     }
     if (!listId) return [];
     const { rows } = await db.query(
-        `SELECT DISTINCT u.id, u.name, u.username
+        `SELECT DISTINCT u.id, u.name, u.username, u.avatar_icon AS "avatarIcon", u.avatar_color AS "avatarColor"
          FROM users u
          JOIN group_members gm ON gm.user_id = u.id
          JOIN list_groups lg ON lg.group_id = gm.group_id AND lg.list_id = $1
@@ -179,7 +179,7 @@ router.get("/:id", async (req, res) => {
             ? pool.query("SELECT id, name FROM users WHERE id = $1", [gift.wish_owner_id])
             : { rows: [null] },
         pool.query(
-            `SELECT u.id, u.name, u.username, gm.amount
+            `SELECT u.id, u.name, u.username, u.avatar_icon AS "avatarIcon", u.avatar_color AS "avatarColor", gm.amount
              FROM gift_members gm JOIN users u ON u.id = gm.user_id
              WHERE gm.gift_id = $1 ORDER BY u.name`,
             [giftId]
@@ -393,9 +393,13 @@ router.put("/:id", receiveImage, async (req, res) => {
                     ]
                 );
             } else {
+                // A gift from a wish profile has its own date, and must keep one; on a list it's the list's date
+                const onProfile = gift.wish_owner_id !== null;
+                if (onProfile && !body.giftDate) throw new HttpError(400, "Ange när gåvan ska ges");
                 await db.query(
-                    "UPDATE gifts SET quantity = $1, price = $2, comment = $3, split = $4, updated_at = now() WHERE id = $5",
-                    [body.quantity, body.price, body.comment, body.split, giftId]
+                    `UPDATE gifts SET quantity = $1, price = $2, comment = $3, split = $4, gift_date = $5, updated_at = now()
+                     WHERE id = $6`,
+                    [body.quantity, body.price, body.comment, body.split, onProfile ? body.giftDate : null, giftId]
                 );
             }
             await replaceMembers(db, giftId, body, userIds);

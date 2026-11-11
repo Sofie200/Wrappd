@@ -21,19 +21,34 @@ export default function AddGiftButton({
                 {children}
             </button>
             {open && (
-                <Modal title={title} onClose={() => setOpen(false)}>
-                    <GiftEditor
-                        id="new"
-                        presetListId={String(listId)}
-                        presetSantaId={String(santaId)}
-                        presetEvent={presetEvent}
-                        onDone={() => {
-                            setOpen(false);
-                            onAdded?.();
-                        }}
-                    />
-                </Modal>
+                <AddGiftModal
+                    listId={listId}
+                    santaId={santaId}
+                    presetEvent={presetEvent}
+                    title={title}
+                    onClose={() => setOpen(false)}
+                    onAdded={onAdded}
+                />
             )}
         </>
+    );
+}
+
+// The gift form in a modal, on its own – for when something other than a plain button opens it
+// (e.g. the "Logga gåva" card on the gifts page). Mount it to open it; onClose closes it.
+export function AddGiftModal({ listId = "", santaId = "", presetEvent = null, title = "Ny överraskningsgåva", onClose, onAdded }) {
+    return (
+        <Modal title={title} onClose={onClose}>
+            <GiftEditor
+                id="new"
+                presetListId={String(listId)}
+                presetSantaId={String(santaId)}
+                presetEvent={presetEvent}
+                onDone={() => {
+                    onClose();
+                    onAdded?.();
+                }}
+            />
+        </Modal>
     );
 }

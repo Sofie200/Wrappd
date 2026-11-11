@@ -17,7 +17,7 @@ import GiftPlusIcon from "./GiftPlusIcon.jsx";
 
 export const sumShares = (rows) => rows.reduce((sum, g) => sum + Math.round((g.myShare ?? 0) * 100), 0) / 100;
 // The gifts' total prices added up (null when none of them has a price)
-const sumPrices = (rows) =>
+export const sumPrices = (rows) =>
     rows.some((g) => g.price !== null)
         ? rows.reduce((sum, g) => sum + Math.round((Number(g.price) || 0) * 100), 0) / 100
         : null;
@@ -225,11 +225,42 @@ export function GiftsCollapse({ count = null, actions = null, children }) {
     );
 }
 
+// The buttons for adding a gift to an event: a surprise gift on a list or a Secret Santa, or another gift
+// for an own event (name, person and date filled in). Nothing for wish profiles or past events.
+// Used on the overview's rows and on the gifts page.
+export function EventAddButtons({ event, archived = false, onChanged, className = "btn btn-small btn-ghost" }) {
+    const { listId, santaId, personId, eventName, recipientId, recipients, endDate } = event;
+    if (archived) return null;
+    return (
+        <>
+            {listId && (
+                <AddGiftButton listId={listId} className={className} onAdded={onChanged}>
+                    <GiftPlusIcon /> Överraskningsgåva
+                </AddGiftButton>
+            )}
+            {!listId && !santaId && !personId && eventName && (
+                <AddGiftButton
+                    presetEvent={{ name: eventName, recipientId, recipientName: recipients, date: endDate }}
+                    title="Logga en gåva"
+                    className={className}
+                    onAdded={onChanged}
+                >
+                    <GiftPlusIcon /> Ytterligare gåva
+                </AddGiftButton>
+            )}
+            {santaId && (
+                <AddGiftButton santaId={santaId} className={className} onAdded={onChanged}>
+                    <GiftPlusIcon /> Överraskningsgåva
+                </AddGiftButton>
+            )}
+        </>
+    );
+}
+
 // One event: the list's details on the left (in a contrasting colour), my gifts for it on the right
 export function EventRow({ event, archived = false, onChanged }) {
     const { listId, santaId, personId, title, endDate, recipients, isRecipient, canOpen, gifts, wishCount, reservedCount } =
         event;
-    const { eventName, recipientId } = event;
     // The kind of event decides the colour; past events keep it, toned down (event-archived)
     const kind = isRecipient ? " event-to-me" : santaId ? " event-santa" : !listId ? " event-no-list" : "";
     const variant = kind + (archived ? " event-archived" : "");
@@ -237,31 +268,7 @@ export function EventRow({ event, archived = false, onChanged }) {
     const KickerIcon = listId ? ScrollText : santaId ? HatGlasses : personId ? null : Table2;
 
     // The buttons for adding a gift: in the section's head – on phones up in the "Mina inköp" bar
-    const actions = isRecipient ? null : (
-        <>
-            {listId && !archived && (
-                <AddGiftButton listId={listId} className="btn btn-small btn-ghost" onAdded={onChanged}>
-                    <GiftPlusIcon /> Överraskningsgåva
-                </AddGiftButton>
-            )}
-            {/* An own event: another gift for the same event (name, person and date filled in) */}
-            {!listId && !santaId && !personId && eventName && !archived && (
-                <AddGiftButton
-                    presetEvent={{ name: eventName, recipientId, recipientName: recipients, date: endDate }}
-                    title="Logga en gåva"
-                    className="btn btn-small btn-ghost"
-                    onAdded={onChanged}
-                >
-                    <GiftPlusIcon /> Ytterligare gåva
-                </AddGiftButton>
-            )}
-            {santaId && !archived && (
-                <AddGiftButton santaId={santaId} className="btn btn-small btn-ghost" onAdded={onChanged}>
-                    <GiftPlusIcon /> Överraskningsgåva
-                </AddGiftButton>
-            )}
-        </>
-    );
+    const actions = isRecipient ? null : <EventAddButtons event={event} archived={archived} onChanged={onChanged} />;
 
     return (
         <div className={`event-group${variant}`}>

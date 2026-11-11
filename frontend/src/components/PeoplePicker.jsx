@@ -7,6 +7,8 @@ import Avatar from "./Avatar.jsx";
 // lockedIds: always chosen, can't be removed (e.g. the creator as admin).
 // disabledIds: can't be picked (e.g. someone else's child) – disabledHint says why.
 // single: at most one person – picking someone replaces the choice, and the search hides once someone is chosen.
+// bare: no fieldset or legend of its own – for when it sits inside another fieldset (legend is then only
+// used to label the search field for screen readers).
 const MAX_SUGGESTIONS = 8;
 
 export default function PeoplePicker({
@@ -20,6 +22,7 @@ export default function PeoplePicker({
     disabledHint,
     emptyText = "Välj en grupp först.",
     single = false,
+    bare = false,
 }) {
     const [query, setQuery] = useState("");
     const [open, setOpen] = useState(false);
@@ -70,11 +73,8 @@ export default function PeoplePicker({
 
     const activeId = pickable[active] ? `${listId}-${pickable[active].id}` : undefined;
 
-    return (
-        <fieldset className="fieldset">
-            <legend>{legend}</legend>
-            {hint && <p className="muted small">{hint}</p>}
-            {people.length === 0 ? (
+    const picker =
+            people.length === 0 ? (
                 <p className="muted small">{emptyText}</p>
             ) : (
                 <div className="people-picker">
@@ -170,7 +170,14 @@ export default function PeoplePicker({
                     </div>
                     )}
                 </div>
-            )}
+            );
+
+    if (bare) return picker;
+    return (
+        <fieldset className="fieldset">
+            <legend>{legend}</legend>
+            {hint && <p className="muted small">{hint}</p>}
+            {picker}
         </fieldset>
     );
 }
