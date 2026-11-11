@@ -500,6 +500,15 @@ a:focus-visible {
     border-color: #c39784;
 }
 
+/* Like "Avbryt" (thin border, see-through), but with red text – e.g. "Radera mitt konto" */
+.btn-ghost.btn-ghost-danger {
+    color: var(--danger);
+}
+
+.btn-ghost.btn-ghost-danger:hover {
+    background: var(--danger-soft);
+}
+
 .btn-danger-ghost {
     background: transparent;
     color: var(--danger);
@@ -1125,6 +1134,39 @@ select {
 .cookie-notice-icon {
     flex-shrink: 0;
     color: var(--accent);
+}
+
+/* Profile page: "Radera mitt konto" at the very bottom */
+.danger-zone {
+    margin-top: 2.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--line);
+    max-width: 500px;
+}
+
+.danger-zone h2 {
+    margin-bottom: 0.5rem;
+}
+
+.delete-plan {
+    padding-left: 1.25rem;
+    margin: 0 0 1rem;
+}
+
+.delete-plan li + li {
+    margin-top: 0.35rem;
+}
+
+/* A solid red button – only for what can't be undone */
+.btn-danger {
+    background: var(--danger);
+    color: #ffffff;
+    border-color: var(--danger);
+}
+
+.btn-danger:hover:not(:disabled) {
+    background: #8f1e18;
+    border-color: #8f1e18;
 }
 
 .auth-hint {
@@ -3548,6 +3590,14 @@ button.event-edit {
     display: flex;
     align-items: center;
     gap: 0.6rem;
+}
+
+/* The child's name and its "…" menu side by side; the name may wrap, the menu stays next to it */
+.child-title-row {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    min-width: 0;
 }
 
 .child-groups {

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 import AuthLayout from "../components/AuthLayout.jsx";
-import { ErrorMessage } from "../components/Feedback.jsx";
+import { ErrorMessage, Notice } from "../components/Feedback.jsx";
 import GoogleButton from "../components/GoogleButton.jsx";
 
 export default function LoginPage() {
@@ -50,6 +50,7 @@ export default function LoginPage() {
 
     return (
         <AuthLayout title="Logga in">
+            {location.state?.accountDeleted && <Notice>Ditt konto är raderat. Tack för att du använde Wrappd!</Notice>}
             <form onSubmit={handleSubmit} className="form">
                 <ErrorMessage message={error} />
 

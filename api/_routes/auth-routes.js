@@ -7,6 +7,9 @@ import { HttpError, parse } from "../_lib/http.js";
 import { avatarColor, avatarIcon, email, name, password, username } from "../_lib/userSchema.js";
 import { hashToken, isTokenFormat } from "../_lib/userLinks.js";
 import { verifyGoogleIdToken } from "../_lib/googleAuth.js";
+import { deleteAccount, planAccountDeletion } from "../_lib/deleteAccount.js";
+import { syncChildGroups } from "../_lib/childGroups.js";
+import { removeWishImages } from "../_integrations/storageAdapter.js";
 
 const router = Router();
 
@@ -288,6 +291,44 @@ router.put("/me/email", requireAuth, async (req, res) => {
         if (err.code === "23505") throw new HttpError(409, "Det finns redan ett konto med den e-postadressen");
         throw err;
     }
+});
+
+/* --- GET /api/auth/me/deletion → what deleting my account would mean – for the confirmation dialog --- */
+router.get("/me/deletion", requireAuth, async (req, res) => {
+    const plan = await planAccountDeletion(pool, req.user.id);
+    res.json({
+        children: plan.children.map((c) => c.name),
+        lists: plan.lists.map((l) => l.title),
+        emptyGroups: plan.emptyGroups.map((g) => g.name),
+        keptGroups: plan.keptGroups.length,
+        sharedGifts: plan.sharedGifts,
+    });
+});
+
+/* --- DELETE /api/auth/me  { username } → 204 – delete my account (see _lib/deleteAccount.js) --- */
+// The username is typed in as confirmation, so it can't happen by mistake
+const DeleteMe = z.object({
+    username: z.string({ error: "Skriv ditt användarnamn för att bekräfta" }).trim().toLowerCase().min(1, "Skriv ditt användarnamn för att bekräfta"),
+});
+
+router.delete("/me", requireAuth, async (req, res) => {
+    const body = parse(DeleteMe, req.body ?? {});
+
+    const { imageUrls } = await withTransaction(async (db) => {
+        const { rows: [me] } = await db.query("SELECT username FROM users WHERE id = $1", [req.user.id]);
+        if (!me) throw new HttpError(401, "Kontot finns inte längre.");
+        if (me.username !== body.username.replace(/^@/, "")) {
+            throw new HttpError(400, "Användarnamnet stämmer inte. Skriv ditt användarnamn för att bekräfta.");
+        }
+        const result = await deleteAccount(db, req.user.id);
+        // Other people's children leave groups where none of their parents is left
+        await syncChildGroups(db);
+        return result;
+    });
+
+    clearAuthCookie(res);
+    await removeWishImages(imageUrls).catch((err) => console.warn("[ACCOUNT] Could not delete images:", err));
+    res.status(204).end();
 });
 
 /* --- GET /api/auth/link/:token → { purpose, name, username } – who the link is for --- */

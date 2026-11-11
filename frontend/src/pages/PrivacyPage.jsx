@@ -106,8 +106,10 @@ export default function PrivacyPage() {
 
                 <h2>Hur länge sparar vi dem?</h2>
                 <p>
-                    Så länge du har ett konto. Vill du att ditt konto tas bort, mejla{" "}
-                    <a href={`mailto:${CONTACT}`}>{CONTACT}</a> så raderar vi kontot och det du har lagt in. Ett konto
+                    Så länge du har ett konto. Du kan radera ditt konto själv under <strong>Min profil</strong> →{" "}
+                    <strong>Radera mitt konto</strong>. Då raderas kontot och det som bara är ditt; det du delar med
+                    andra (till exempel gåvor ni köpt tillsammans) finns kvar för dem. Du kan också mejla{" "}
+                    <a href={`mailto:${CONTACT}`}>{CONTACT}</a> så hjälper vi dig. Ett konto
                     som en admin har skapat åt dig, men som aldrig aktiverats, raderas när det tas bort ur sin sista
                     grupp.
                 </p>

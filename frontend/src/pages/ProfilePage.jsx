@@ -7,6 +7,7 @@ import Avatar from "../components/Avatar.jsx";
 import { ErrorMessage } from "../components/Feedback.jsx";
 import GoogleConnect from "../components/GoogleConnect.jsx";
 import EmailField from "../components/EmailField.jsx";
+import DeleteAccount from "../components/DeleteAccount.jsx";
 
 // /profile – edit my profile: name, icon and colour – with a live preview
 export default function ProfilePage() {
@@ -138,6 +139,7 @@ export default function ProfilePage() {
             </div>
 
             <GoogleConnect />
+            <DeleteAccount />
         </div>
     );
 }

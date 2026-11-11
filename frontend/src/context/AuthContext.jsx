@@ -65,6 +65,12 @@ export function AuthProvider({ children }) {
         setUser(data.user);
     }
 
+    // Delete my account for good. The server removes the cookie; here we just forget the user.
+    async function deleteAccount(username) {
+        await api("/auth/me", { method: "DELETE", body: { username } });
+        setUser(null);
+    }
+
     async function updateEmail(email) {
         const data = await api("/auth/me/email", { method: "PUT", body: { email } });
         setUser(data.user);
@@ -94,7 +100,7 @@ export function AuthProvider({ children }) {
 
     return (
         <AuthContext.Provider
-            value={{ user, checking, error, login, loginWithGoogle, signupWithGoogle, connectGoogle, disconnectGoogle, updateEmail, register, choosePassword, logout, updateProfile, retry: checkLogin }}
+            value={{ user, checking, error, login, loginWithGoogle, signupWithGoogle, connectGoogle, disconnectGoogle, updateEmail, deleteAccount, register, choosePassword, logout, updateProfile, retry: checkLogin }}
         >
             {children}
         </AuthContext.Provider>

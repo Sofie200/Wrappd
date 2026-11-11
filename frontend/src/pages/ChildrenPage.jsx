@@ -94,14 +94,12 @@ export default function ChildrenPage() {
                         {children.data.data.map((child) => (
                             <div key={child.id} className="card">
                                 <div className="card-top">
-                                    <h3 className="child-title">
-                                        <Avatar isChild id={child.id} size={32} />
-                                        {child.name}
-                                    </h3>
-                                    <div className="actions">
-                                        <Link to={`/lists/new?for=${child.id}`} className="btn btn-small">
-                                            <ScrollText size={16} aria-hidden="true" /> Ny lista
-                                        </Link>
+                                    {/* The name with its "…" menu right after it – like the group page's title */}
+                                    <div className="child-title-row">
+                                        <h3 className="child-title">
+                                            <Avatar isChild id={child.id} size={32} />
+                                            {child.name}
+                                        </h3>
                                         <SettingsMenu label={`Alternativ för ${child.name}`} icon={Ellipsis}>
                                             <button
                                                 type="button"
@@ -132,6 +130,11 @@ export default function ChildrenPage() {
                                                 <Trash2 size={16} aria-hidden="true" /> Ta bort
                                             </button>
                                         </SettingsMenu>
+                                    </div>
+                                    <div className="actions">
+                                        <Link to={`/lists/new?for=${child.id}`} className="btn btn-small">
+                                            <ScrollText size={16} aria-hidden="true" /> Ny lista
+                                        </Link>
                                     </div>
                                 </div>
                                 <p className="muted small">Föräldrar: {child.parents.map((p) => p.name).join(", ")}</p>
