@@ -6,6 +6,7 @@ import { AVATAR_COLORS, AVATAR_ICONS, DEFAULT_COLOR, DEFAULT_ICON } from "../pro
 import Avatar from "../components/Avatar.jsx";
 import { ErrorMessage } from "../components/Feedback.jsx";
 import GoogleConnect from "../components/GoogleConnect.jsx";
+import EmailField from "../components/EmailField.jsx";
 
 // /profile – edit my profile: name, icon and colour – with a live preview
 export default function ProfilePage() {
@@ -65,6 +66,8 @@ export default function ProfilePage() {
                         />
                         <small>Det du loggar in med. 3–30 tecken: a–z, siffror, punkt, bindestreck eller understreck.</small>
                     </label>
+
+                    <EmailField disabled={busy} />
 
                     <fieldset className="fieldset fieldset-plain">
                         <legend>Ikon</legend>

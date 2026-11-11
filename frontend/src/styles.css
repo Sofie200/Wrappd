@@ -1036,6 +1036,23 @@ select {
     margin: 0 0 1rem;
 }
 
+/* Profile page: the email field */
+.email-verified {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.email-add {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.email-add input {
+    flex: 1;
+    min-width: 0;
+}
+
 .auth-hint {
     text-align: center;
     margin: 0.75rem 0 0;

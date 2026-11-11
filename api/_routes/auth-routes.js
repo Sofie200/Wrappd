@@ -20,7 +20,7 @@ const Login = z.object({
 
 // What the frontend gets to know about the logged-in user
 // googleConnected / hasPassword: for the profile page (whether Google can be disconnected without locking yourself out)
-const USER_FIELDS = `id, name, username, email, avatar_icon AS "avatarIcon", avatar_color AS "avatarColor",
+const USER_FIELDS = `id, name, username, email, email_verified AS "emailVerified", avatar_icon AS "avatarIcon", avatar_color AS "avatarColor",
     google_sub IS NOT NULL AS "googleConnected", password_hash IS NOT NULL AS "hasPassword"`;
 
 const LINK_INVALID = "Länken är ogiltig, redan använd eller har gått ut. Be en admin i din grupp om en ny länk.";
@@ -266,19 +266,23 @@ router.put("/me", requireAuth, async (req, res) => {
     }
 });
 
-/* --- PUT /api/auth/me/email  { email } → { user } – add or change my email --- */
-// A typed-in email is unverified (see migration 016) – unless it's the same verified address as before
+/* --- PUT /api/auth/me/email  { email } → { user } – add my email (only if I have none) --- */
+// Once set, the email can't be changed here. A typed-in email is unverified (see migration 016).
 const EditEmail = z.object({ email });
 
 router.put("/me/email", requireAuth, async (req, res) => {
     const body = parse(EditEmail, req.body);
     try {
         const { rows: [user] } = await pool.query(
-            `UPDATE users SET email = $1, email_verified = (email IS NOT DISTINCT FROM $1 AND email_verified)
-             WHERE id = $2 AND NOT is_child RETURNING ${USER_FIELDS}`,
+            `UPDATE users SET email = $1, email_verified = false
+             WHERE id = $2 AND NOT is_child AND email IS NULL RETURNING ${USER_FIELDS}`,
             [body.email, req.user.id]
         );
-        if (!user) throw new HttpError(401, "Kontot finns inte längre. Logga in igen.");
+        if (!user) {
+            const { rowCount } = await pool.query("SELECT 1 FROM users WHERE id = $1", [req.user.id]);
+            if (!rowCount) throw new HttpError(401, "Kontot finns inte längre. Logga in igen.");
+            throw new HttpError(409, "Du har redan en e-postadress, och den kan inte ändras.");
+        }
         res.json({ user });
     } catch (err) {
         if (err.code === "23505") throw new HttpError(409, "Det finns redan ett konto med den e-postadressen");
