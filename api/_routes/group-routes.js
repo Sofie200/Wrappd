@@ -5,6 +5,7 @@ import { HttpError, parse, parseId } from "../_lib/http.js";
 import { name, username } from "../_lib/userSchema.js";
 import { createUserLink } from "../_lib/userLinks.js";
 import { syncChildGroups } from "../_lib/childGroups.js";
+import { removeWishImages } from "../_integrations/storageAdapter.js";
 
 const router = Router();
 
@@ -306,14 +307,16 @@ router.patch("/:id/members/:userId", async (req, res) => {
     res.json({ userId, isAdmin });
 });
 
-/* --- DELETE /api/groups/:id/members/:userId – remove a member (admin), or leave the group (yourself) --- */
+/* --- DELETE /api/groups/:id/members/:userId → { removed, accountDeleted } – remove a member (admin), or leave (yourself) --- */
 // The member's children leave with them, unless the other parent is still in the group.
+// A never-activated account (no password, no Google) that isn't in any other group is deleted completely:
+// nobody has ever logged in to it, so nobody loses anything of their own. See deleteUnactivatedAccount below.
 router.delete("/:id/members/:userId", async (req, res) => {
     const groupId = parseId(req.params.id);
     const userId = parseId(req.params.userId);
     const leaving = userId === req.user.id;
 
-    await withTransaction(async (db) => {
+    const { imageUrls } = await withTransaction(async (db) => {
         await db.query("SELECT id FROM groups WHERE id = $1 FOR UPDATE", [groupId]);
         const me = await requireMember(db, groupId, req.user.id);
         if (!leaving && !me.is_admin) throw new HttpError(403, "Bara gruppens admins kan ta bort medlemmar");
@@ -343,11 +346,55 @@ router.delete("/:id/members/:userId", async (req, res) => {
         }
 
         await db.query("DELETE FROM group_members WHERE group_id = $1 AND user_id = $2", [groupId, userId]);
+        const deleted = leaving ? null : await deleteUnactivatedAccount(db, userId);
         // Their children leave too – unless the other parent is still in the group
         await syncChildGroups(db);
+        return deleted ?? { imageUrls: null };
     });
 
-    res.json({ removed: userId });
+    if (imageUrls) {
+        await removeWishImages(imageUrls).catch((err) => console.warn("[GROUP] Could not delete images:", err));
+    }
+    res.json({ removed: userId, accountDeleted: Boolean(imageUrls) });
 });
+
+// Called right after the user was removed from a group. Deletes the whole account if it was never activated
+// and is now in no group at all – otherwise does nothing and returns null.
+// Like deleting a child: lists where they are the only recipient go (with wishes, gifts and images);
+// on lists with other recipients too they're just removed as a recipient. The rest goes by ON DELETE CASCADE
+// (links, wish profile, Secret Santa pairs …). Returns { imageUrls } to delete once the transaction is done.
+async function deleteUnactivatedAccount(db, userId) {
+    const { rows: [user] } = await db.query(
+        `SELECT 1 FROM users u
+         WHERE u.id = $1 AND NOT u.is_child
+           AND u.password_hash IS NULL AND u.google_sub IS NULL
+           AND NOT EXISTS (SELECT 1 FROM group_members WHERE user_id = u.id)
+           -- Never logged in, so this can't happen – but these keys have no ON DELETE, so check anyway
+           AND NOT EXISTS (SELECT 1 FROM groups WHERE created_by = u.id)
+           AND NOT EXISTS (SELECT 1 FROM lists WHERE created_by = u.id)
+         FOR UPDATE`,
+        [userId]
+    );
+    if (!user) return null;
+
+    const { rows: lists } = await db.query(
+        `SELECT DISTINCT lr.list_id FROM list_recipients lr
+         WHERE lr.user_id = $1
+           AND NOT EXISTS (SELECT 1 FROM list_recipients o WHERE o.list_id = lr.list_id AND o.user_id <> $1)`,
+        [userId]
+    );
+    const listIds = lists.map((r) => r.list_id);
+
+    const { rows: images } = await db.query(
+        `SELECT image_url FROM wishes WHERE (list_id = ANY($1::int[]) OR user_id = $2) AND image_url IS NOT NULL
+         UNION ALL
+         SELECT image_url FROM gifts WHERE list_id = ANY($1::int[]) AND image_url IS NOT NULL`,
+        [listIds, userId]
+    );
+
+    await db.query("DELETE FROM lists WHERE id = ANY($1::int[])", [listIds]);
+    await db.query("DELETE FROM users WHERE id = $1", [userId]);
+    return { imageUrls: images.map((r) => r.image_url) };
+}
 
 export default router;

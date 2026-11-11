@@ -82,7 +82,11 @@ export default function GroupPage() {
         run(() => api(`/groups/${id}/members/${member.id}`, { method: "PATCH", body: { isAdmin } }));
 
     function removeMember(member) {
-        if (!window.confirm(`Ta bort ${member.name} ur gruppen?`)) return;
+        // A never-activated account that isn't in any other group is deleted completely by the server
+        const message = member.isActivated
+            ? `Ta bort ${member.name} ur gruppen?`
+            : `Ta bort ${member.name} ur gruppen?\n\nKontot är inte aktiverat. Är ${member.name} inte med i någon annan grupp raderas kontot helt – med listor och önskningar som bara är till ${member.name}. Aktiveringslänken slutar då att fungera.`;
+        if (!window.confirm(message)) return;
         run(() => api(`/groups/${id}/members/${member.id}`, { method: "DELETE" }));
     }
 
