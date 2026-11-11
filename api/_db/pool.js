@@ -15,6 +15,14 @@ export const pool = new pg.Pool({
     idleTimeoutMillis: 10_000,
 });
 
+// Neon closes connections that have been idle for a while (and Vercel freezes the function in between).
+// When that happens to a connection resting in the pool, pg emits "error" on the pool – and an "error"
+// event nobody listens to crashes the whole function. Here it's only logged; the pool drops that
+// connection and opens a new one next time.
+pool.on("error", (err) => {
+    console.warn("[DB] An idle connection was closed:", err.message);
+});
+
 // "Today" in Sweden, in SQL. The server runs in UTC on Vercel.
 export const TODAY = `(now() AT TIME ZONE 'Europe/Stockholm')::date`;
 
