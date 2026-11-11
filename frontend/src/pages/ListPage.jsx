@@ -13,6 +13,7 @@ import SettingsMenu from "../components/SettingsMenu.jsx";
 import Avatar from "../components/Avatar.jsx";
 import { GiftEditor } from "./GiftPage.jsx";
 import { formatDate, formatPrice, relativeDays } from "../format.js";
+import { MAX_WISHES_PER_LIST } from "../config.js";
 
 const names = (people) => people.map((p) => p.name).join(", ");
 
@@ -46,6 +47,7 @@ export default function ListPage() {
     if (!data) return <ErrorMessage message={error} onRetry={reload} />;
 
     const { list, me, groups, recipients, wishes, myGifts = [] } = data;
+    const listFull = wishes.length >= MAX_WISHES_PER_LIST;
 
     async function publish() {
         const ok = window.confirm(
@@ -157,7 +159,14 @@ export default function ListPage() {
                     <h2>Önskningar ({wishes.length})</h2>
                     <div className="actions">
                         {me.canEdit && (
-                            <button type="button" className="btn btn-small" onClick={() => setAdding(true)} aria-haspopup="dialog">
+                            <button
+                                type="button"
+                                className="btn btn-small"
+                                onClick={() => setAdding(true)}
+                                aria-haspopup="dialog"
+                                disabled={listFull}
+                                title={listFull ? `Listan har redan ${MAX_WISHES_PER_LIST} önskningar, det är max` : undefined}
+                            >
                                 <Sparkles size={16} aria-hidden="true" /> Lägg till önskning
                             </button>
                         )}
@@ -169,6 +178,13 @@ export default function ListPage() {
                         )}
                     </div>
                 </div>
+
+                {me.canEdit && listFull && (
+                    <Notice>
+                        Listan har {MAX_WISHES_PER_LIST} önskningar, vilket är max. Ta bort någon för att kunna lägga till
+                        en ny.
+                    </Notice>
+                )}
 
                 {adding && (
                     <Modal title="Lägg till önskning" onClose={() => setAdding(false)}>

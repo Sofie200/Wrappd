@@ -80,3 +80,7 @@ export const WishBody = z.object({
     // Only when editing: "true" removes the current image
     removeImage: z.enum(["true", "false"]).optional().transform((v) => v === "true"),
 });
+
+// The most wishes a list may have (the same number in frontend/src/config.js)
+export const MAX_WISHES_PER_LIST = 50;
+export const TOO_MANY_WISHES = `En lista kan ha högst ${MAX_WISHES_PER_LIST} önskningar`;

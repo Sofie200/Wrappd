@@ -3,7 +3,7 @@ import { z } from "zod";
 import { pool, withTransaction } from "../_db/pool.js";
 import { HttpError, parse, parseId, todayInSweden } from "../_lib/http.js";
 import { checkListPeople, getListAccess, requireEditor } from "../_lib/access.js";
-import { WishBody } from "../_lib/wishSchema.js";
+import { WishBody, MAX_WISHES_PER_LIST, TOO_MANY_WISHES } from "../_lib/wishSchema.js";
 import { receiveImage } from "../_middleware/imageUpload.js";
 import { removeWishImages } from "../_integrations/storageAdapter.js";
 import { uploadNewWishImage } from "../_lib/wishImage.js";
@@ -270,22 +270,36 @@ router.post("/:id/wishes", receiveImage, async (req, res) => {
     requireEditor(access);
     const body = parse(WishBody, req.body ?? {});
 
+    // 0. Full already? Then don't even upload the image
+    if ((await countWishes(pool, listId)) >= MAX_WISHES_PER_LIST) throw new HttpError(409, TOO_MANY_WISHES);
+
     // 1. The image first – an uploaded file, or a copy of the shop's image.
     //    If that fails, nothing is saved and the user can try again.
     const imageUrl = await uploadNewWishImage(listId, req.file, body.imageFromUrl);
 
     // 2. Then the wish. If it fails, remove the image again so it isn't left without a wish.
+    //    The list is locked while counting, so two wishes added at the same time can't both become number 50.
     try {
-        const { rows: [wish] } = await pool.query(
-            `INSERT INTO wishes (list_id, title, description, price, url, image_url, quantity)
-             VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
-            [listId, body.title, body.description, body.price, body.url, imageUrl, body.quantity]
-        );
+        const wish = await withTransaction(async (db) => {
+            await db.query("SELECT id FROM lists WHERE id = $1 FOR UPDATE", [listId]);
+            if ((await countWishes(db, listId)) >= MAX_WISHES_PER_LIST) throw new HttpError(409, TOO_MANY_WISHES);
+            const { rows: [created] } = await db.query(
+                `INSERT INTO wishes (list_id, title, description, price, url, image_url, quantity)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
+                [listId, body.title, body.description, body.price, body.url, imageUrl, body.quantity]
+            );
+            return created;
+        });
         res.status(201).json({ id: wish.id });
     } catch (err) {
         if (imageUrl) await removeWishImages([imageUrl]).catch(() => {});
         throw err;
     }
 });
+
+async function countWishes(db, listId) {
+    const { rows: [{ count }] } = await db.query("SELECT count(*)::int AS count FROM wishes WHERE list_id = $1", [listId]);
+    return count;
+}
 
 export default router;
