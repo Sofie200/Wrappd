@@ -4976,3 +4976,55 @@ button.event-edit {
         background: var(--surface-soft);
     }
 }
+
+/* ---------- InfoTip: a small (i) with a bubble on hover / focus ---------- */
+.info-tip {
+    position: relative;
+    top: -0.08em; /* nudged up a little - middle sits a bit low beside the heading's text */
+    display: inline-flex;
+    vertical-align: middle;
+}
+
+.info-tip-btn {
+    display: inline-grid;
+    place-items: center;
+    padding: 0.15rem;
+    border: 0;
+    border-radius: 50%;
+    background: none;
+    color: var(--muted);
+    cursor: help;
+}
+
+.info-tip-btn:hover,
+.info-tip-btn:focus-visible {
+    color: var(--ink);
+}
+
+.info-tip-text {
+    position: absolute;
+    z-index: 5;
+    top: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%);
+    width: max-content;
+    max-width: min(260px, 80vw);
+    padding: 0.5rem 0.7rem;
+    border-radius: 8px;
+    background: var(--ink);
+    color: #fff;
+    font-size: 0.8rem;
+    font-weight: 400;
+    line-height: 1.4;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.12s ease;
+    pointer-events: none;
+}
+
+.info-tip:hover .info-tip-text,
+.info-tip-btn:focus-visible + .info-tip-text,
+.info-tip-btn:focus + .info-tip-text {
+    opacity: 1;
+    visibility: visible;
+}

@@ -1,6 +1,7 @@
 import { useId, useState } from "react";
 import { ChartBar, Table2 } from "lucide-react";
 import { formatPrice } from "../format.js";
+import InfoTip from "./InfoTip.jsx";
 
 // "2026-05-11" → "11 maj 2026" (read as a local date - new Date("2026-05-11") would be UTC)
 function formatDate(isoDate) {
@@ -12,10 +13,10 @@ function formatDate(isoDate) {
 // for gifts to events in the chosen period. One series, so one colour (the brand rose) and no legend.
 // Values at the bar tips, a tooltip on hover/focus with the number of gifts, and a table view.
 //
-// The period counts from N months back up to today - and includes coming events I've already bought
-// for, plus gifts from wish profiles (they have no date). "Eget": two dates, from and to (both included);
-// gifts without a date aren't in a range of my own. Several recipients on one list ("Anna, Bert")
-// make one bar. More than MAX_BARS people: the rest fold into "Övriga".
+// The periods mean what they say: "3/6/12 mån" is N months back up to today, "I år" is 1 January to
+// 31 December. Coming gifts are seen under "Eget" (which starts on the coming events) and "Allt".
+// "Eget": two dates, from and to (both included). Gifts without a date (old wish-profile gifts)
+// are only in "Allt". Several recipients on one list ("Anna, Bert") make one bar. More than MAX_BARS people: the rest fold into "Övriga".
 const PERIODS = [
     { key: "3m", label: "3 mån", months: 3 },
     { key: "6m", label: "6 mån", months: 6 },
@@ -29,13 +30,13 @@ const MAX_BARS = 8;
 const pad = (n) => String(n).padStart(2, "0");
 const iso = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 
-// The first date in the period (as "YYYY-MM-DD"), or null for all time
-function periodStart(period) {
+// The period's first and last date (as "YYYY-MM-DD"), or nulls for all time
+function periodRange(period) {
     const today = new Date();
-    if (period.key === "all") return null;
-    if (period.key === "year") return `${today.getFullYear()}-01-01`;
+    if (period.key === "all") return { start: null, end: null };
+    if (period.key === "year") return { start: `${today.getFullYear()}-01-01`, end: `${today.getFullYear()}-12-31` };
     const d = new Date(today.getFullYear(), today.getMonth() - period.months, today.getDate());
-    return iso(d);
+    return { start: iso(d), end: iso(today) };
 }
 
 // A clean axis maximum (1, 2 or 5 × 10^n) and its ticks
@@ -68,13 +69,13 @@ export default function SpendingChart({ gifts }) {
     const titleId = useId();
     const period = PERIODS.find((p) => p.key === periodKey);
     const isCustom = periodKey === "custom";
-    const start = isCustom ? custom.from || null : periodStart(period);
-    const end = isCustom ? custom.to || null : null;
+    const { start, end } = isCustom ? { start: custom.from || null, end: custom.to || null } : periodRange(period);
+    const isAll = periodKey === "all";
 
     // My share per recipient, in the period
     const byPerson = new Map();
     for (const g of gifts) {
-        if (isCustom && !g.endDate) continue; // no date: not in a range of my own
+        if (!isAll && !g.endDate) continue; // no date: only in "Allt"
         if (start && g.endDate && g.endDate < start) continue;
         if (end && g.endDate && g.endDate > end) continue;
         const who = g.recipients || g.eventName || "Okänd mottagare";
@@ -106,20 +107,22 @@ export default function SpendingChart({ gifts }) {
         <section className="section spending" aria-labelledby={titleId}>
             <div className="section-head spending-head">
                 <div>
-                    <h2 id={titleId}>Vem har jag köpt till?</h2>
+                    <h2 id={titleId}>
+                        Vem har jag köpt till?{" "}
+                        <InfoTip>
+                            Gåvor räknas på datumet de ges bort, inte när de köptes. &quot;Eget&quot; visar per default gåvor för
+                            alla kommande händelser.
+                        </InfoTip>
+                    </h2>
                     <p className="muted small spending-sub">
                         Min del av gåvorna
-                        {isCustom
-                            ? start && end
-                                ? ` ${formatDate(start)} - ${formatDate(end)}`
-                                : start
-                                  ? ` sedan ${formatDate(start)}`
-                                  : end
-                                    ? ` till och med ${formatDate(end)}`
-                                    : ""
+                        {start && end
+                            ? ` ${formatDate(start)} - ${formatDate(end)}`
                             : start
                               ? ` sedan ${formatDate(start)}`
-                              : ""}
+                              : end
+                                ? ` till och med ${formatDate(end)}`
+                                : ""}
                         {rows.length > 0 && <> · totalt <strong>{formatPrice(total)}</strong></>}
                     </p>
                 </div>
