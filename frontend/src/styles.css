@@ -330,9 +330,11 @@ img {
     padding: var(--main-pad-top) var(--main-pad-x) 4rem;
 }
 
-/* Wide screens: inset on both sides by the space in front of the menu, so the content's left edge
-   lines up with the menu (and stays centred, since the right side gets the same) */
-@media (min-width: 1024px) {
+/* Wide screens - once the sheet has reached its max width (1500px, see --panel-inset): inset on both
+   sides by the space in front of the menu, so the content's left edge lines up with the menu (and stays
+   centred, since the right side gets the same). Narrower than that, the inset ate too much of the width,
+   so up to 1500px the ordinary padding above is kept. */
+@media (min-width: 1501px) {
     .main {
         --main-pad-x: var(--content-inset);
     }
@@ -4956,7 +4958,8 @@ button.event-edit {
     font-size: 0.8rem;
 }
 
-@media (min-width: 1024px) {
+/* As .main: lined up with the menu only once the sheet is at its max width */
+@media (min-width: 1501px) {
     .footer {
         padding-inline: var(--content-inset);
     }
