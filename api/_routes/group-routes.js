@@ -138,7 +138,7 @@ router.get("/:id", async (req, res) => {
     );
 
     // Public lists in the group, plus private ones I administer.
-    // Lists to me are included (marked isRecipient) - the frontend shows them without a link.
+    // Lists to me are left out, unless I administer them (then marked isRecipient).
     const { rows: lists } = await pool.query(
         `SELECT l.id, l.title, l.end_date AS "endDate", l.is_public AS "isPublic",
                 l.end_date < ${TODAY} AS archived,
@@ -155,7 +155,10 @@ router.get("/:id", async (req, res) => {
                  JOIN users u ON u.id = lr.user_id WHERE lr.list_id = l.id) AS recipients
          FROM lists l
          JOIN list_groups lg ON lg.list_id = l.id AND lg.group_id = $1
-         WHERE l.is_public OR EXISTS (SELECT 1 FROM list_admins WHERE list_id = l.id AND user_id = $2)
+         WHERE (l.is_public OR EXISTS (SELECT 1 FROM list_admins WHERE list_id = l.id AND user_id = $2))
+           -- Lists to me are hidden completely, unless I administer them
+           AND NOT (EXISTS (SELECT 1 FROM list_recipients WHERE list_id = l.id AND user_id = $2)
+                    AND NOT EXISTS (SELECT 1 FROM list_admins WHERE list_id = l.id AND user_id = $2))
          ORDER BY archived, l.end_date, l.title`,
         [groupId, req.user.id]
     );

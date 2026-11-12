@@ -36,6 +36,9 @@ router.get("/", async (req, res) => {
                AND EXISTS (SELECT 1 FROM list_groups lg
                            JOIN group_members gm ON gm.group_id = lg.group_id
                            WHERE lg.list_id = l.id AND gm.user_id = $1)
+               -- Lists to me are hidden completely, unless I administer them
+               AND NOT (EXISTS (SELECT 1 FROM list_recipients WHERE list_id = l.id AND user_id = $1)
+                        AND NOT EXISTS (SELECT 1 FROM list_admins WHERE list_id = l.id AND user_id = $1))
              ORDER BY l.end_date, l.title`,
             [me]
         ),
