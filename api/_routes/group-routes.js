@@ -102,7 +102,10 @@ router.get("/members", async (req, res) => {
     const { rows } = await pool.query(
         `SELECT DISTINCT u.id, u.name, u.username, (u.password_hash IS NOT NULL OR u.google_sub IS NOT NULL) AS "isActivated",
                 u.is_child AS "isChild", u.avatar_icon AS "avatarIcon", u.avatar_color AS "avatarColor",
-                (SELECT array_agg(parent_id ORDER BY parent_id) FROM child_parents WHERE child_id = u.id) AS "parentIds"
+                (SELECT array_agg(parent_id ORDER BY parent_id) FROM child_parents WHERE child_id = u.id) AS "parentIds",
+                -- Which of the asked groups the person is in (a new list picks the recipient first, then the groups)
+                (SELECT array_agg(group_id ORDER BY group_id) FROM group_members
+                 WHERE user_id = u.id AND group_id = ANY($1::int[])) AS "groupIds"
          FROM users u
          JOIN group_members gm ON gm.user_id = u.id
          WHERE gm.group_id = ANY($1::int[])

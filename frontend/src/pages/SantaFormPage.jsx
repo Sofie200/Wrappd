@@ -6,6 +6,7 @@ import { useAuth } from "../context/AuthContext.jsx";
 import { useFetch } from "../hooks/useFetch.js";
 import { Empty, ErrorMessage, Loading } from "../components/Feedback.jsx";
 import Avatar from "../components/Avatar.jsx";
+import Select from "../components/Select.jsx";
 import { todayIso } from "../format.js";
 
 const MIN_PARTICIPANTS = 3;
@@ -68,7 +69,7 @@ export default function SantaFormPage() {
             </h1>
             <p className="muted">
                 Alla som är med lottas till någon annan. Var och en ser bara vem de själva ska ge till - inte ens du
-                som lottar ser de andras.
+                som lottar ser de andras!
             </p>
 
             {groups.data.data.length === 0 ? (
@@ -77,21 +78,9 @@ export default function SantaFormPage() {
                     tillsammans.
                 </Empty>
             ) : (
-                <form className="form" onSubmit={draw}>
+                <form className="form form-wizard" onSubmit={draw}>
                     <label className="field">
-                        <span>Grupp</span>
-                        <select value={groupId} onChange={(e) => setGroupId(e.target.value)} required disabled={busy}>
-                            <option value="">Välj en grupp</option>
-                            {groups.data.data.map((g) => (
-                                <option key={g.id} value={g.id}>
-                                    {g.name}
-                                </option>
-                            ))}
-                        </select>
-                    </label>
-
-                    <label className="field">
-                        <span>Namn</span>
+                        <span>Titel</span>
                         <input value={title} onChange={(e) => setTitle(e.target.value)} maxLength={80} disabled={busy} />
                     </label>
 
@@ -99,7 +88,7 @@ export default function SantaFormPage() {
                         <label className="field">
                             <span>Datum</span>
                             <input type="date" value={date} min={todayIso()} onChange={(e) => setDate(e.target.value)} required disabled={busy} />
-                            <small>När gåvorna ska ges.</small>
+                            <small>När gåvorna ska delas ut.</small>
                         </label>
                         <label className="field">
                             <span>Budget (kr)</span>
@@ -108,9 +97,25 @@ export default function SantaFormPage() {
                         </label>
                     </div>
 
+                    <div className="field">
+                        <span>Grupp</span>
+                        <Select
+                            label="Grupp"
+                            value={groupId}
+                            onChange={(v) => setGroupId(String(v))}
+                            options={groups.data.data.map((g) => ({ value: g.id, label: g.name }))}
+                            placeholder="Välj en grupp"
+                            disabled={busy}
+                        />
+                    </div>
+
+                    {/* Who takes part - right under the group they come from */}
                     {groupId && (
-                        <fieldset className="fieldset">
-                            <legend>Vilka är med?</legend>
+                        <fieldset className="fieldset fieldset-tight">
+                            <legend>
+                                Vilka är med?{" "}
+                                {group.data && <span className="muted small legend-count">({memberIds.length} valda)</span>}
+                            </legend>
                             {!group.data ? (
                                 group.loading ? <Loading /> : <ErrorMessage message={group.error} onRetry={group.reload} />
                             ) : (
@@ -127,10 +132,11 @@ export default function SantaFormPage() {
                                             </label>
                                         ))}
                                     </div>
-                                    <p className={`small${tooFew ? " field-error" : " muted"}`}>
-                                        {memberIds.length} valda
-                                        {tooFew && ` - minst ${MIN_PARTICIPANTS} behövs, annars vet alla vem som fick vem.`}
-                                    </p>
+                                    {tooFew && (
+                                        <p className="small field-error">
+                                            Minst {MIN_PARTICIPANTS} behövs, annars vet alla vem som fick vem.
+                                        </p>
+                                    )}
                                 </>
                             )}
                         </fieldset>
@@ -141,9 +147,6 @@ export default function SantaFormPage() {
                     <div className="form-actions">
                         <button type="submit" className="btn btn-primary" disabled={busy || !group.data || tooFew}>
                             <Shuffle size={16} aria-hidden="true" /> {busy ? "Lottar…" : "Lotta"}
-                        </button>
-                        <button type="button" className="btn btn-ghost" onClick={() => navigate("/")} disabled={busy}>
-                            Avbryt
                         </button>
                     </div>
                 </form>

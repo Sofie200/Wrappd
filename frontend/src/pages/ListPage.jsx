@@ -213,7 +213,8 @@ export default function ListPage() {
                                 Listan är tom än så länge{me.isRecipient ? " - vad drömmer du om?" : "."}{" "}
                                 <button type="button" className="text-link" onClick={() => setAdding(true)} aria-haspopup="dialog">
                                     {me.isRecipient ? "Lägg till din första önskning" : "Lägg till den första önskningen"}
-                                </button>
+                                </button>{" "}
+                                <span aria-hidden="true">✨</span>
                             </>
                         ) : list.archived || recipients.length === 0 ? (
                             "Listan har inga önskningar."

@@ -1,5 +1,5 @@
 import { useId, useState } from "react";
-import { X } from "lucide-react";
+import { Plus, X } from "lucide-react";
 import Avatar from "./Avatar.jsx";
 
 // Picking people among the members of the list's groups: the chosen ones as chips, and a search
@@ -10,6 +10,7 @@ import Avatar from "./Avatar.jsx";
 // bare: no fieldset or legend of its own - for when it sits inside another fieldset (legend is then only
 // used to label the search field for screen readers).
 // onNotFound: adds a last choice "Hittar du inte den du söker?" to the suggestions, which calls it.
+// compact: once someone is chosen the search hides, and a small + next to the chips opens it again for one more.
 const MAX_SUGGESTIONS = 8;
 
 export default function PeoplePicker({
@@ -25,10 +26,12 @@ export default function PeoplePicker({
     single = false,
     bare = false,
     onNotFound,
+    compact = false,
 }) {
     const [query, setQuery] = useState("");
     const [open, setOpen] = useState(false);
     const [active, setActive] = useState(0); // the highlighted suggestion
+    const [adding, setAdding] = useState(false); // compact: the search is open for one more
     const listId = useId();
 
     const isChosen = (id) => lockedIds.includes(id) || selected.includes(id);
@@ -46,6 +49,7 @@ export default function PeoplePicker({
         onChange(single ? [person.id] : [...selected, person.id]);
         setQuery("");
         setActive(0);
+        setAdding(false);
     }
 
     function notFound() {
@@ -72,12 +76,15 @@ export default function PeoplePicker({
             else if (open && onNotFound) notFound();
         } else if (e.key === "Escape") {
             setOpen(false);
+            if (query === "") setAdding(false);
         } else if (e.key === "Backspace" && query === "") {
             // An empty field: Backspace removes the last one chosen (not a locked one)
             const last = [...selected].reverse().find((id) => !lockedIds.includes(id));
             if (last !== undefined) remove(last);
         }
     }
+
+    const showSearch = single ? chosen.length === 0 : !compact || chosen.length === 0 || adding;
 
     const activeId = pickable[active] ? `${listId}-${pickable[active].id}` : undefined;
 
@@ -105,10 +112,23 @@ export default function PeoplePicker({
                                     )}
                                 </li>
                             ))}
+                            {!showSearch && !single && (
+                                <li>
+                                    <button
+                                        type="button"
+                                        className="person-chip-add"
+                                        onClick={() => setAdding(true)}
+                                        aria-label={`Lägg till fler - ${legend}`}
+                                        title="Lägg till fler"
+                                    >
+                                        <Plus size={16} aria-hidden="true" />
+                                    </button>
+                                </li>
+                            )}
                         </ul>
                     )}
 
-                    {!(single && chosen.length > 0) && (
+                    {showSearch && (
                     <div className="people-search">
                         <input
                             type="search"
@@ -119,7 +139,12 @@ export default function PeoplePicker({
                                 setOpen(true);
                             }}
                             onFocus={() => setOpen(true)}
-                            onBlur={() => setOpen(false)}
+                            onBlur={() => {
+                                setOpen(false);
+                                // compact: leaving the field empty closes it again
+                                if (query === "") setAdding(false);
+                            }}
+                            autoFocus={adding}
                             onKeyDown={onKeyDown}
                             placeholder="Sök på namn eller användarnamn"
                             autoCapitalize="none"
