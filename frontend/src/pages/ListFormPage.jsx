@@ -237,7 +237,7 @@ export default function ListFormPage() {
 
                     <PeoplePicker
                         legend="Vem är det vi firar?"
-                        hint="Mottagarna ser aldrig vad som är reserverat."
+                        hint="Mottagarna ser inte listan, om de inte också är admins. Reservationerna ser de aldrig."
                         people={people}
                         selected={form.recipientIds}
                         onChange={update("recipientIds")}
