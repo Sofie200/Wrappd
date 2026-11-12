@@ -15,7 +15,7 @@ import { WISH_CATEGORIES } from "../wishCategories.js";
 // The same limit as MAX_PROFILE_WISHES in api/_routes/people-routes.js
 const MAX_WISHES = 3;
 
-// /people/:id/edit – edit a wish profile: my own, or my child's.
+// /people/:id/edit - edit a wish profile: my own, or my child's.
 // Free text, categories (like / don't like / neither), and wishes without a list.
 export default function WishProfilePage() {
     const { id } = useParams();
@@ -80,7 +80,7 @@ function WishProfileForm({ data, reload }) {
 
     return (
         <div className="page page-narrow">
-            {/* Your own profile is reached from the menu – just the title. A child's gets a way back and its avatar. */}
+            {/* Your own profile is reached from the menu - just the title. A child's gets a way back and its avatar. */}
             {isMe ? (
                 <h1 className="title-with-icon">
                     <Heart size={26} aria-hidden="true" /> Min önskeprofil
@@ -190,7 +190,7 @@ function WishProfileForm({ data, reload }) {
                 </div>
                 <p className="muted small">
                     Upp till {MAX_WISHES} önskningar som inte hör till någon lista. Andra kan reservera dem
-                    {isMe ? " – men du ser aldrig vad som är reserverat." : "."}
+                    {isMe ? " - men du ser aldrig vad som är reserverat." : "."}
                     {wishes.length >= MAX_WISHES && " Ta bort en för att kunna lägga till en ny."}
                 </p>
 

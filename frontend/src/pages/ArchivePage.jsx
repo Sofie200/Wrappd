@@ -3,14 +3,14 @@ import { Empty, ErrorMessage, Loading } from "../components/Feedback.jsx";
 import ListCard from "../components/ListCard.jsx";
 import Breadcrumbs from "../components/Breadcrumbs.jsx";
 
-// /archive – the lists I administer whose date has passed
+// /archive - the lists I administer whose date has passed
 export default function ArchivePage() {
     const { data, error, loading, reload } = useFetch("/profile");
 
     if (!data && loading) return <Loading />;
     if (!data) return <ErrorMessage message={error} onRetry={reload} />;
 
-    // The server sorts by date, oldest first – here the most recent is the most interesting
+    // The server sorts by date, oldest first - here the most recent is the most interesting
     const archived = data.adminLists.filter((list) => list.archived).reverse();
 
     return (
@@ -21,7 +21,7 @@ export default function ArchivePage() {
 
             <section className="section">
                 {archived.length === 0 ? (
-                    <Empty>Inga arkiverade listor än.</Empty>
+                    <Empty>Inget i arkivet än. Här sparas listor när firandet är över.</Empty>
                 ) : (
                     <div className="cards">
                         {archived.map((list) => (

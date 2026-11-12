@@ -28,7 +28,13 @@ export default function ChildListsModal({ child, onClose }) {
     return (
         <Modal title={`Listor till ${child.name}`} onClose={onClose}>
             {lists.length === 0 ? (
-                <p className="muted">Inga listor än.</p>
+                <p className="muted">
+                    {child.name} har inga listor än.{" "}
+                    <Link to={`/lists/new?for=${child.id}`} className="text-link" onClick={onClose}>
+                        Skapa en
+                    </Link>{" "}
+                    till nästa kalas!
+                </p>
             ) : (
                 <>
                     {current.length > 0 && <ul className="child-groups">{current.map(row)}</ul>}

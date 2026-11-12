@@ -9,7 +9,7 @@ import GoogleConnect from "../components/GoogleConnect.jsx";
 import EmailField from "../components/EmailField.jsx";
 import DeleteAccount from "../components/DeleteAccount.jsx";
 
-// /profile – edit my profile: name, icon and colour – with a live preview
+// /profile - edit my profile: name, icon and colour - with a live preview
 export default function ProfilePage() {
     const { user, updateProfile } = useAuth();
     const navigate = useNavigate();
@@ -61,11 +61,11 @@ export default function ProfilePage() {
                             autoComplete="username"
                             autoCapitalize="none"
                             pattern="[A-Za-z0-9._\-]{3,30}"
-                            title="3–30 tecken: a–z, siffror, punkt, bindestreck eller understreck"
+                            title="3-30 tecken: a-z, siffror, punkt, bindestreck eller understreck"
                             required
                             disabled={busy}
                         />
-                        <small>Det du loggar in med. 3–30 tecken: a–z, siffror, punkt, bindestreck eller understreck.</small>
+                        <small>Det du loggar in med. 3-30 tecken: a-z, siffror, punkt, bindestreck eller understreck.</small>
                     </label>
 
                     <EmailField disabled={busy} />
@@ -125,7 +125,7 @@ export default function ProfilePage() {
                     </div>
                 </form>
 
-                {/* How the profile looks – updates live as you change the form */}
+                {/* How the profile looks - updates live as you change the form */}
                 <aside className="profile-aside" aria-label="Förhandsgranskning">
                     <p className="profile-aside-label">Förhandsgranskning</p>
                     <div className="profile-card">

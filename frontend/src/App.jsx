@@ -29,7 +29,7 @@ export default function App() {
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<RegisterPage />} />
                 <Route path="/register/google" element={<GoogleSignupPage />} />
-                {/* Activation and reset links – open without being logged in */}
+                {/* Activation and reset links - open without being logged in */}
                 <Route path="/link/:token" element={<LinkPage />} />
                 <Route path="/integritet" element={<PrivacyPage />} />
 

@@ -29,7 +29,7 @@ export class ApiError extends Error {
 }
 
 // GET requests that fail because the server or database is briefly unreachable are tried again
-// automatically: after 1 s, then 3 s. Only GET – it's safe to repeat. A POST/PUT/DELETE that failed
+// automatically: after 1 s, then 3 s. Only GET - it's safe to repeat. A POST/PUT/DELETE that failed
 // halfway might already have been saved, so those are never repeated (the user decides).
 const RETRY_DELAYS_MS = [1000, 3000];
 const RETRY_STATUSES = [502, 503, 504];
@@ -41,7 +41,7 @@ const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
  */
 export async function api(path, options = {}) {
     const method = options.method ?? "GET";
-    // Read the old login once – takeOldToken() removes it, so a retry must reuse it
+    // Read the old login once - takeOldToken() removes it, so a retry must reuse it
     const oldToken = options.migrateOldLogin ? takeOldToken() : null;
     for (let attempt = 0; ; attempt++) {
         try {

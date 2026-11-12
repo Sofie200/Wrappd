@@ -26,7 +26,7 @@ app.use(express.json({ limit: "100kb" }));
 
 app.get("/api/health", (req, res) => res.json({ ok: true }));
 
-// Express 5 sends errors from async routes on to the error handler below – no try/catch needed in the routes
+// Express 5 sends errors from async routes on to the error handler below - no try/catch needed in the routes
 app.use("/api/auth", authRoutes);
 app.use("/api/users", requireAuth, userRoutes);
 app.use("/api/groups", requireAuth, groupRoutes);
@@ -44,7 +44,7 @@ app.use((req, res) => {
 });
 
 // Every error ends here. Known errors (HttpError) are sent as they are; anything else is logged
-// and the user gets a general message – never a stack trace or an SQL error.
+// and the user gets a general message - never a stack trace or an SQL error.
 // eslint-disable-next-line no-unused-vars
 app.use((err, req, res, next) => {
     if (err instanceof HttpError) {

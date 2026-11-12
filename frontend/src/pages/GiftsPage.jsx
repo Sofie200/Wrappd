@@ -16,8 +16,8 @@ import Modal from "../components/Modal.jsx";
 import SettingsMenu from "../components/SettingsMenu.jsx";
 import EditEventModal from "../components/EditEventModal.jsx";
 
-// /gifts – everything I've bought or share, as cards grouped by event: the coming events (soonest first,
-// gifts from wish profiles last) – or, switched with the Arkiv button (like on Mina listor), the past ones
+// /gifts - everything I've bought or share, as cards grouped by event: the coming events (soonest first,
+// gifts from wish profiles last) - or, switched with the Arkiv button (like on Mina listor), the past ones
 // (latest first).
 export default function GiftsPage() {
     const { data, error, loading, reload } = useFetch("/profile");
@@ -61,7 +61,7 @@ export default function GiftsPage() {
                     <h2>Arkiv</h2>
                     <p className="muted">Gåvor till händelser vars datum har passerat.</p>
                     {history.length === 0 ? (
-                        <Empty>Inga arkiverade gåvor än.</Empty>
+                        <Empty>Här hamnar gåvorna när händelsen är över - ett litet minnesalbum över allt du gett bort.</Empty>
                     ) : (
                         <div className="gift-events">
                             {history.map((event) => (
@@ -74,7 +74,15 @@ export default function GiftsPage() {
                 <section className="section">
                     <h2>Aktuella</h2>
                     {current.length === 0 ? (
-                        <Empty>Du har inga aktuella gåvor. Reservera något på en lista eller en önskeprofil!</Empty>
+                        // A div, not <Empty>'s <p>: the "logga en gåva" button carries its modal (a <dialog>)
+                        <div className="empty">
+                            Inga gåvor på gång just nu. Kika in på <Link to="/">Översikten</Link> och se vem som har önskat
+                            sig något - eller{" "}
+                            <LogGiftButton className="text-link" onAdded={reload}>
+                                logga en gåva
+                            </LogGiftButton>{" "}
+                            du redan köpt.
+                        </div>
                     ) : (
                         <div className="gift-events">
                             {current.map((event) => (
@@ -98,7 +106,7 @@ function GiftEvent({ event, archived = false, onChanged }) {
     // The surface's colour by kind: wish lists beige-pink, logged gifts pale blue, Secret Santa pale yellow
     // (the tab colours for Secret Santa / Önskeprofil come from the same classes as on the overview)
     const kind = santaId ? " event-santa" : eventId ? " event-logged" : !listId ? " event-no-list" : "";
-    // Only gifts from a wish profile get a tab – the surface's colour tells the other kinds apart
+    // Only gifts from a wish profile get a tab - the surface's colour tells the other kinds apart
     // (wish lists beige-pink, logged gifts blue, Secret Santa yellow)
     const kicker = personId ? "Önskeprofil" : null;
     const name = title ?? `Till ${recipients}`;
@@ -106,7 +114,7 @@ function GiftEvent({ event, archived = false, onChanged }) {
     const [editingEvent, setEditingEvent] = useState(false);
     const [error, setError] = useState(null);
 
-    // The whole event – and all its gifts, for everyone who shares them
+    // The whole event - and all its gifts, for everyone who shares them
     async function removeEvent() {
         const giftsText = gifts.length === 1 ? "dess gåva" : `alla dess ${gifts.length} gåvor`;
         if (!window.confirm(`Ta bort "${name}" och ${giftsText}?\n\nGåvorna tas bort för alla som delar på dem. Det går inte att ångra.`)) return;
@@ -155,7 +163,7 @@ function GiftEvent({ event, archived = false, onChanged }) {
                     </h3>
                     {endDate && <EventDate iso={endDate} />}
                 </div>
-                {/* What the gifts cost in all – click it for how it's split, and what I pay */}
+                {/* What the gifts cost in all - click it for how it's split, and what I pay */}
                 <button
                     type="button"
                     className="btn btn-small btn-ghost gift-event-total"
@@ -167,7 +175,7 @@ function GiftEvent({ event, archived = false, onChanged }) {
                     {/* The coins close to the amount */}
                     <span className="gift-event-total-amount">
                         <Coins size={16} aria-hidden="true" />
-                        <strong>{total === null ? "–" : formatPrice(total)}</strong>
+                        <strong>{total === null ? "-" : formatPrice(total)}</strong>
                     </span>
                 </button>
             </div>
@@ -184,8 +192,8 @@ function GiftEvent({ event, archived = false, onChanged }) {
             )}
 
             {showingSplit && (
-                <Modal title={`Fördelning – ${name}`} onClose={() => setShowingSplit(false)}>
-                    {/* The same table as on the overview: Gåva, Antal, Pris, Min utgift – with edit and release */}
+                <Modal title={`Fördelning - ${name}`} onClose={() => setShowingSplit(false)}>
+                    {/* The same table as on the overview: Gåva, Antal, Pris, Min utgift - with edit and release */}
                     <GiftTable rows={gifts} onChanged={onChanged} />
                 </Modal>
             )}

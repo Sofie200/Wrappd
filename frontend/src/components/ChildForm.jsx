@@ -74,10 +74,10 @@ export default function ChildForm({ child, onSaved, onCancel }) {
             <label className="field">
                 <span>Namn</span>
                 <input value={name} onChange={(e) => setName(e.target.value)} maxLength={80} required autoFocus />
-                <small>Barn har inget användarnamn och kan inte logga in – de kan bara få listor.</small>
+                <small>Barn har inget användarnamn och kan inte logga in - de kan bara få listor.</small>
             </label>
 
-            {/* Groups aren't chosen – they're shown under Info on the child */}
+            {/* Groups aren't chosen - they're shown under Info on the child */}
             {!child && (
                 <p className="muted small">
                     Barnet kommer med automatiskt i alla grupper med <strong>Inkludera barn</strong> som någon av

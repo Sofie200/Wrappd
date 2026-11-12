@@ -6,7 +6,7 @@ import { useFetch } from "../hooks/useFetch.js";
 import AuthLayout from "../components/AuthLayout.jsx";
 import { ErrorMessage, Loading } from "../components/Feedback.jsx";
 
-// /link/:token – the page a new user (or someone who forgot their password) opens to choose a password
+// /link/:token - the page a new user (or someone who forgot their password) opens to choose a password
 export default function LinkPage() {
     const { token } = useParams();
     const { choosePassword } = useAuth();

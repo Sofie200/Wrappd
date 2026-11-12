@@ -1,14 +1,14 @@
 import { Link } from "react-router-dom";
 import { APP_NAME } from "../config.js";
 
-// The footer at the bottom of every logged-in page: what the app is, contact, privacy and © – all centred
+// The footer at the bottom of every logged-in page: what the app is, contact, privacy and © - all centred
 export default function Footer() {
     return (
         <footer className="footer">
             <div className="footer-inner">
                 <div className="footer-brand">
                     <img src="/logo.png" alt={APP_NAME} className="footer-logo" />
-                    <p>Håll koll på önskelistor, inköp och gåvor – tillsammans.</p>
+                    <p>Håll koll på önskelistor, inköp och gåvor - tillsammans.</p>
                 </div>
             </div>
 

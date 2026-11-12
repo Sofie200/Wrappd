@@ -14,9 +14,9 @@ function shortDate(iso) {
 }
 
 // Someone's wish profile: what they like and don't like, and their own wishes (which can be reserved).
-// The person themselves never sees what is reserved – the server doesn't send it to them.
-// santa: { id, title, date } – opened from a Secret Santa on the gifts page: reserving here counts for it
-// (no date to choose – it's the draw's). onReserved runs after a reservation is made or changed.
+// The person themselves never sees what is reserved - the server doesn't send it to them.
+// santa: { id, title, date } - opened from a Secret Santa on the gifts page: reserving here counts for it
+// (no date to choose - it's the draw's). onReserved runs after a reservation is made or changed.
 export default function PersonModal({ personId, onClose, santa = null, onReserved }) {
     const { data, error, loading, reload } = useFetch(`/people/${personId}`);
 
@@ -46,7 +46,7 @@ export default function PersonModal({ personId, onClose, santa = null, onReserve
                     )}
                 </div>
 
-                {/* The date inside a JS string – JSX would drop a space at the start of a line */}
+                {/* The date inside a JS string - JSX would drop a space at the start of a line */}
                 {santa && (
                     <Notice>
                         Det du reserverar här loggas som din gåva till <strong>{santa.title}</strong>
@@ -56,7 +56,9 @@ export default function PersonModal({ personId, onClose, santa = null, onReserve
 
                 {empty && (
                     <p className="empty">
-                        {me.isOwner ? "Du har inte fyllt i din önskeprofil än." : `${person.name} har inte fyllt i något än.`}
+                        {me.isOwner
+                            ? "Berätta vad du gillar - favoritfärg, storlek, vad du samlar på - så blir det lättare för andra att hitta rätt."
+                            : `${person.name} har inte fyllt i sin önskeprofil än. Kanske dags för en liten knuff? 😉`}
                     </p>
                 )}
 

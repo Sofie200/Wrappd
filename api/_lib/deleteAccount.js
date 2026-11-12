@@ -1,11 +1,11 @@
 // "Radera mitt konto": what goes, what's handed over to someone else, and the deletion itself.
-// Rule of thumb: what is only mine goes – what others share with me is handed over, so nobody else loses anything.
+// Rule of thumb: what is only mine goes - what others share with me is handed over, so nobody else loses anything.
 //
 // Goes:
 //  - my account, and my children where I'm the only parent (with their wish profiles)
 //  - lists to only us (every recipient is me or one of those children), with their wishes
 //  - lists I created that have no other admin
-//    (others' gifts on those lists are kept – the database makes them gifts for an own event, migration 018)
+//    (others' gifts on those lists are kept - the database makes them gifts for an own event, migration 018)
 //  - gifts only I am in, my wish profile, my links, my place in Secret Santa draws (ON DELETE CASCADE)
 //  - groups where nobody else is left
 // Handed over:
@@ -14,7 +14,7 @@
 //  - groups I created / was the only admin of → another member becomes creator / admin
 // Children with another parent stay with that parent.
 
-/** What would happen if userId deleted their account – also used for the confirmation dialog. */
+/** What would happen if userId deleted their account - also used for the confirmation dialog. */
 export async function planAccountDeletion(db, userId) {
     // Me, and my children without another parent
     const { rows: soloChildren } = await db.query(
@@ -49,7 +49,7 @@ export async function planAccountDeletion(db, userId) {
         [ids, userId]
     );
 
-    // Gifts I'm in that others share too – they stay, without me
+    // Gifts I'm in that others share too - they stay, without me
     const { rows: [{ count: sharedGifts }] } = await db.query(
         `SELECT count(DISTINCT gm.gift_id)::int AS count FROM gift_members gm
          WHERE gm.user_id = $1

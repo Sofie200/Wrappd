@@ -15,7 +15,7 @@ export default function RequireAuth({ children }) {
         );
     }
 
-    // There is a token, but the server couldn't be reached – don't log out, offer a retry
+    // There is a token, but the server couldn't be reached - don't log out, offer a retry
     if (!user && error) {
         return (
             <div className="page-center">

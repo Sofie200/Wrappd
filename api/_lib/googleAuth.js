@@ -1,4 +1,4 @@
-// Checks a "Sign in with Google" ID token (a JWT signed by Google) – without extra packages.
+// Checks a "Sign in with Google" ID token (a JWT signed by Google) - without extra packages.
 // Google's public keys are fetched and kept for as long as Google says (Cache-Control max-age).
 import { createPublicKey } from "node:crypto";
 import jwt from "jsonwebtoken";
@@ -23,7 +23,7 @@ async function fetchKeys() {
 
 async function publicKey(kid) {
     let keys = cachedKeys && cachedKeys.expiresAt > Date.now() ? cachedKeys.keys : await fetchKeys();
-    // Google rotates its keys – an unknown kid means: fetch again once
+    // Google rotates its keys - an unknown kid means: fetch again once
     if (!keys.has(kid)) keys = await fetchKeys();
     return keys.get(kid);
 }
@@ -32,7 +32,7 @@ export function googleClientId() {
     return process.env.GOOGLE_CLIENT_ID || null;
 }
 
-/** Returns the token's content ({ sub, email, email_verified, name, ... }) or throws 400 (not 401 – that would log out a user who is connecting Google). */
+/** Returns the token's content ({ sub, email, email_verified, name, ... }) or throws 400 (not 401 - that would log out a user who is connecting Google). */
 export async function verifyGoogleIdToken(credential) {
     const clientId = googleClientId();
     if (!clientId) throw new HttpError(503, "Inloggning med Google är inte påslagen.");

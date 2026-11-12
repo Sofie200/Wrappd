@@ -7,7 +7,7 @@ import GoogleButton from "./GoogleButton.jsx";
 import { ErrorMessage } from "./Feedback.jsx";
 
 // After logging in: a user with neither an email nor Google gets asked to add one of them.
-// "Inte nu" hides it until the browser tab is closed – next visit it asks again.
+// "Inte nu" hides it until the browser tab is closed - next visit it asks again.
 const DISMISS_KEY = "emailPromptDismissed";
 
 function isDismissed(userId) {
@@ -31,7 +31,7 @@ export default function EmailPrompt() {
         try {
             sessionStorage.setItem(DISMISS_KEY, String(user.id));
         } catch {
-            // Private mode etc. – then it's only hidden until the page is reloaded
+            // Private mode etc. - then it's only hidden until the page is reloaded
         }
         setDismissed(true);
     }

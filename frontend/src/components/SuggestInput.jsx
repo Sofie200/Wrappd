@@ -27,7 +27,7 @@ export default function SuggestInput({ value, onChange, suggestions = [], ...inp
             e.preventDefault();
             setActive((i) => Math.max(i - 1, 0));
         } else if (e.key === "Enter" && active >= 0) {
-            e.preventDefault(); // pick – don't submit the form
+            e.preventDefault(); // pick - don't submit the form
             pick(shown[active]);
         } else if (e.key === "Escape") {
             setOpen(false);

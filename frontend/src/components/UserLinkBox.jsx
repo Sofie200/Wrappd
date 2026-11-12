@@ -13,7 +13,7 @@ export default function UserLinkBox({ user, link, onClose }) {
             setCopied(true);
             setTimeout(() => setCopied(false), 2000);
         } catch {
-            // No clipboard access (e.g. not https) – the text field can still be copied by hand
+            // No clipboard access (e.g. not https) - the text field can still be copied by hand
         }
     }
 
@@ -25,7 +25,7 @@ export default function UserLinkBox({ user, link, onClose }) {
                         ? `Aktiveringslänk till ${user.name}`
                         : `Länk för nytt lösenord till ${user.name}`}
                 </strong>
-                {/* The same round close button as the modals – not when the box is in one (no onClose) */}
+                {/* The same round close button as the modals - not when the box is in one (no onClose) */}
                 {onClose && (
                     <button type="button" className="modal-close" onClick={onClose} aria-label="Stäng" title="Stäng">
                         <X size={20} aria-hidden="true" />
@@ -53,7 +53,7 @@ export default function UserLinkBox({ user, link, onClose }) {
             </div>
 
             <p className="muted small">
-                Länken fungerar en gång och gäller till {expires}. Länken visas bara nu – går den förlorad kan du ta fram en ny.
+                Länken fungerar en gång och gäller till {expires}. Länken visas bara nu - går den förlorad kan du ta fram en ny.
             </p>
         </div>
     );

@@ -1,4 +1,4 @@
-// Validation of a wish, from a multipart form – every field arrives as text.
+// Validation of a wish, from a multipart form - every field arrives as text.
 import { z } from "zod";
 
 const optionalText = (max, message) =>

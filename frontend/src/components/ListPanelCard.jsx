@@ -2,11 +2,11 @@ import { Link } from "react-router-dom";
 import { ArrowRight, Gift, Lock, Pencil, ScrollText, Sparkles } from "lucide-react";
 import DateBadge, { EventDate } from "./DateBadge.jsx";
 
-// A list as a card in the overview's event style – only the coloured panel, no gifts column.
+// A list as a card in the overview's event style - only the coloured panel, no gifts column.
 // Used on Mina listor and on a group's page.
 //  - Published: the rose panel, "Önskelista", and "Se lista" at the bottom right.
 //  - Private: the same panel inverted (white with rose details), "Privat lista", and the pencil opens it.
-//  - To me (and not mine to run): the lavender panel and no links – I can't open it.
+//  - To me (and not mine to run): the lavender panel and no links - I can't open it.
 //  - Archived: toned down, like past events.
 export default function ListPanelCard({ list }) {
     const isPrivate = !list.isPublic;
@@ -19,7 +19,7 @@ export default function ListPanelCard({ list }) {
             <span>
                 <Sparkles size={14} aria-hidden="true" /> {list.wishCount} {list.wishCount === 1 ? "önskning" : "önskningar"}
             </span>
-            {/* Never on lists to me (the server sends null there), nor on private lists – nobody can reserve yet */}
+            {/* Never on lists to me (the server sends null there), nor on private lists - nobody can reserve yet */}
             {list.reservedCount != null && !isPrivate && (
                 <span>
                     <Gift size={14} aria-hidden="true" /> {list.reservedCount} reserverade

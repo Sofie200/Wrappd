@@ -8,8 +8,8 @@ import GiftPlusIcon from "./GiftPlusIcon.jsx";
 import { AddGiftModal } from "./AddGiftButton.jsx";
 
 // The last card in an event's row on the gifts page: an empty card saying "Logga gåva".
-//  - A wish list: a menu – "Från önskelistan" (opens the list to reserve a wish) or "Överraskning".
-//  - A Secret Santa: a menu – "Från önskeprofilen" (the wish profile of the one I give to – reserving there
+//  - A wish list: a menu - "Från önskelistan" (opens the list to reserve a wish) or "Överraskning".
+//  - A Secret Santa: a menu - "Från önskeprofilen" (the wish profile of the one I give to - reserving there
 //    counts for the Secret Santa) or "Egen gåva". An own event: straight to another gift for it.
 //  - Wish profiles and past events: no card (returns null).
 export default function AddGiftCard({ event, archived = false, onChanged }) {

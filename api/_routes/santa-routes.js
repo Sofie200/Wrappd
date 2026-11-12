@@ -1,5 +1,5 @@
 // Secret Santa: a member of a group picks a date and who takes part. Everyone is drawn to give a
-// gift to someone else. Only the giver ever learns who they got – the API never sends anyone
+// gift to someone else. Only the giver ever learns who they got - the API never sends anyone
 // else's pair, not even to the one who made the draw.
 import { randomInt } from "node:crypto";
 import { Router } from "express";
@@ -25,7 +25,7 @@ const NewSanta = z.object({
         .refine((ids) => ids.length >= MIN_PARTICIPANTS, `Välj minst ${MIN_PARTICIPANTS} deltagare`),
 });
 
-// Shuffle (Fisher–Yates, with a cryptographic random source), then everyone gives to the next one
+// Shuffle (Fisher-Yates, with a cryptographic random source), then everyone gives to the next one
 // in the shuffled order, and the last one to the first. One big circle: nobody draws themselves,
 // everyone gives exactly once and gets exactly once, and no two people simply swap gifts.
 export function drawPairs(ids) {
@@ -37,7 +37,7 @@ export function drawPairs(ids) {
     return order.map((giverId, i) => ({ giverId, receiverId: order[(i + 1) % order.length] }));
 }
 
-/* --- POST /api/santas  { groupId, title?, date, budget?, memberIds } → { id } – make the draw --- */
+/* --- POST /api/santas  { groupId, title?, date, budget?, memberIds } → { id } - make the draw --- */
 router.post("/", async (req, res) => {
     const body = parse(NewSanta, req.body);
     if (body.date < todayInSweden()) throw new HttpError(400, "Datumet kan inte ha passerat");
@@ -49,7 +49,7 @@ router.post("/", async (req, res) => {
         );
         if (!me) throw new HttpError(403, "Du kan bara göra en Secret Santa i grupper du är med i");
 
-        // Only adults in the group – children can't log in, so they could never see who they got
+        // Only adults in the group - children can't log in, so they could never see who they got
         const { rows: members } = await db.query(
             `SELECT u.id FROM group_members gm JOIN users u ON u.id = gm.user_id
              WHERE gm.group_id = $1 AND NOT u.is_child AND u.id = ANY($2::int[])`,
@@ -77,7 +77,7 @@ router.post("/", async (req, res) => {
     res.status(201).json({ id });
 });
 
-/* --- DELETE /api/santas/:id – cancel the draw (the one who made it) --- */
+/* --- DELETE /api/santas/:id - cancel the draw (the one who made it) --- */
 // The givers' gifts are kept: the database makes them gifts for an own event, to the one they drew (migration 018).
 router.delete("/:id", async (req, res) => {
     const santaId = parseId(req.params.id);

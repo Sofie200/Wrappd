@@ -17,7 +17,7 @@ export default function ChildGroupsModal({ child, onClose }) {
                     {groups.map((g) => (
                         <li key={g.id} className={g.includeChildren ? undefined : "child-group-off"}>
                             <Users size={16} aria-hidden="true" />
-                            {/* A link to the group – only if I'm in it myself (not a co-parent's group I can't open) */}
+                            {/* A link to the group - only if I'm in it myself (not a co-parent's group I can't open) */}
                             {g.isMember ? (
                                 <Link to={`/groups/${g.id}`} className="text-link" onClick={onClose}>
                                     {g.name}

@@ -1,4 +1,4 @@
-// The rules for name, username and password – shared by registration, admin-created users and links
+// The rules for name, username and password - shared by registration, admin-created users and links
 import { z } from "zod";
 
 export const name = z
@@ -13,7 +13,7 @@ export const username = z
     .toLowerCase()
     .regex(
         /^[a-z0-9._-]{3,30}$/,
-        "Användarnamnet ska vara 3–30 tecken: a–z, siffror, punkt, bindestreck eller understreck"
+        "Användarnamnet ska vara 3-30 tecken: a-z, siffror, punkt, bindestreck eller understreck"
     );
 
 export const email = z
@@ -27,7 +27,7 @@ export const password = z
     .min(8, "Lösenordet ska vara minst 8 tecken")
     .max(200, "Lösenordet får vara högst 200 tecken");
 
-// The profile icon and its colour – the same values as the CHECKs in db/schema.sql
+// The profile icon and its colour - the same values as the CHECKs in db/schema.sql
 export const AVATAR_ICONS = [
     "user", "cat", "snail", "bug", "bird", "ghost", "banana",
     "hand-metal", "citrus", "lollipop", "coffee", "squirrel", "sun", "germ",

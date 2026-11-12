@@ -5,7 +5,7 @@ import { X } from "lucide-react";
 // Mount it to open it, unmount it to close it. Clicking the backdrop also closes.
 // If something in it has been changed (typed into, picked) and not saved, closing by the backdrop,
 // Esc or × asks first. A submitted form counts as saved.
-// hideTitle: the title is only for screen readers – the content shows it its own way.
+// hideTitle: the title is only for screen readers - the content shows it its own way.
 export default function Modal({ title, hideTitle = false, onClose, children }) {
     const ref = useRef(null);
     const titleId = useId();
@@ -30,7 +30,7 @@ export default function Modal({ title, hideTitle = false, onClose, children }) {
             className="modal"
             aria-labelledby={titleId}
             // Esc fires "cancel": stop the browser closing it on its own and let React decide.
-            // (We don't listen to "close" – in StrictMode the effect's cleanup closes the dialog,
+            // (We don't listen to "close" - in StrictMode the effect's cleanup closes the dialog,
             // and that late close event would shut the modal right after it opened.)
             onCancel={(e) => {
                 e.preventDefault();

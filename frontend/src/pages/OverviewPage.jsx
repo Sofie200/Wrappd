@@ -17,8 +17,8 @@ import ListPanelCard from "../components/ListPanelCard.jsx";
 import GiftPlusIcon from "../components/GiftPlusIcon.jsx";
 import Confetti from "../components/Confetti.jsx";
 
-// A Secret Santa among the events. Who I give to is hidden until I press the eye –
-// someone might be looking at the screen. Below it: my gifts for it – the ones linked to the draw,
+// A Secret Santa among the events. Who I give to is hidden until I press the eye -
+// someone might be looking at the screen. Below it: my gifts for it - the ones linked to the draw,
 // and what I've reserved on the receiver's wish profile.
 function SantaRow({ santa, gifts = [], onChanged }) {
     const { user } = useAuth();
@@ -57,7 +57,7 @@ function SantaRow({ santa, gifts = [], onChanged }) {
         }
     }
 
-    // In the section's head – on phones up in the "Mina gåvor" bar
+    // In the section's head - on phones up in the "Mina gåvor" bar
     const addGift = (
         <AddGiftButton santaId={santa.id} className="btn btn-small btn-ghost" onAdded={onChanged}>
             <GiftPlusIcon /> Överraskning
@@ -66,7 +66,7 @@ function SantaRow({ santa, gifts = [], onChanged }) {
 
     return (
         <div className="event-group event-santa">
-            {/* The tab and "Till:" like the lists – but who it's for stays hidden until revealed */}
+            {/* The tab and "Till:" like the lists - but who it's for stays hidden until revealed */}
             <div className="event-tab-row">
                 <p className="event-kicker">
                     <HatGlasses size={14} aria-hidden="true" /> Secret Santa
@@ -108,14 +108,14 @@ function SantaRow({ santa, gifts = [], onChanged }) {
                         </div>
                     </div>
 
-                    {/* Who I got – hidden until I press the eye */}
+                    {/* Who I got - hidden until I press the eye */}
                     {receiver && (
                         <div className="santa-secret">
                             <div className="santa-who">
                             <p className="santa-label">Du ska ge en gåva till:</p>
                             {/* The same placeholder for everyone while hidden, so the blur doesn't hint at the name's length */}
                             <div className="santa-name-row">
-                                {/* Hidden: a blurred placeholder with the eye on top – a click reveals it (no hiding again).
+                                {/* Hidden: a blurred placeholder with the eye on top - a click reveals it (no hiding again).
                                     Shown: the name itself opens the wish profile. */}
                                 <span className="santa-name-wrap" ref={nameRef} aria-live="polite">
                                     {shown ? (
@@ -186,7 +186,7 @@ function SantaRow({ santa, gifts = [], onChanged }) {
                     )}
                 </div>
                 </GiftsCollapse>
-                {/* Everyone who takes part – never who gives to whom */}
+                {/* Everyone who takes part - never who gives to whom */}
                 {showParticipants && (
                     <Modal title={`Deltagare i ${santa.title}`} onClose={() => setShowParticipants(false)}>
                         <ul className="member-list">
@@ -216,9 +216,9 @@ export default function OverviewPage() {
     if (!data) return <ErrorMessage message={error} onRetry={reload} />;
 
     const { upcoming, gifts, adminLists, santas = [], profileEmpty = false } = data;
-    // In a Secret Santa (someone has drawn me) but nothing in my wish profile – they won't know what to buy
+    // In a Secret Santa (someone has drawn me) but nothing in my wish profile - they won't know what to buy
     const santaNeedsProfile = profileEmpty && santas.some((santa) => santa.receiver);
-    // Published lists are among the events above – here only my coming lists that aren't published yet
+    // Published lists are among the events above - here only my coming lists that aren't published yet
     const privateLists = adminLists.filter((list) => !list.archived && !list.isPublic);
 
     // My gifts for each Secret Santa I give in: the ones linked to it, and what I've reserved on the
@@ -271,7 +271,8 @@ export default function OverviewPage() {
 
                 {events.length === 0 ? (
                     <Empty>
-                        Inget planerat än, men allt kan firas 🎉 <Link to="/lists/new">Klicka här</Link> för att skapa en ny önskelista!
+                        Lugnt just nu - men allt kan firas 🎉 <Link to="/lists/new">Skapa en önskelista</Link> så har du något att
+                        se fram emot.
                     </Empty>
                 ) : (
                     <div className="events">
@@ -286,7 +287,7 @@ export default function OverviewPage() {
                 )}
             </section>
 
-            {/* Only when there are any – the published ones are among the events above */}
+            {/* Only when there are any - the published ones are among the events above */}
             {privateLists.length > 0 && (
                 <section className="section">
                     <div className="section-head">

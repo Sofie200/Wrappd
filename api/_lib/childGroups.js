@@ -1,4 +1,4 @@
-// Which groups a child is in is never chosen by hand – it follows from two rules:
+// Which groups a child is in is never chosen by hand - it follows from two rules:
 //  1. A group with "Inkludera barn" (include_children) has ALL its members' children as members.
 //     A group without it has no children at all.
 //  2. A child is never in a group where none of its parents is a member.
@@ -33,7 +33,7 @@ export async function syncChildGroups(db) {
 
     if (removed.length === 0) return;
 
-    // A recipient must stay in one of the list's groups – stop (and roll back) instead of
+    // A recipient must stay in one of the list's groups - stop (and roll back) instead of
     // leaving a child on a current list it no longer belongs to
     const { rows: [stranded] } = await db.query(
         `SELECT u.name, l.title

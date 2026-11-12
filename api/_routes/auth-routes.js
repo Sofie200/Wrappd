@@ -13,7 +13,7 @@ import { removeUnusedImages } from "../_lib/imageCleanup.js";
 
 const router = Router();
 
-// Email is required here – the alternative is signing up with Google (POST /google), which brings its own
+// Email is required here - the alternative is signing up with Google (POST /google), which brings its own
 const Register = z.object({ name, username, email, password });
 
 const Login = z.object({
@@ -57,7 +57,7 @@ router.post("/login", async (req, res) => {
         `SELECT ${USER_FIELDS}, password_hash FROM users WHERE username = $1`,
         [body.username]
     );
-    // Same message whether the user exists, isn't activated yet, or the password is wrong –
+    // Same message whether the user exists, isn't activated yet, or the password is wrong -
     // don't reveal which usernames exist
     const ok = user?.password_hash && (await bcrypt.compare(body.password, user.password_hash));
     if (!ok) throw new HttpError(401, "Fel användarnamn eller lösenord");
@@ -67,12 +67,12 @@ router.post("/login", async (req, res) => {
     res.json({ user: safeUser });
 });
 
-/* --- POST /api/auth/google  { credential } → { user } (+ the login cookie)  OR  { signup } – log in with Google --- */
+/* --- POST /api/auth/google  { credential } → { user } (+ the login cookie)  OR  { signup } - log in with Google --- */
 // 1. A user already connected to this Google account → log in.
 // 2. Otherwise an adult whose VERIFIED email is the same → connect the Google account and log in.
 //    (Never on a typed-in email: anyone can type anyone's address and would get the owner's Google login.)
 // 3. The email belongs to an account with an unverified email → 409; log in there and connect Google instead.
-// 4. Otherwise NO account is created yet: { signup: { name, username, email } } – suggestions for the last step,
+// 4. Otherwise NO account is created yet: { signup: { name, username, email } } - suggestions for the last step,
 //    where the user picks a username and sends everything to POST /google/signup.
 const GoogleLogin = z.object({ credential: z.string({ error: "Inloggningen med Google saknas" }).min(1).max(4096) });
 
@@ -80,7 +80,7 @@ function googleEmail(google) {
     return google.email_verified && google.email ? google.email.toLowerCase() : null;
 }
 
-// Steps 1–3 above: the user this Google account belongs to, or null if it's a new person
+// Steps 1-3 above: the user this Google account belongs to, or null if it's a new person
 async function findGoogleUser(db, google) {
     const email = googleEmail(google);
     const { rows: [known] } = await db.query(`SELECT ${USER_FIELDS} FROM users WHERE google_sub = $1`, [google.sub]);
@@ -115,7 +115,7 @@ router.post("/google", async (req, res) => {
         return res.json({ user });
     }
 
-    // A new person: suggestions only. The username comes from the first name – not from the email,
+    // A new person: suggestions only. The username comes from the first name - not from the email,
     // since usernames are visible to others and searchable.
     const suggestedUsername = await freeUsername(pool, google.given_name || google.name?.split(" ")[0] || "user");
     res.json({
@@ -129,7 +129,7 @@ router.post("/google", async (req, res) => {
 
 /* --- POST /api/auth/google/signup  { credential, name, username } → { user } (+ the login cookie) --- */
 // The last step of signing up with Google. The same Google token is checked again (it's valid for an hour),
-// so the email and Google id can't be made up – only the name and username come from the form.
+// so the email and Google id can't be made up - only the name and username come from the form.
 const GoogleSignup = GoogleLogin.extend({ name, username });
 
 router.post("/google/signup", async (req, res) => {
@@ -161,7 +161,7 @@ router.post("/google/signup", async (req, res) => {
     }
 });
 
-/* --- POST /api/auth/google/connect  { credential } → { user } – connect a Google account to my account --- */
+/* --- POST /api/auth/google/connect  { credential } → { user } - connect a Google account to my account --- */
 // Also saves Google's (verified) email, if I have none and nobody else uses it.
 // If my email is the same as Google's, it now counts as verified.
 router.post("/google/connect", requireAuth, async (req, res) => {
@@ -194,7 +194,7 @@ router.post("/google/connect", requireAuth, async (req, res) => {
     res.json({ user });
 });
 
-/* --- DELETE /api/auth/google → { user } – disconnect Google from my account --- */
+/* --- DELETE /api/auth/google → { user } - disconnect Google from my account --- */
 router.delete("/google", requireAuth, async (req, res) => {
     const { rows: [current] } = await pool.query("SELECT password_hash IS NOT NULL AS has_password FROM users WHERE id = $1", [
         req.user.id,
@@ -230,13 +230,13 @@ async function freeUsername(db, wanted) {
     throw new HttpError(500, "Kunde inte hitta ett ledigt användarnamn. Försök igen.");
 }
 
-/* --- POST /api/auth/logout → 204 – removes the login cookie (JavaScript can't, it's httpOnly) --- */
+/* --- POST /api/auth/logout → 204 - removes the login cookie (JavaScript can't, it's httpOnly) --- */
 router.post("/logout", (req, res) => {
     clearAuthCookie(res);
     res.status(204).end();
 });
 
-/* --- GET /api/auth/me → { user } – checks that the login still works --- */
+/* --- GET /api/auth/me → { user } - checks that the login still works --- */
 router.get("/me", requireAuth, async (req, res) => {
     const { rows: [user] } = await pool.query(`SELECT ${USER_FIELDS} FROM users WHERE id = $1`, [req.user.id]);
     if (!user) {
@@ -248,7 +248,7 @@ router.get("/me", requireAuth, async (req, res) => {
     res.json({ user });
 });
 
-/* --- PUT /api/auth/me  { name, username, avatarIcon, avatarColor } → { user } (+ the login cookie) – edit my profile --- */
+/* --- PUT /api/auth/me  { name, username, avatarIcon, avatarColor } → { user } (+ the login cookie) - edit my profile --- */
 // A new cookie, since the name and username are in the token
 const EditProfile = z.object({ name, username, avatarIcon, avatarColor });
 
@@ -269,7 +269,7 @@ router.put("/me", requireAuth, async (req, res) => {
     }
 });
 
-/* --- PUT /api/auth/me/email  { email } → { user } – add my email (only if I have none) --- */
+/* --- PUT /api/auth/me/email  { email } → { user } - add my email (only if I have none) --- */
 // Once set, the email can't be changed here. A typed-in email is unverified (see migration 016).
 const EditEmail = z.object({ email });
 
@@ -293,7 +293,7 @@ router.put("/me/email", requireAuth, async (req, res) => {
     }
 });
 
-/* --- GET /api/auth/me/deletion → what deleting my account would mean – for the confirmation dialog --- */
+/* --- GET /api/auth/me/deletion → what deleting my account would mean - for the confirmation dialog --- */
 router.get("/me/deletion", requireAuth, async (req, res) => {
     const plan = await planAccountDeletion(pool, req.user.id);
     res.json({
@@ -305,7 +305,7 @@ router.get("/me/deletion", requireAuth, async (req, res) => {
     });
 });
 
-/* --- DELETE /api/auth/me  { username } → 204 – delete my account (see _lib/deleteAccount.js) --- */
+/* --- DELETE /api/auth/me  { username } → 204 - delete my account (see _lib/deleteAccount.js) --- */
 // The username is typed in as confirmation, so it can't happen by mistake
 const DeleteMe = z.object({
     username: z.string({ error: "Skriv ditt användarnamn för att bekräfta" }).trim().toLowerCase().min(1, "Skriv ditt användarnamn för att bekräfta"),
@@ -331,7 +331,7 @@ router.delete("/me", requireAuth, async (req, res) => {
     res.status(204).end();
 });
 
-/* --- GET /api/auth/link/:token → { purpose, name, username } – who the link is for --- */
+/* --- GET /api/auth/link/:token → { purpose, name, username } - who the link is for --- */
 router.get("/link/:token", async (req, res) => {
     const { token } = req.params;
     if (!isTokenFormat(token)) throw new HttpError(404, LINK_INVALID);
@@ -348,7 +348,7 @@ router.get("/link/:token", async (req, res) => {
     res.json(link);
 });
 
-/* --- POST /api/auth/link/:token  { password } → { user } (+ the login cookie) – choose a password, and log in --- */
+/* --- POST /api/auth/link/:token  { password } → { user } (+ the login cookie) - choose a password, and log in --- */
 const ChoosePassword = z.object({ password });
 
 router.post("/link/:token", async (req, res) => {
@@ -372,7 +372,7 @@ router.post("/link/:token", async (req, res) => {
             `UPDATE users SET password_hash = $1 WHERE id = $2 RETURNING ${USER_FIELDS}`,
             [passwordHash, link.user_id]
         );
-        // This link – and any other open link for the same user – is now used up
+        // This link - and any other open link for the same user - is now used up
         await db.query("UPDATE user_links SET used_at = now() WHERE user_id = $1 AND used_at IS NULL", [link.user_id]);
         return updated;
     });

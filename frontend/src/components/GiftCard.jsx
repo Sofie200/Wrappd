@@ -10,7 +10,7 @@ import { ErrorMessage } from "./Feedback.jsx";
 import { GiftEditor } from "../pages/GiftPage.jsx";
 
 // One of my gifts as a card on the gifts page: picture, title (opens the gift), quantity and price,
-// my share, and who shares it. "…" to edit, or release / delete – the same rules as in GiftTable.
+// my share, and who shares it. "…" to edit, or release / delete - the same rules as in GiftTable.
 export default function GiftCard({ gift: g, onChanged }) {
     const [editing, setEditing] = useState(false);
     const [busy, setBusy] = useState(false);
@@ -60,7 +60,7 @@ export default function GiftCard({ gift: g, onChanged }) {
                 <div className="gift-card-foot">
                     <p className="gift-card-share">
                         <span className="muted small">Min utgift</span>
-                        <strong>{g.myShare === null ? "–" : formatPrice(g.myShare)}</strong>
+                        <strong>{g.myShare === null ? "-" : formatPrice(g.myShare)}</strong>
                     </p>
                     {shared && (
                         <span className="avatar-stack" title={`Delas av ${joinNames(g.people.map((p) => p.name))}`}>
@@ -79,7 +79,7 @@ export default function GiftCard({ gift: g, onChanged }) {
                     <button type="button" className="menu-item" role="menuitem" onClick={() => setEditing(true)}>
                         <Pencil size={16} aria-hidden="true" /> Redigera
                     </button>
-                    {/* A reservation can't be undone after the event – a gift outside the list always can */}
+                    {/* A reservation can't be undone after the event - a gift outside the list always can */}
                     {(g.offList || !g.archived) && (
                         <button
                             type="button"

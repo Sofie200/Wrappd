@@ -23,7 +23,7 @@ export function parseId(value) {
     return Number(value);
 }
 
-// "2026-11-01" – today's date in Sweden, to compare with end dates
+// "2026-11-01" - today's date in Sweden, to compare with end dates
 export function todayInSweden() {
     return new Intl.DateTimeFormat("sv-SE", {
         timeZone: "Europe/Stockholm",

@@ -1,7 +1,7 @@
 import { ImagePlus } from "lucide-react";
 
-// The image part of a form – used with useImageChoice().
-// The native file input is hidden; a themed button (a label wrapping it) opens the picker –
+// The image part of a form - used with useImageChoice().
+// The native file input is hidden; a themed button (a label wrapping it) opens the picker -
 // on a phone that's the camera or the photo library.
 export default function ImageField({ image, onError, label = "Bild (JPG eller PNG, max 4 MB)" }) {
     return (

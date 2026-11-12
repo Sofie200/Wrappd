@@ -40,7 +40,7 @@ export default function CreateUserForm({ groupId, onCreated }) {
                         onChange={(e) => setUsername(e.target.value)}
                         autoCapitalize="none"
                         pattern="[A-Za-z0-9._\-]{3,30}"
-                        title="3–30 tecken: a–z, siffror, punkt, bindestreck eller understreck"
+                        title="3-30 tecken: a-z, siffror, punkt, bindestreck eller understreck"
                         required
                     />
                 </label>

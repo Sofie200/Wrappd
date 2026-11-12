@@ -3,7 +3,7 @@ import { money } from "./money.js";
 import { WishBody } from "./wishSchema.js";
 
 // Validation of a gift. Gifts outside the wish list arrive as multipart (they can have an image),
-// so every field may arrive as text – also the members, as a JSON string.
+// so every field may arrive as text - also the members, as a JSON string.
 const quantity = z.coerce
     .number({ error: "Ange ett antal" })
     .int("Antalet måste vara ett heltal")
@@ -23,7 +23,7 @@ export const optionalId = z
         return n;
     });
 
-// The fields only gifts outside the list have. Title is required for them – checked below.
+// The fields only gifts outside the list have. Title is required for them - checked below.
 // A date "YYYY-MM-DD", or null when empty. Own events and gifts from a wish profile need one
 // (checked in the routes); shared with wish-routes.js (reserving on a wish profile).
 export const giftDate = z

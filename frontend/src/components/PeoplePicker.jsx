@@ -5,9 +5,9 @@ import Avatar from "./Avatar.jsx";
 // Picking people among the members of the list's groups: the chosen ones as chips, and a search
 // field that suggests the others as you type (on name or username).
 // lockedIds: always chosen, can't be removed (e.g. the creator as admin).
-// disabledIds: can't be picked (e.g. someone else's child) – disabledHint says why.
-// single: at most one person – picking someone replaces the choice, and the search hides once someone is chosen.
-// bare: no fieldset or legend of its own – for when it sits inside another fieldset (legend is then only
+// disabledIds: can't be picked (e.g. someone else's child) - disabledHint says why.
+// single: at most one person - picking someone replaces the choice, and the search hides once someone is chosen.
+// bare: no fieldset or legend of its own - for when it sits inside another fieldset (legend is then only
 // used to label the search field for screen readers).
 const MAX_SUGGESTIONS = 8;
 
@@ -59,7 +59,7 @@ export default function PeoplePicker({
             e.preventDefault();
             setActive((i) => Math.max(i - 1, 0));
         } else if (e.key === "Enter") {
-            // Pick the highlighted one – and never submit the form from here
+            // Pick the highlighted one - and never submit the form from here
             e.preventDefault();
             if (open && pickable[active]) add(pickable[active]);
         } else if (e.key === "Escape") {
@@ -117,7 +117,7 @@ export default function PeoplePicker({
                             autoCapitalize="none"
                             autoComplete="off"
                             role="combobox"
-                            aria-label={`Sök – ${legend}`}
+                            aria-label={`Sök - ${legend}`}
                             aria-expanded={open && suggestions.length > 0}
                             aria-controls={listId}
                             aria-activedescendant={open ? activeId : undefined}
@@ -127,7 +127,7 @@ export default function PeoplePicker({
                             <ul className="people-suggestions" id={listId} role="listbox">
                                 {suggestions.length === 0 ? (
                                     <li className="people-suggestion-empty">
-                                        {term ? `Ingen i grupperna matchar "${query.trim()}".` : "Alla är redan valda."}
+                                        {term ? `Hittar ingen som heter "${query.trim()}" i dina grupper.` : "Alla är redan med!"}
                                     </li>
                                 ) : (
                                     suggestions.map((person) => {

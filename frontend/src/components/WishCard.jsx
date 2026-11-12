@@ -14,11 +14,11 @@ import SettingsMenu from "./SettingsMenu.jsx";
 // What the modal shows depends on `me` from the server:
 //  - seesReservations: who has reserved it, per gift (never for recipients)
 //  - canReserve: reserve (creates a gift), or go to my gift
-//  - canEdit: edit and delete (list admins, not archived) – not once someone has reserved it
-// santa: { id } – on a wish profile opened from a Secret Santa: the reservation counts for it (no date to choose)
+//  - canEdit: edit and delete (list admins, not archived) - not once someone has reserved it
+// santa: { id } - on a wish profile opened from a Secret Santa: the reservation counts for it (no date to choose)
 export default function WishCard({ wish, me, listId, santa = null, onChanged }) {
     const { user } = useAuth();
-    // "dig och Ted" – me first, as "dig"
+    // "dig och Ted" - me first, as "dig"
     const whoNames = (people) =>
         joinNames([
             ...people.filter((p) => p.id === user.id).map(() => "dig"),
@@ -29,7 +29,7 @@ export default function WishCard({ wish, me, listId, santa = null, onChanged }) 
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState(null);
     const [qty, setQty] = useState(1);
-    // A wish on a wish profile (no list): the gift needs a date – when it's to be given –
+    // A wish on a wish profile (no list): the gift needs a date - when it's to be given -
     // unless it's reserved for a Secret Santa (then it's the draw's date)
     const onProfile = !listId && !santa;
     const [giftDate, setGiftDate] = useState("");
@@ -48,10 +48,10 @@ export default function WishCard({ wish, me, listId, santa = null, onChanged }) 
         }
     }
 
-    // Reserving creates a gift – and stays here; the gift can be edited later (Gåvor / the overview)
+    // Reserving creates a gift - and stays here; the gift can be edited later (Gåvor / the overview)
     // quantity: from the row it's always 1, from the modal what's chosen there
     async function reserve(quantity = qty) {
-        // On a wish profile the date comes from the field in the modal – from the row, open the modal for it
+        // On a wish profile the date comes from the field in the modal - from the row, open the modal for it
         if (onProfile && !giftDate) {
             setOpen(true);
             if (open) setError("Ange när gåvan ska ges");
@@ -60,7 +60,7 @@ export default function WishCard({ wish, me, listId, santa = null, onChanged }) 
         setBusy(true);
         setError(null);
         try {
-            // The gift is created as a straight copy of the wish – price, comment and sharing can be changed later
+            // The gift is created as a straight copy of the wish - price, comment and sharing can be changed later
             await api(`/wishes/${wish.id}/gifts`, {
                 method: "POST",
                 body: { quantity: Number(quantity), ...(onProfile && { giftDate }), ...(santa && { santaId: santa.id }) },
@@ -75,7 +75,7 @@ export default function WishCard({ wish, me, listId, santa = null, onChanged }) 
         }
     }
 
-    // Undo my reservation – the whole gift goes, also for the others who share it
+    // Undo my reservation - the whole gift goes, also for the others who share it
     function unreserve() {
         if (!window.confirm(`Släpp din reservation av "${wish.title}"? Gåvan tas bort för alla som delar på den.`)) return;
         run(() => api(`/gifts/${wish.myGiftId}`, { method: "DELETE" }));
@@ -96,7 +96,7 @@ export default function WishCard({ wish, me, listId, santa = null, onChanged }) 
     const available = wish.quantity - reserved;
     const full = me.seesReservations && available <= 0;
     const options = Array.from({ length: Math.max(available, 0) }, (_, i) => i + 1);
-    // Recipients don't know if it's reserved – the server answers them if they try
+    // Recipients don't know if it's reserved - the server answers them if they try
     const locked = me.seesReservations && reserved > 0;
 
     const image = (className) =>
@@ -115,7 +115,7 @@ export default function WishCard({ wish, me, listId, santa = null, onChanged }) 
         }
     }
 
-    // Only those who may see reservations get the badge and the icons – recipients never do
+    // Only those who may see reservations get the badge and the icons - recipients never do
     const reservedBadge =
         me.seesReservations && reserved > 0 ? (
             <span className="reserved-by">
@@ -134,7 +134,7 @@ export default function WishCard({ wish, me, listId, santa = null, onChanged }) 
             </span>
         ) : null;
 
-    // "Reservera" straight on the row: when I can reserve, haven't already, and there's some left (1 st –
+    // "Reservera" straight on the row: when I can reserve, haven't already, and there's some left (1 st -
     // the quantity can be changed on the gift afterwards)
     const quickReserve = me.canReserve && !wish.myGiftId && available > 0;
     // A "…" menu on the row for my own reservation
@@ -158,7 +158,7 @@ export default function WishCard({ wish, me, listId, santa = null, onChanged }) 
                             </span>
                         )}
                     </span>
-                    {/* Reserved and by whom – out on the right */}
+                    {/* Reserved and by whom - out on the right */}
                     {reservedBadge && <span className="wish-reserved">{reservedBadge}</span>}
                 </button>
                 {quickReserve && (
@@ -247,7 +247,7 @@ export default function WishCard({ wish, me, listId, santa = null, onChanged }) 
                                 )}
                             </div>
 
-                            {/* Not needed once everything is reserved – the badge already says so */}
+                            {/* Not needed once everything is reserved - the badge already says so */}
                             {!full && (
                                 <p className="muted small">
                                     Önskat antal: {wish.quantity}
@@ -270,7 +270,7 @@ export default function WishCard({ wish, me, listId, santa = null, onChanged }) 
                                 >
                                     {/* A wish on a wish profile: when the gift is to be given (there's no list date).
                                         The label on its own row above, so the date field, the quantity and
-                                        "Reservera" share one row – centred on each other. */}
+                                        "Reservera" share one row - centred on each other. */}
                                     {onProfile && (
                                         <>
                                             <label htmlFor={`gift-date-${wish.id}`} className="wish-gift-date-label">
@@ -340,7 +340,7 @@ export default function WishCard({ wish, me, listId, santa = null, onChanged }) 
                 </Modal>
             )}
 
-            {/* My reservation (the gift): price, comment, who shares – on top of the wish */}
+            {/* My reservation (the gift): price, comment, who shares - on top of the wish */}
             {editingGift && wish.myGiftId && (
                 <Modal title="Redigera reservation" onClose={() => setEditingGift(false)}>
                     <GiftEditor

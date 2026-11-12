@@ -2,7 +2,7 @@ import { Fragment } from "react";
 import { Link } from "react-router-dom";
 import { ChevronRight } from "lucide-react";
 
-// "Mina grupper › Familjen". items: [{ label, to }] – the last one is the current page (no link).
+// "Mina grupper › Familjen". items: [{ label, to }] - the last one is the current page (no link).
 export default function Breadcrumbs({ items }) {
     return (
         <nav className="breadcrumbs" aria-label="Brödsmulor">

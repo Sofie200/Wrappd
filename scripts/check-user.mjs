@@ -1,4 +1,4 @@
-// Shows everything in the database that still points to a user – e.g. to check that a deletion worked.
+// Shows everything in the database that still points to a user - e.g. to check that a deletion worked.
 // Only reads, changes nothing. Run from the project root:
 //
 //   node scripts/check-user.mjs 23
@@ -43,5 +43,5 @@ const { rows: fks } = await c.query(`
   JOIN information_schema.constraint_column_usage ccu ON ccu.constraint_name = tc.constraint_name
   WHERE tc.constraint_type = 'FOREIGN KEY' AND ccu.table_name = 'users' ORDER BY 1, 2`);
 console.log("\nAlla kolumner som pekar på users:", fks.map((f) => `${f.table_name}.${f.column_name}`).join(", "));
-console.log(total === 0 ? `\nInget pekar på användare ${id} – allt är borta.` : `\nTotalt ${total} rader pekar fortfarande på användare ${id}.`);
+console.log(total === 0 ? `\nInget pekar på användare ${id} - allt är borta.` : `\nTotalt ${total} rader pekar fortfarande på användare ${id}.`);
 await c.end();

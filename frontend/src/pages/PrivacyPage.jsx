@@ -3,18 +3,18 @@ import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 import { APP_NAME } from "../config.js";
 
-// /integritet – privacy policy and cookies. Open without logging in.
+// /integritet - privacy policy and cookies. Open without logging in.
 // Change the policy here, and update UPDATED. The facts (where data is stored, which services)
-// must match reality – check them when the setup changes (e.g. moving the Vercel functions or Blob store to the EU).
+// must match reality - check them when the setup changes (e.g. moving the Vercel functions or Blob store to the EU).
 const UPDATED = "11 november 2026";
-const CONTROLLER = "Kirakira"; // who is responsible for the personal data – check that this is right
+const CONTROLLER = "Kirakira"; // who is responsible for the personal data - check that this is right
 const CONTACT = "hej@wrappd.se";
 
 export default function PrivacyPage() {
     const { user } = useAuth();
     const { hash } = useLocation();
 
-    // "Läs mer" in the cookie notice links to #cookies – React Router doesn't scroll to it by itself
+    // "Läs mer" in the cookie notice links to #cookies - React Router doesn't scroll to it by itself
     useEffect(() => {
         if (hash) document.getElementById(hash.slice(1))?.scrollIntoView();
         else window.scrollTo(0, 0);
@@ -47,7 +47,7 @@ export default function PrivacyPage() {
                 <ul>
                     <li>
                         <strong>Ditt konto:</strong> namn, användarnamn, e-postadress, lösenord (bara som en
-                        krypterad hash – vi kan aldrig se det) och vald profilikon och färg. Loggar du in med Google
+                        krypterad hash - vi kan aldrig se det) och vald profilikon och färg. Loggar du in med Google
                         sparar vi också Googles id för ditt konto, din e-postadress och ditt namn därifrån.
                     </li>
                     <li>
@@ -75,7 +75,7 @@ export default function PrivacyPage() {
                     För att kunna ge dig tjänsten: logga in dig, visa dina grupper och listor och låta er hålla koll på
                     gåvor tillsammans (rättslig grund: avtal). Tekniska loggar sparar vi för att hålla tjänsten säker
                     och fungerande (rättslig grund: berättigat intresse). Din e-postadress använder vi för att kunna
-                    koppla ditt konto till Google och för att kunna nå dig om ditt konto – aldrig för marknadsföring.
+                    koppla ditt konto till Google och för att kunna nå dig om ditt konto - aldrig för marknadsföring.
                 </p>
 
                 <h2>Vem kan se dem?</h2>
@@ -89,13 +89,13 @@ export default function PrivacyPage() {
                 <p>Vi använder några tjänsteleverantörer (personuppgiftsbiträden), som bara får hantera uppgifterna åt oss:</p>
                 <ul>
                     <li>
-                        <strong>Vercel</strong> – driften av webbplatsen och servern, och lagring av bilder.
+                        <strong>Vercel</strong> - driften av webbplatsen och servern, och lagring av bilder.
                     </li>
                     <li>
-                        <strong>Neon</strong> – databasen där kontot och allt du lägger in sparas.
+                        <strong>Neon</strong> - databasen där kontot och allt du lägger in sparas.
                     </li>
                     <li>
-                        <strong>Google</strong> – inloggning med Google, om du väljer det. Typsnittet på sidan hämtas
+                        <strong>Google</strong> - inloggning med Google, om du väljer det. Typsnittet på sidan hämtas
                         också från Google Fonts, vilket betyder att din webbläsare kontaktar Google.
                     </li>
                 </ul>
@@ -129,7 +129,7 @@ export default function PrivacyPage() {
 
                 <h2 id="cookies">Cookies och lagring i webbläsaren</h2>
                 <p>
-                    Vi använder bara det som behövs för att tjänsten ska fungera – inga cookies för statistik,
+                    Vi använder bara det som behövs för att tjänsten ska fungera - inga cookies för statistik,
                     analys eller reklam. Därför behöver vi inte ditt samtycke, men du ska veta vad som sparas:
                 </p>
                 <div className="table-scroll">

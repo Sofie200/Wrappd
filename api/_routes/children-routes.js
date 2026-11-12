@@ -1,10 +1,10 @@
 // Children: users who can't log in, but can be recipients of lists.
 // Rules:
 //  - Anyone can create a child of their own, with an optional co-parent (any adult, by username).
-//  - A child has 1–2 parents. Only parents manage the child: name and parents.
+//  - A child has 1-2 parents. Only parents manage the child: name and parents.
 //  - Groups are never chosen: a child is in every group with "Inkludera barn" that one of its
 //    parents is in, and in no other group (see _lib/childGroups.js).
-//  - Deleting a child deletes the lists where it is the only recipient – gifts included.
+//  - Deleting a child deletes the lists where it is the only recipient - gifts included.
 import { Router } from "express";
 import { z } from "zod";
 import { pool, TODAY, withTransaction } from "../_db/pool.js";
@@ -32,7 +32,7 @@ const UpdateChild = z.object({
         .refine((list) => list.length <= 2, "Ett barn kan ha högst två föräldrar"),
 });
 
-// 404 if it isn't a child, or I'm not its parent – nobody else learns that it exists
+// 404 if it isn't a child, or I'm not its parent - nobody else learns that it exists
 async function requireParent(db, childId, userId) {
     const { rows: [child] } = await db.query(
         `SELECT u.id, u.name FROM users u
@@ -56,7 +56,7 @@ async function adultIds(db, usernames) {
     return usernames.map((u) => rows.find((r) => r.username === u).id);
 }
 
-/* --- GET /api/children → { data: [...] } – my children (groups = the child's, parentGroups = the parents', lists) --- */
+/* --- GET /api/children → { data: [...] } - my children (groups = the child's, parentGroups = the parents', lists) --- */
 // Also counts what would be deleted with each child, for the warning before deleting.
 router.get("/", async (req, res) => {
     const { rows } = await pool.query(
@@ -104,7 +104,7 @@ router.get("/", async (req, res) => {
     res.json({ data: rows });
 });
 
-/* --- POST /api/children  { name, coParentUsername? } → { id } – I become a parent --- */
+/* --- POST /api/children  { name, coParentUsername? } → { id } - I become a parent --- */
 // The child joins every group with "Inkludera barn" that one of its parents is in
 router.post("/", async (req, res) => {
     const body = parse(NewChild, req.body);
@@ -113,7 +113,7 @@ router.post("/", async (req, res) => {
         const parentIds = [req.user.id];
         if (body.coParentUsername) {
             if (body.coParentUsername === req.user.username) {
-                throw new HttpError(400, "Du är redan förälder – ange den andra förälderns användarnamn");
+                throw new HttpError(400, "Du är redan förälder - ange den andra förälderns användarnamn");
             }
             parentIds.push(...(await adultIds(db, [body.coParentUsername])));
         }
@@ -133,8 +133,8 @@ router.post("/", async (req, res) => {
     res.status(201).json({ id });
 });
 
-/* --- PUT /api/children/:id  { name, parentUsernames } – edit (parent) --- */
-// New parents can change which groups the child is in – that follows automatically
+/* --- PUT /api/children/:id  { name, parentUsernames } - edit (parent) --- */
+// New parents can change which groups the child is in - that follows automatically
 router.put("/:id", async (req, res) => {
     const childId = parseId(req.params.id);
     const body = parse(UpdateChild, req.body);
@@ -177,7 +177,7 @@ router.put("/:id", async (req, res) => {
     res.json({ id: childId });
 });
 
-/* --- DELETE /api/children/:id – delete the child, and the lists where it is the only recipient (parent) --- */
+/* --- DELETE /api/children/:id - delete the child, and the lists where it is the only recipient (parent) --- */
 router.delete("/:id", async (req, res) => {
     const childId = parseId(req.params.id);
 
@@ -194,7 +194,7 @@ router.delete("/:id", async (req, res) => {
 
         const { rows: images } = await db.query(
             // Wishes' images, and the images of gifts bought outside those lists (they go with the lists)
-            // – and the images of the child's own wish profile
+            // - and the images of the child's own wish profile
             `SELECT image_url FROM wishes WHERE (list_id = ANY($1::int[]) OR user_id = $2) AND image_url IS NOT NULL
              UNION ALL
              SELECT image_url FROM gifts WHERE list_id = ANY($1::int[]) AND image_url IS NOT NULL`,

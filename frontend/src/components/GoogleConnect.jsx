@@ -5,7 +5,7 @@ import { GOOGLE_CLIENT_ID } from "../config.js";
 import GoogleButton from "./GoogleButton.jsx";
 import { ErrorMessage } from "./Feedback.jsx";
 
-// On the profile page: connect a Google account, so I can log in with Google too – or disconnect it
+// On the profile page: connect a Google account, so I can log in with Google too - or disconnect it
 export default function GoogleConnect() {
     const { user, connectGoogle, disconnectGoogle } = useAuth();
     const [busy, setBusy] = useState(false);

@@ -55,7 +55,7 @@ export default function RegisterPage() {
         <AuthLayout title="Skapa konto">
             <ErrorMessage message={error} />
 
-            {/* Quickest: an account straight from Google – name and email come from there */}
+            {/* Quickest: an account straight from Google - name and email come from there */}
             <GoogleButton text="signup_with" divider={false} onCredential={handleGoogle} />
             {GOOGLE_CLIENT_ID && (
                 <div className="auth-divider">
@@ -80,10 +80,10 @@ export default function RegisterPage() {
                         autoComplete="username"
                         autoCapitalize="none"
                         pattern="[A-Za-z0-9._\-]{3,30}"
-                        title="3–30 tecken: a–z, siffror, punkt, bindestreck eller understreck"
+                        title="3-30 tecken: a-z, siffror, punkt, bindestreck eller understreck"
                         required
                     />
-                    <small>3–30 tecken: a–z, siffror, punkt, bindestreck eller understreck.</small>
+                    <small>3-30 tecken: a-z, siffror, punkt, bindestreck eller understreck.</small>
                 </label>
 
                 <label className="field">

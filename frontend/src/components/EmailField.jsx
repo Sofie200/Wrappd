@@ -3,7 +3,7 @@ import { BadgeCheck, Plus } from "lucide-react";
 import { useAuth } from "../context/AuthContext.jsx";
 import { ErrorMessage } from "./Feedback.jsx";
 
-// On the profile page, inside its form: my email – shown but not changeable.
+// On the profile page, inside its form: my email - shown but not changeable.
 // Without an email it can be added here (its own button, not the profile form's "Spara").
 export default function EmailField({ disabled }) {
     const { user, updateEmail } = useAuth();

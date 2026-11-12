@@ -12,7 +12,7 @@ import GiftPlusIcon from "../components/GiftPlusIcon.jsx";
 import SettingsMenu from "../components/SettingsMenu.jsx";
 import Avatar from "../components/Avatar.jsx";
 import { GiftEditor } from "./GiftPage.jsx";
-import { formatDate, formatPrice, relativeDays } from "../format.js";
+import { formatDate, formatPrice, joinNames, relativeDays } from "../format.js";
 import { MAX_WISHES_PER_LIST } from "../config.js";
 
 const names = (people) => people.map((p) => p.name).join(", ");
@@ -20,7 +20,7 @@ const names = (people) => people.map((p) => p.name).join(", ");
 // Wishes in sections by price per item. Cheapest first within each section; no price last.
 const PRICE_GROUPS = [
     { key: "low", title: "Upp till 250 kr", test: (p) => p <= 250 },
-    { key: "mid", title: "250–500 kr", test: (p) => p > 250 && p <= 500 },
+    { key: "mid", title: "250-500 kr", test: (p) => p > 250 && p <= 500 },
     { key: "high", title: "Över 500 kr", test: (p) => p > 500 },
     { key: "none", title: "Utan pris", test: (p) => p === null },
 ];
@@ -67,7 +67,7 @@ export default function ListPage() {
     }
 
     async function remove() {
-        // Gifts bought from the list are kept for those who bought them – as gifts for an own event
+        // Gifts bought from the list are kept for those who bought them - as gifts for an own event
         if (
             !window.confirm(
                 `Radera listan "${list.title}" och alla dess önskningar?\n\nDe som har köpt något från listan behåller sina gåvor.`
@@ -156,7 +156,7 @@ export default function ListPage() {
                 </Notice>
             )}
             {me.isRecipient && (
-                <Notice>Listan är till dig, så du ser inte vad som är reserverat – det är en överraskning.</Notice>
+                <Notice>Listan är till dig, så du ser inte vad som är reserverat - det är en överraskning.</Notice>
             )}
             {list.archived && <Notice>Eventet har varit. Listan är arkiverad och kan inte längre ändras.</Notice>}
 
@@ -176,7 +176,7 @@ export default function ListPage() {
                                 <Sparkles size={16} aria-hidden="true" /> Lägg till önskning
                             </button>
                         )}
-                        {/* A gift bought outside the list – only those who share it ever see it. Only once it's published. */}
+                        {/* A gift bought outside the list - only those who share it ever see it. Only once it's published. */}
                         {me.seesReservations && list.isPublic && (
                             <AddGiftButton listId={list.id} onAdded={reload}>
                                 <GiftPlusIcon /> Överraskning
@@ -206,7 +206,21 @@ export default function ListPage() {
                 )}
 
                 {wishes.length === 0 ? (
-                    <Empty>Inga önskningar än.</Empty>
+                    <Empty>
+                        {/* The owner gets a nudge (and the button), others a "come back later" */}
+                        {me.canEdit && !list.archived && !listFull ? (
+                            <>
+                                Listan är tom än så länge{me.isRecipient ? " - vad drömmer du om?" : "."}{" "}
+                                <button type="button" className="text-link" onClick={() => setAdding(true)} aria-haspopup="dialog">
+                                    {me.isRecipient ? "Lägg till din första önskning" : "Lägg till den första önskningen"}
+                                </button>
+                            </>
+                        ) : list.archived || recipients.length === 0 ? (
+                            "Listan har inga önskningar."
+                        ) : (
+                            `${joinNames(recipients.map((p) => p.name))} har inte lagt till några önskningar än. Titta in igen lite senare!`
+                        )}
+                    </Empty>
                 ) : (
                     groupByPrice(wishes).map((group) => (
                         <section key={group.key} className="price-group" aria-labelledby={`price-${group.key}`}>
@@ -223,7 +237,7 @@ export default function ListPage() {
                 )}
             </section>
 
-            {/* My own gifts linked to this list – last, looking like the wishes. Only for me (and those I share them with) */}
+            {/* My own gifts linked to this list - last, looking like the wishes. Only for me (and those I share them with) */}
             {myGifts.length > 0 && (
                 <section className="section">
                     <h3 className="subhead">

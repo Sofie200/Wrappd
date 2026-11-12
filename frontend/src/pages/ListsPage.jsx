@@ -5,7 +5,7 @@ import { useFetch } from "../hooks/useFetch.js";
 import { Empty, ErrorMessage, Loading } from "../components/Feedback.jsx";
 import ListPanelCard from "../components/ListPanelCard.jsx";
 
-// /lists – the lists I administer: the coming published ones and the ones that aren't published yet –
+// /lists - the lists I administer: the coming published ones and the ones that aren't published yet -
 // or, switched with the Arkiv button, the past ones. (Others' lists are on the overview.)
 export default function ListsPage() {
     const { data, error, loading, reload } = useFetch("/profile");
@@ -50,7 +50,7 @@ export default function ListsPage() {
                     <h2>Arkiv</h2>
                     <p className="muted">Listor vars datum har passerat. De kan inte längre ändras.</p>
                     {archivedLists.length === 0 ? (
-                        <Empty>Inga arkiverade listor än.</Empty>
+                        <Empty>Gamla listor sparas här när de har gjort sitt - med allt som önskades och gavs.</Empty>
                     ) : (
                         <div className="cards list-cards">
                             {archivedLists.map((list) => (
@@ -64,7 +64,7 @@ export default function ListsPage() {
                     <section className="section">
                         <h2>Publicerade</h2>
                         {publishedLists.length === 0 ? (
-                            <Empty>Du har inga publicerade listor just nu.</Empty>
+                            <Empty>Ingen lista är synlig för andra just nu. Publicera en, så kan gruppen börja fixa.</Empty>
                         ) : (
                             <div className="cards list-cards">
                                 {publishedLists.map((list) => (
@@ -77,7 +77,7 @@ export default function ListsPage() {
                     <section className="section">
                         <h2>Privata</h2>
                         {privateLists.length === 0 ? (
-                            <Empty>Du har inga opublicerade listor.</Empty>
+                            <Empty>Inga utkast på gång. Här kan du förbereda en lista i lugn och ro innan du visar den.</Empty>
                         ) : (
                             <div className="cards list-cards">
                                 {privateLists.map((list) => (

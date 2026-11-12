@@ -12,12 +12,12 @@ export function useGroupPeople() {
     return (groupMembers.data?.data ?? []).filter((p) => p.id !== user.id);
 }
 
-// An event of my own ("Loggade gåvor"): its name, date and who it's for – someone in my groups,
+// An event of my own ("Loggade gåvor"): its name, date and who it's for - someone in my groups,
 // or a name in free text. Used in "Logga gåva" (a new event) and "Redigera händelse".
 // draft: { name, date, recipientId, recipientText } (all strings); unknown: the recipient's account was deleted.
 export default function EventFields({ draft, onChange, people, unknown = false, disabled = false }) {
     const set = (field) => (e) => onChange({ ...draft, [field]: e.target.value });
-    // Names I've typed in before – suggested when the free-text field is clicked
+    // Names I've typed in before - suggested when the free-text field is clicked
     const recentNames = useFetch("/gifts/recipient-names");
     // The linked person, also if they're no longer in my groups
     const options =

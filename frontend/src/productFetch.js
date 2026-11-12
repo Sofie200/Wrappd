@@ -12,7 +12,7 @@ export async function fetchProduct(url) {
     const missing = Object.keys(NAMES).filter((key) => !product[key]);
     const warnings = [];
     if (product.price && product.currency && product.currency !== "SEK") {
-        warnings.push(`Priset är i ${product.currency}, inte kronor – kontrollera det.`);
+        warnings.push(`Priset är i ${product.currency}, inte kronor - kontrollera det.`);
     }
     if (product.imageUnsupported) warnings.push("Butikens bild är inte JPG eller PNG, så den kunde inte användas.");
 

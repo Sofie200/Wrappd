@@ -16,7 +16,7 @@ export const pool = new pg.Pool({
 });
 
 // Neon closes connections that have been idle for a while (and Vercel freezes the function in between).
-// When that happens to a connection resting in the pool, pg emits "error" on the pool – and an "error"
+// When that happens to a connection resting in the pool, pg emits "error" on the pool - and an "error"
 // event nobody listens to crashes the whole function. Here it's only logged; the pool drops that
 // connection and opens a new one next time.
 pool.on("error", (err) => {

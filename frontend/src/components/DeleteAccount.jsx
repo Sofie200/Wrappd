@@ -67,7 +67,7 @@ function DeleteAccountDialog({ onClose }) {
                         {plan.data.lists.length > 0 && (
                             <li>
                                 {plan.data.lists.length === 1 ? "Listan" : `${plan.data.lists.length} listor:`}{" "}
-                                <strong>{plan.data.lists.join(", ")}</strong> – med önskningar. De som köpt något därifrån
+                                <strong>{plan.data.lists.join(", ")}</strong> - med önskningar. De som köpt något därifrån
                                 behåller sina gåvor.
                             </li>
                         )}

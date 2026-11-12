@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Shuffle, HatGlasses } from "lucide-react";
 import { api } from "../api.js";
 import { useAuth } from "../context/AuthContext.jsx";
@@ -10,7 +10,7 @@ import { todayIso } from "../format.js";
 
 const MIN_PARTICIPANTS = 3;
 
-// /santa/new – pick a group, a date and who takes part, then draw.
+// /santa/new - pick a group, a date and who takes part, then draw.
 // Everyone gets someone else; only you will ever see who you got.
 export default function SantaFormPage() {
     const navigate = useNavigate();
@@ -27,7 +27,7 @@ export default function SantaFormPage() {
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState(null);
 
-    // Only adults can take part – children can't log in to see who they got
+    // Only adults can take part - children can't log in to see who they got
     const adults = (group.data?.members ?? []).filter((m) => !m.isChild);
 
     // A new group: everyone is in from the start
@@ -67,12 +67,15 @@ export default function SantaFormPage() {
                 <HatGlasses size={28} aria-hidden="true" /> Secret Santa
             </h1>
             <p className="muted">
-                Alla som är med lottas till någon annan. Var och en ser bara vem de själva ska ge till – inte ens du
+                Alla som är med lottas till någon annan. Var och en ser bara vem de själva ska ge till - inte ens du
                 som lottar ser de andras.
             </p>
 
             {groups.data.data.length === 0 ? (
-                <Empty>Du behöver vara med i en grupp först.</Empty>
+                <Empty>
+                    Secret Santa behöver deltagare! <Link to="/groups">Skapa en grupp</Link> först, så kan ni dra lott
+                    tillsammans.
+                </Empty>
             ) : (
                 <form className="form" onSubmit={draw}>
                     <label className="field">
@@ -126,7 +129,7 @@ export default function SantaFormPage() {
                                     </div>
                                     <p className={`small${tooFew ? " field-error" : " muted"}`}>
                                         {memberIds.length} valda
-                                        {tooFew && ` – minst ${MIN_PARTICIPANTS} behövs, annars vet alla vem som fick vem.`}
+                                        {tooFew && ` - minst ${MIN_PARTICIPANTS} behövs, annars vet alla vem som fick vem.`}
                                     </p>
                                 </>
                             )}

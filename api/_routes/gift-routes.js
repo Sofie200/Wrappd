@@ -2,21 +2,21 @@
 // Two kinds:
 //  - On a wish (wish_id): created by reserving the wish. Title and price are copied from the wish.
 //  - Outside the wish list (wish_id NULL): created here, with its own title, description, link and image.
-//    Linked to a list (list_id), to a Secret Santa I'm a giver in (santa_id – recipient and date come
+//    Linked to a list (list_id), to a Secret Santa I'm a giver in (santa_id - recipient and date come
 //    from the draw), or logged on an event of my own (event_id → gift_events, "Loggade gåvor"): a name,
 //    a date and one recipient (a user in my groups, a name in free text, or "Okänd mottagare").
 //    NEVER shown on the list. The API still calls the event's fields recipient (name), giftDate,
-//    recipientId, recipientText and recipientUnknown – as before they moved to gift_events.
+//    recipientId, recipientText and recipientUnknown - as before they moved to gift_events.
 // Rules:
 //  - Everyone who shares a gift has the same rights to it. Others don't see it at all
 //    (a gift on a wish only shows as "Reserverad av …" on the list).
-//  - A gift can be shared with adults in its list's groups – never the list's recipients, never children.
+//  - A gift can be shared with adults in its list's groups - never the list's recipients, never children.
 //    A gift on a wish profile (a wish without a list) can be shared with adults in the person's groups.
-//    A gift without a list or a wish can't be shared (also not a Secret Santa gift – only the giver knows who it's for).
+//    A gift without a list or a wish can't be shared (also not a Secret Santa gift - only the giver knows who it's for).
 //  - Gifts on wishes: quantity and undo are locked after the event; price, comment and split are not.
 //    One person can be in at most one gift per wish.
-//  - Gifts outside the list: everything can always be changed – except what it is linked to (a list, a Secret
-//    Santa or an own event), which is set when it is created – and they can always be deleted.
+//  - Gifts outside the list: everything can always be changed - except what it is linked to (a list, a Secret
+//    Santa or an own event), which is set when it is created - and they can always be deleted.
 //  - The split is either equal, or an amount in kronor per person that adds up to the price.
 import { Router } from "express";
 import { pool, TODAY, withTransaction } from "../_db/pool.js";
@@ -31,7 +31,7 @@ import { removeUnusedImages } from "../_lib/imageCleanup.js";
 
 const router = Router();
 
-// The gift, if I'm one of its members. 404 otherwise – others don't learn it exists.
+// The gift, if I'm one of its members. 404 otherwise - others don't learn it exists.
 async function loadGift(db, giftId, userId, { lock = false } = {}) {
     const { rows: [gift] } = await db.query(
         `SELECT g.id, g.wish_id, g.quantity, g.title, g.price, g.comment, g.split,
@@ -94,12 +94,12 @@ async function shareCandidates(db, { listId, wishId = null, giftId = null, owner
     return rows;
 }
 
-// A gift outside the list may be linked to a published list I can see and am not a recipient of –
+// A gift outside the list may be linked to a published list I can see and am not a recipient of -
 // also archived ones. Not to a private list: nobody can buy for it before it's published.
 async function requireLinkableList(db, listId, userId) {
     const access = await getListAccess(db, listId, userId); // 404 if I can't see it
     if (access.isRecipient) throw new HttpError(403, "Du kan inte koppla en gåva till en lista till dig själv");
-    if (!access.list.is_public) throw new HttpError(403, "Listan är inte publicerad än – då kan du inte koppla gåvor till den");
+    if (!access.list.is_public) throw new HttpError(403, "Listan är inte publicerad än - då kan du inte koppla gåvor till den");
 }
 
 // Who a gift for an event is for: someone else in one of my groups. 404 otherwise.
@@ -115,7 +115,7 @@ async function requireLinkablePerson(db, personId, userId) {
     if (rowCount === 0) throw new HttpError(404, "Personen finns inte i dina grupper");
 }
 
-// ...or to an event of my own that I'm in – through a gift on it. 404 otherwise.
+// ...or to an event of my own that I'm in - through a gift on it. 404 otherwise.
 async function requireMyEvent(db, eventId, userId) {
     const { rowCount } = await db.query(
         `SELECT 1 FROM gifts g JOIN gift_members gm ON gm.gift_id = g.id
@@ -125,7 +125,7 @@ async function requireMyEvent(db, eventId, userId) {
     if (rowCount === 0) throw new HttpError(404, "Händelsen finns inte");
 }
 
-// ...or to a Secret Santa where I'm a giver. 404 otherwise – others don't learn it exists.
+// ...or to a Secret Santa where I'm a giver. 404 otherwise - others don't learn it exists.
 async function requireMySanta(db, santaId, userId) {
     const { rowCount } = await db.query(
         "SELECT 1 FROM secret_santa_pairs WHERE santa_id = $1 AND giver_id = $2",
@@ -134,7 +134,7 @@ async function requireMySanta(db, santaId, userId) {
     if (rowCount === 0) throw new HttpError(404, "Secret Santa finns inte");
 }
 
-// The Secret Santas a gift can be linked to: the ones I give in – who I give to, the date and the title
+// The Secret Santas a gift can be linked to: the ones I give in - who I give to, the date and the title
 async function mySantas(db, userId) {
     const { rows } = await db.query(
         `SELECT s.id, s.title, s.event_date AS "date", s.event_date < ${TODAY} AS archived, u.name AS receiver
@@ -148,7 +148,7 @@ async function mySantas(db, userId) {
     return rows;
 }
 
-/* --- GET /api/gifts/lists → { data, santas } – the lists and Secret Santas a gift outside the wish list can be linked to --- */
+/* --- GET /api/gifts/lists → { data, santas } - the lists and Secret Santas a gift outside the wish list can be linked to --- */
 router.get("/lists", async (req, res) => {
     const santas = await mySantas(pool, req.user.id);
     const { rows } = await pool.query(
@@ -168,8 +168,8 @@ router.get("/lists", async (req, res) => {
     res.json({ data: rows, santas });
 });
 
-/* --- GET /api/gifts/candidates?listId=5 → { data } – who a new surprise gift on the list can be shared with --- */
-// Adults in the list's groups who aren't its recipients – the same rule as for a saved gift
+/* --- GET /api/gifts/candidates?listId=5 → { data } - who a new surprise gift on the list can be shared with --- */
+// Adults in the list's groups who aren't its recipients - the same rule as for a saved gift
 router.get("/candidates", async (req, res) => {
     const listId = parseId(req.query.listId);
     await requireLinkableList(pool, listId, req.user.id);
@@ -177,7 +177,7 @@ router.get("/candidates", async (req, res) => {
     res.json({ data: people.filter((p) => p.id !== req.user.id) });
 });
 
-/* --- GET /api/gifts/events → { data } – my events of my own ("Loggade gåvor"), to log another gift on --- */
+/* --- GET /api/gifts/events → { data } - my events of my own ("Loggade gåvor"), to log another gift on --- */
 // Mine = an event with a gift I'm in. Coming ones first (soonest first), then past ones (latest first).
 router.get("/events", async (req, res) => {
     const { rows } = await pool.query(
@@ -196,7 +196,7 @@ router.get("/events", async (req, res) => {
     res.json({ data: rows });
 });
 
-/* --- GET /api/gifts/recipient-names → { data: ["Farmor", …] } – the 10 latest names I've typed in as a recipient --- */
+/* --- GET /api/gifts/recipient-names → { data: ["Farmor", …] } - the 10 latest names I've typed in as a recipient --- */
 // For the suggestions under "…eller skriv ett namn". From events with a gift I'm in, the most recent first.
 router.get("/recipient-names", async (req, res) => {
     const { rows } = await pool.query(
@@ -213,7 +213,7 @@ router.get("/recipient-names", async (req, res) => {
     res.json({ data: rows.map((r) => r.name) });
 });
 
-/* --- PUT /api/gifts/events/:id  { name, giftDate, recipientId?, recipientText? } – change an event of my own --- */
+/* --- PUT /api/gifts/events/:id  { name, giftDate, recipientId?, recipientText? } - change an event of my own --- */
 // Anyone in one of its gifts may. It changes for all the event's gifts.
 const EventBody = GiftBody.pick({ recipient: true, giftDate: true, recipientId: true, recipientText: true });
 
@@ -240,8 +240,8 @@ router.put("/events/:id", async (req, res) => {
     res.json({ id: eventId });
 });
 
-/* --- DELETE /api/gifts/events/:id → { deleted, giftsDeleted } – delete an event of my own and all its gifts --- */
-// Only for someone who is in EVERY gift on it – nobody deletes a gift they can't see. The gifts go for
+/* --- DELETE /api/gifts/events/:id → { deleted, giftsDeleted } - delete an event of my own and all its gifts --- */
+// Only for someone who is in EVERY gift on it - nobody deletes a gift they can't see. The gifts go for
 // everyone who shares them; the event goes with its last gift (trigger), and so do images nothing else uses.
 router.delete("/events/:id", async (req, res) => {
     const eventId = parseId(req.params.id);
@@ -296,7 +296,7 @@ router.get("/:id", async (req, res) => {
              WHERE gm.gift_id = $1 ORDER BY u.name`,
             [giftId]
         ),
-        // How many copies OTHER gifts on the wish have taken – the most this gift can have is the rest
+        // How many copies OTHER gifts on the wish have taken - the most this gift can have is the rest
         gift.wish_id
             ? pool.query(
                   "SELECT COALESCE(SUM(quantity), 0)::int AS taken FROM gifts WHERE wish_id = $1 AND id <> $2",
@@ -304,7 +304,7 @@ router.get("/:id", async (req, res) => {
               )
             : { rows: [{ taken: 0 }] },
         shareCandidates(pool, { listId: gift.list_id, wishId: gift.wish_id, giftId, ownerId: gift.wish_owner_id }),
-        // The Secret Santa it belongs to, with who I give to – only if I'm still the giver
+        // The Secret Santa it belongs to, with who I give to - only if I'm still the giver
         gift.santa_id
             ? pool.query(
                   `SELECT s.id, s.title, s.event_date AS "date", u.name AS receiver
@@ -341,7 +341,7 @@ router.get("/:id", async (req, res) => {
             // A name in free text, and "the recipient's account was deleted" (then shown as "Okänd mottagare")
             recipientText: gift.recipient_text,
             recipientUnknown: gift.recipient_unknown,
-            // The event's date – or, for a gift from a wish profile, its own
+            // The event's date - or, for a gift from a wish profile, its own
             giftDate: gift.event_id ? gift.event_date : gift.gift_date,
         },
         wish: wish.rows[0],
@@ -356,7 +356,7 @@ router.get("/:id", async (req, res) => {
 // A gift outside the list: a title, and a list OR a Secret Santa OR an event (an existing one, or a name and a date)
 function checkFreeGift(body) {
     if (!body.title) throw new HttpError(400, "Ange en titel");
-    if (body.listId && body.santaId) throw new HttpError(400, "Välj en lista eller en Secret Santa – inte båda");
+    if (body.listId && body.santaId) throw new HttpError(400, "Välj en lista eller en Secret Santa - inte båda");
     if (!body.listId && !body.santaId && !body.eventId) {
         if (!body.recipient) throw new HttpError(400, "Välj en lista, eller skriv vad det är för händelse");
         if (!body.giftDate) throw new HttpError(400, "Ange ett datum för gåvan");
@@ -388,7 +388,7 @@ async function replaceMembers(db, giftId, body, userIds) {
     );
 }
 
-/* --- POST /api/gifts  (multipart) → { id } – a gift outside the wish list. Only me to begin with. --- */
+/* --- POST /api/gifts  (multipart) → { id } - a gift outside the wish list. Only me to begin with. --- */
 router.post("/", receiveImage, async (req, res) => {
     // A surprise gift on a list can be shared right away (members + split, like when changing a gift).
     // Anything else starts with only me.
@@ -412,7 +412,7 @@ router.post("/", receiveImage, async (req, res) => {
     if (body.santaId) await requireMySanta(pool, body.santaId, req.user.id);
     if (body.listId || body.santaId) body.eventId = null;
     if (body.eventId) await requireMyEvent(pool, body.eventId, req.user.id);
-    // A new event of my own: its name, date and person – only without a list, a Secret Santa or an existing event
+    // A new event of my own: its name, date and person - only without a list, a Secret Santa or an existing event
     const newEvent = !body.listId && !body.santaId && !body.eventId;
     if (newEvent && body.recipientId) await requireLinkablePerson(pool, body.recipientId, req.user.id);
 
@@ -448,27 +448,27 @@ router.post("/", receiveImage, async (req, res) => {
     }
 });
 
-/* --- PUT /api/gifts/:id  (JSON or multipart) – change the gift (member) ---
+/* --- PUT /api/gifts/:id  (JSON or multipart) - change the gift (member) ---
    All gifts:     { quantity, price, comment, split, members: [{ userId, amount }] }
    Outside list:  + { title, description, url, image / imageFromUrl / removeImage }.
-                  The link (list / Secret Santa / event of my own) never changes – an event is edited on its own route. */
+                  The link (list / Secret Santa / event of my own) never changes - an event is edited on its own route. */
 router.put("/:id", receiveImage, async (req, res) => {
     const giftId = parseId(req.params.id);
     const body = parse(GiftBody, req.body ?? {});
     const userIds = checkSplit(body);
 
-    // Who I am in it, and what kind it is – before uploading any image
+    // Who I am in it, and what kind it is - before uploading any image
     const before = await loadGift(pool, giftId, req.user.id);
     if (before.is_free) {
         // What it's linked to (a list, a Secret Santa or an own event) is decided when it's created and
-        // can't change – whatever arrives is replaced by what it already has
+        // can't change - whatever arrives is replaced by what it already has
         // A logged gift stays on its event; the event itself is changed with PUT /api/gifts/events/:id
         body.listId = before.own_list_id;
         body.santaId = before.santa_id;
         body.eventId = before.event_id;
         checkFreeGift(body);
         if (body.santaId && userIds.length > 1) throw new HttpError(400, "En gåva till en Secret Santa kan inte delas.");
-        // Without a list nobody new can join – but those already in it may stay (a gift whose list or
+        // Without a list nobody new can join - but those already in it may stay (a gift whose list or
         // Secret Santa was deleted keeps everyone who shared it)
         if (!body.listId && !body.santaId) {
             const { rows: current } = await pool.query("SELECT user_id FROM gift_members WHERE gift_id = $1", [giftId]);
@@ -537,7 +537,7 @@ router.put("/:id", receiveImage, async (req, res) => {
                     ]
                 );
             } else {
-                // A gift from a wish profile has its own date, and must keep one – unless it's for a Secret Santa
+                // A gift from a wish profile has its own date, and must keep one - unless it's for a Secret Santa
                 // (the draw's date). On a list it's the list's date.
                 const ownDate = gift.wish_owner_id !== null && !gift.santa_id;
                 if (ownDate && !body.giftDate) throw new HttpError(400, "Ange när gåvan ska ges");
@@ -561,7 +561,7 @@ router.put("/:id", receiveImage, async (req, res) => {
     res.json({ id: giftId, stillMember: userIds.includes(req.user.id) });
 });
 
-/* --- DELETE /api/gifts/:id – undo the reservation / delete the gift (member) --- */
+/* --- DELETE /api/gifts/:id - undo the reservation / delete the gift (member) --- */
 // A gift on a wish can't be undone after the event. A gift outside the list can always be deleted.
 router.delete("/:id", async (req, res) => {
     const giftId = parseId(req.params.id);
@@ -573,7 +573,7 @@ router.delete("/:id", async (req, res) => {
         return gift.image_url;
     });
 
-    // Several gifts can share an image (copies of the same wish) – only delete it when none uses it
+    // Several gifts can share an image (copies of the same wish) - only delete it when none uses it
     if (imageUrl) await removeUnusedImages([imageUrl], "GIFT");
     res.json({ deleted: giftId });
 });

@@ -2,11 +2,11 @@
 // That is risky on a server: someone could point us at our own network (localhost, 10.x, the cloud's
 // metadata service …). So:
 //  - only http/https on the standard ports
-//  - every address the name points to must be public – checked in the connection's own DNS lookup,
+//  - every address the name points to must be public - checked in the connection's own DNS lookup,
 //    so the name can't change to a private address between the check and the request
 //  - redirects are followed by hand (max 5), and every hop is checked the same way
 //  - a total timeout, and a maximum size
-// No extra packages – only Node's own http/https.
+// No extra packages - only Node's own http/https.
 import dns from "node:dns";
 import http from "node:http";
 import https from "node:https";
@@ -65,7 +65,7 @@ export function isPublicAddress(address) {
     return false;
 }
 
-// Used by the connection itself – so the address we check is the address we connect to
+// Used by the connection itself - so the address we check is the address we connect to
 function safeLookup(hostname, options, callback) {
     dns.lookup(hostname, { all: true }, (err, addresses) => {
         if (err) return callback(err);
@@ -81,7 +81,7 @@ function checkUrl(url) {
     if (url.protocol !== "http:" && url.protocol !== "https:") throw new FetchError("Bara http- och https-länkar");
     if (url.port && url.port !== "80" && url.port !== "443") throw new FetchError("Länken använder en port som inte stöds");
     if (url.username || url.password) throw new FetchError("Länken får inte innehålla inloggningsuppgifter");
-    // An IP address in the link never goes through the DNS lookup – check it here
+    // An IP address in the link never goes through the DNS lookup - check it here
     const host = url.hostname.replace(/^\[|\]$/g, "");
     if (net.isIP(host) && !isPublicAddress(host)) throw new FetchError("Adressen pekar inte på en publik webbplats");
 }

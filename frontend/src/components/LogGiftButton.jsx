@@ -8,7 +8,7 @@ import { ErrorMessage, Loading } from "./Feedback.jsx";
 import { GiftEditor } from "../pages/GiftPage.jsx";
 
 // "Logga gåva" on the gifts page: a modal in two steps.
-//  1. The event: one of my events ("Loggade gåvor") – or a new one, with its name, date and recipient.
+//  1. The event: one of my events ("Loggade gåvor") - or a new one, with its name, date and recipient.
 //  2. "Nästa": the ordinary gift form, already logged on that event ("Ändra" goes back to step 1).
 // The new event is created on the server together with the gift (an event never exists without gifts).
 export default function LogGiftButton({ className = "btn btn-primary", onAdded, children }) {
@@ -37,7 +37,7 @@ function LogGiftModal({ onClose, onAdded }) {
     const people = useGroupPeople();
 
     const [step, setStep] = useState(1);
-    // "existing" or "new" – existing is chosen from the start when there are events to pick from
+    // "existing" or "new" - existing is chosen from the start when there are events to pick from
     const [mode, setMode] = useState(null);
     const [eventId, setEventId] = useState("");
     const [draft, setDraft] = useState({ name: "", date: "", recipientId: "", recipientText: "" });
@@ -46,7 +46,7 @@ function LogGiftModal({ onClose, onAdded }) {
     const list = events.data?.data ?? [];
     const chosenMode = mode ?? (list.length > 0 ? "existing" : "new");
 
-    // Step 2's "preset" event: the chosen one (with its id), or the new one's fields (no id – created with the gift)
+    // Step 2's "preset" event: the chosen one (with its id), or the new one's fields (no id - created with the gift)
     function presetEvent() {
         if (chosenMode === "existing") {
             const ev = list.find((x) => String(x.id) === eventId);

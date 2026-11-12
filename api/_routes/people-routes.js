@@ -1,5 +1,5 @@
 // Wish profiles: what a person wishes for, without a list. Free text, categories they like or
-// don't like, and their own wishes – which others can reserve (they become gifts, like on a list).
+// don't like, and their own wishes - which others can reserve (they become gifts, like on a list).
 // Who may do what is in getPersonAccess (_lib/access.js). The person never sees what is reserved.
 import { Router } from "express";
 import { pool, withTransaction } from "../_db/pool.js";
@@ -13,7 +13,7 @@ import { removeWishImages } from "../_integrations/storageAdapter.js";
 
 const router = Router();
 
-// A wish profile is a short "this is what I'd like" – the lists are for more
+// A wish profile is a short "this is what I'd like" - the lists are for more
 export const MAX_PROFILE_WISHES = 3;
 const TOO_MANY = `Du kan ha högst ${MAX_PROFILE_WISHES} önskningar på en önskeprofil`;
 
@@ -24,7 +24,7 @@ async function profileWishCount(db, personId) {
 
 /* --- GET /api/people/:id → { person, profile, me, wishes } --- */
 // The same wish shape as on a list, so the frontend can use the same components.
-// Reservations only for those who may see them – never for the person themselves.
+// Reservations only for those who may see them - never for the person themselves.
 router.get("/:id", async (req, res) => {
     const personId = parseId(req.params.id);
     const access = await getPersonAccess(pool, personId, req.user.id);
@@ -87,7 +87,7 @@ router.get("/:id", async (req, res) => {
     });
 });
 
-/* --- PUT /api/people/:id/profile  { about, likes, dislikes } – my own, or my child's --- */
+/* --- PUT /api/people/:id/profile  { about, likes, dislikes } - my own, or my child's --- */
 router.put("/:id/profile", async (req, res) => {
     const personId = parseId(req.params.id);
     const access = await getPersonAccess(pool, personId, req.user.id);
@@ -110,7 +110,7 @@ router.post("/:id/wishes", receiveImage, async (req, res) => {
     requireEditor(access);
     const body = parse(WishBody, req.body ?? {});
 
-    // Check before uploading the image – no point uploading it if the save will be refused
+    // Check before uploading the image - no point uploading it if the save will be refused
     if ((await profileWishCount(pool, personId)) >= MAX_PROFILE_WISHES) throw new HttpError(409, TOO_MANY);
 
     const imageUrl = await uploadNewProfileWishImage(personId, req.file, body.imageFromUrl);

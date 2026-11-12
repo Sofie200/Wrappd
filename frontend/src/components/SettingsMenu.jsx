@@ -7,9 +7,9 @@ import { Settings } from "lucide-react";
 // and when an item is chosen.
 //
 // The menu is position: fixed and placed from the button's position on screen, so it always
-// stays inside the window: under the button, right-aligned to it – pushed in from the edges
+// stays inside the window: under the button, right-aligned to it - pushed in from the edges
 // if needed, and opened upwards if there's no room below.
-// atPointer: for a big trigger (e.g. a whole card) – the menu opens where it was clicked instead,
+// atPointer: for a big trigger (e.g. a whole card) - the menu opens where it was clicked instead,
 // centred under the pointer (from the keyboard: the middle of the trigger).
 export default function SettingsMenu({
     label = "Inställningar",
@@ -98,7 +98,7 @@ export default function SettingsMenu({
                 onClick={(e) => {
                     if (atPointer) {
                         const rect = buttonRef.current.getBoundingClientRect();
-                        // detail === 0: pressed with the keyboard – no pointer, so use the middle
+                        // detail === 0: pressed with the keyboard - no pointer, so use the middle
                         anchor.current =
                             e.detail === 0
                                 ? { x: rect.width / 2, y: rect.height / 2 }

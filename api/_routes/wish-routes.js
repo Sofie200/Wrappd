@@ -12,7 +12,7 @@ import { uploadNewProfileWishImage, uploadNewWishImage } from "../_lib/wishImage
 
 const router = Router();
 
-// The wish, and my access to its list – or to the wish profile it's on.
+// The wish, and my access to its list - or to the wish profile it's on.
 // 404 if the wish doesn't exist or I can't see where it is.
 async function loadWish(db, wishId, userId) {
     const { rows: [wish] } = await db.query("SELECT id, list_id, user_id, image_url FROM wishes WHERE id = $1", [wishId]);
@@ -27,7 +27,7 @@ async function giftCount(db, wishId) {
 }
 
 // A wish can't be changed or deleted once someone has reserved it.
-// Recipients must not learn what is reserved – so a vaguer message for them.
+// Recipients must not learn what is reserved - so a vaguer message for them.
 function lockedByGifts(access, what) {
     return new HttpError(
         409,
@@ -35,14 +35,14 @@ function lockedByGifts(access, what) {
     );
 }
 
-/* --- PATCH /api/wishes/:id  (multipart, same fields as create + removeImage) – edit (list admin / profile owner) --- */
+/* --- PATCH /api/wishes/:id  (multipart, same fields as create + removeImage) - edit (list admin / profile owner) --- */
 router.patch("/:id", receiveImage, async (req, res) => {
     const wishId = parseId(req.params.id);
     const { wish, access } = await loadWish(pool, wishId, req.user.id);
     requireEditor(access);
     const body = parse(WishBody, req.body ?? {});
 
-    // Check before uploading a new image – no point uploading it if the save will be refused
+    // Check before uploading a new image - no point uploading it if the save will be refused
     if ((await giftCount(pool, wishId)) > 0) throw lockedByGifts(access, "ändras");
 
     // 1. A new image (uploaded file, or a copy of the shop's image) is saved first.
@@ -56,7 +56,7 @@ router.patch("/:id", receiveImage, async (req, res) => {
     try {
         await withTransaction(async (db) => {
             await db.query("SELECT id FROM wishes WHERE id = $1 FOR UPDATE", [wishId]);
-            // Again, inside the lock – someone may have reserved it meanwhile
+            // Again, inside the lock - someone may have reserved it meanwhile
             if ((await giftCount(db, wishId)) > 0) throw lockedByGifts(access, "ändras");
 
             await db.query(
@@ -71,7 +71,7 @@ router.patch("/:id", receiveImage, async (req, res) => {
         throw err;
     }
 
-    // 2. The wish is saved – now the old image can go
+    // 2. The wish is saved - now the old image can go
     if (wish.image_url && wish.image_url !== imageUrl) {
         await removeUnusedImages([wish.image_url], "WISH");
     }
@@ -79,7 +79,7 @@ router.patch("/:id", receiveImage, async (req, res) => {
     res.json({ id: wishId, imageUrl });
 });
 
-/* --- DELETE /api/wishes/:id – only if nobody has reserved it (list admin) --- */
+/* --- DELETE /api/wishes/:id - only if nobody has reserved it (list admin) --- */
 router.delete("/:id", async (req, res) => {
     const wishId = parseId(req.params.id);
     const { wish, access } = await loadWish(pool, wishId, req.user.id);
@@ -97,10 +97,10 @@ router.delete("/:id", async (req, res) => {
     res.json({ deleted: wishId });
 });
 
-/* --- POST /api/wishes/:id/gifts  { quantity } → { id } – reserve: creates a gift with me in it --- */
+/* --- POST /api/wishes/:id/gifts  { quantity } → { id } - reserve: creates a gift with me in it --- */
 // The gift gets a copy of the title, and the price = the wish's price × quantity. Both are then the gift's own.
-// giftDate: when the gift is to be given – required on a wish profile (it has no list with a date) …
-// santaId: … unless it's for a Secret Santa where I give to the profile's owner – then it's the draw's date
+// giftDate: when the gift is to be given - required on a wish profile (it has no list with a date) …
+// santaId: … unless it's for a Secret Santa where I give to the profile's owner - then it's the draw's date
 const Reserve = z.object({
     giftDate,
     santaId: optionalId,
@@ -123,7 +123,7 @@ router.post("/:id/gifts", async (req, res) => {
             "SELECT quantity, title, price, user_id FROM wishes WHERE id = $1 FOR UPDATE",
             [wishId]
         );
-        // A wish on a wish profile: the gift needs its own date (a list's wishes use the list's date) –
+        // A wish on a wish profile: the gift needs its own date (a list's wishes use the list's date) -
         // or a Secret Santa where I'm the giver and the profile's owner is the one I give to
         const onProfile = wish.user_id !== null;
         if (santaId) {

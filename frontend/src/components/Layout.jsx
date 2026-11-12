@@ -12,7 +12,7 @@ export default function Layout() {
     const { user, logout } = useAuth();
     const { pathname } = useLocation();
 
-    // A new page starts at the top – otherwise you'd land as far down as you were on the last one
+    // A new page starts at the top - otherwise you'd land as far down as you were on the last one
     useEffect(() => {
         window.scrollTo(0, 0);
     }, [pathname]);

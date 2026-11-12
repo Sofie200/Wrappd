@@ -11,7 +11,7 @@ import Modal from "../components/Modal.jsx";
 import SettingsMenu from "../components/SettingsMenu.jsx";
 import { ArrowRight, Baby, Ellipsis, Gift, Heart, Pencil, Plus, ScrollText, Trash2, Users } from "lucide-react";
 
-// What disappears when a child is deleted – shown in the confirmation
+// What disappears when a child is deleted - shown in the confirmation
 function deleteWarning(child) {
     const lines = [`Radera ${child.name}?`];
     if (child.listsDeletedWithChild > 0) {
@@ -32,7 +32,7 @@ function deleteWarning(child) {
 
 export default function ChildrenPage() {
     const children = useFetch("/children");
-    const [mode, setMode] = useState(null); // "new" – the form for a new child is open
+    const [mode, setMode] = useState(null); // "new" - the form for a new child is open
     const [editing, setEditing] = useState(null); // the child being edited (modal)
     const [showing, setShowing] = useState(null); // { child, what: "lists" | "groups" } (modal)
     const [actionError, setActionError] = useState(null);
@@ -88,13 +88,13 @@ export default function ChildrenPage() {
 
             <section className="section">
                 {children.data.data.length === 0 && mode !== "new" ? (
-                    <Empty>Du har inte lagt till några barn än.</Empty>
+                    <Empty>Har du barn som ska få önskelistor? Lägg till dem här, så kan du göra listor åt dem och dela med släkten.</Empty>
                 ) : (
                     <div className="cards">
                         {children.data.data.map((child) => (
                             <div key={child.id} className="card">
                                 <div className="card-top">
-                                    {/* The name with its "…" menu right after it – like the group page's title */}
+                                    {/* The name with its "…" menu right after it - like the group page's title */}
                                     <div className="child-title-row">
                                         <h3 className="child-title">
                                             <Avatar isChild id={child.id} size={32} />

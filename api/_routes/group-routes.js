@@ -38,7 +38,7 @@ async function requireGroupAdmin(db, groupId, userId) {
     return member;
 }
 
-/* --- GET /api/groups → { data: [{ id, name, isAdmin, includeChildren, memberCount, activeListCount }] } – my groups --- */
+/* --- GET /api/groups → { data: [{ id, name, isAdmin, includeChildren, memberCount, activeListCount }] } - my groups --- */
 // activeListCount: published lists shared with the group whose date hasn't passed
 router.get("/", async (req, res) => {
     const { rows } = await pool.query(
@@ -54,8 +54,8 @@ router.get("/", async (req, res) => {
     res.json({ data: rows });
 });
 
-/* --- POST /api/groups  { name, includeChildren? } → { id } – the creator becomes admin --- */
-// includeChildren: every member's children are members automatically – mine from the start
+/* --- POST /api/groups  { name, includeChildren? } → { id } - the creator becomes admin --- */
+// includeChildren: every member's children are members automatically - mine from the start
 router.post("/", async (req, res) => {
     const { name, includeChildren } = parse(CreateGroup, req.body);
 
@@ -76,7 +76,7 @@ router.post("/", async (req, res) => {
 });
 
 /* --- GET /api/groups/members?ids=1,2 → { data: [{ id, name, username }] } --- */
-// Everyone who is a member of any of the groups – used to pick recipients and admins of a list.
+// Everyone who is a member of any of the groups - used to pick recipients and admins of a list.
 // Allowed for groups I am a member of, and for groups on a list I administer.
 const MemberQuery = z.object({
     ids: z
@@ -138,14 +138,14 @@ router.get("/:id", async (req, res) => {
     );
 
     // Public lists in the group, plus private ones I administer.
-    // Lists to me are included (marked isRecipient) – the frontend shows them without a link.
+    // Lists to me are included (marked isRecipient) - the frontend shows them without a link.
     const { rows: lists } = await pool.query(
         `SELECT l.id, l.title, l.end_date AS "endDate", l.is_public AS "isPublic",
                 l.end_date < ${TODAY} AS archived,
                 EXISTS (SELECT 1 FROM list_admins WHERE list_id = l.id AND user_id = $2) AS "isAdmin",
                 EXISTS (SELECT 1 FROM list_recipients WHERE list_id = l.id AND user_id = $2) AS "isRecipient",
                 (SELECT count(*)::int FROM wishes WHERE list_id = l.id) AS "wishCount",
-                -- Fully reserved wishes – not on lists to me (that's a surprise)
+                -- Fully reserved wishes - not on lists to me (that's a surprise)
                 CASE WHEN EXISTS (SELECT 1 FROM list_recipients WHERE list_id = l.id AND user_id = $2) THEN NULL
                      ELSE (SELECT count(*)::int FROM wishes w
                            WHERE w.list_id = l.id
@@ -163,8 +163,8 @@ router.get("/:id", async (req, res) => {
     res.json({ group, me: { isAdmin: me.is_admin }, members, lists });
 });
 
-/* --- PATCH /api/groups/:id  { name, includeChildren? } – group settings (admin) --- */
-// includeChildren on: all members' children join. Off: all children leave – stopped if a child
+/* --- PATCH /api/groups/:id  { name, includeChildren? } - group settings (admin) --- */
+// includeChildren on: all members' children join. Off: all children leave - stopped if a child
 // would then leave all groups of a current list it is a recipient on.
 const UpdateGroup = GroupBody.extend({ includeChildren: z.boolean().optional() });
 
@@ -183,7 +183,7 @@ router.patch("/:id", async (req, res) => {
     res.json({ id: groupId, name });
 });
 
-/* --- POST /api/groups/:id/members  { userId } – add a member directly, no invitation (admin) --- */
+/* --- POST /api/groups/:id/members  { userId } - add a member directly, no invitation (admin) --- */
 const AddMember = z.object({ userId: z.coerce.number({ error: "Välj en användare" }).int().positive() });
 
 // If the group includes children, the new member's children come along automatically
@@ -207,7 +207,7 @@ router.post("/:id/members", async (req, res) => {
     res.status(201).json({ added: userId });
 });
 
-/* --- POST /api/groups/:id/users  { name, username } → { user, link } – create an account (admin) --- */
+/* --- POST /api/groups/:id/users  { name, username } → { user, link } - create an account (admin) --- */
 // The new user is added to the group directly. They choose their own password via the link.
 const NewUser = z.object({ name, username });
 
@@ -238,7 +238,7 @@ router.post("/:id/users", async (req, res) => {
     res.status(201).json(result);
 });
 
-/* --- POST /api/groups/:id/members/:userId/link → { user, link } – a new link (admin) --- */
+/* --- POST /api/groups/:id/members/:userId/link → { user, link } - a new link (admin) --- */
 // Not activated yet: a new activation link (the old one stops working).
 // Activated: a link to choose a new password. The current password works until the link is used.
 router.post("/:id/members/:userId/link", async (req, res) => {
@@ -269,7 +269,7 @@ router.post("/:id/members/:userId/link", async (req, res) => {
     res.status(201).json(result);
 });
 
-/* --- PATCH /api/groups/:id/members/:userId  { isAdmin } – make or unmake admin (admin) --- */
+/* --- PATCH /api/groups/:id/members/:userId  { isAdmin } - make or unmake admin (admin) --- */
 const SetAdmin = z.object({ isAdmin: z.boolean({ error: "isAdmin måste vara true eller false" }) });
 
 router.patch("/:id/members/:userId", async (req, res) => {
@@ -307,7 +307,7 @@ router.patch("/:id/members/:userId", async (req, res) => {
     res.json({ userId, isAdmin });
 });
 
-/* --- DELETE /api/groups/:id/members/:userId → { removed, accountDeleted } – remove a member (admin), or leave (yourself) --- */
+/* --- DELETE /api/groups/:id/members/:userId → { removed, accountDeleted } - remove a member (admin), or leave (yourself) --- */
 // The member's children leave with them, unless the other parent is still in the group.
 // A never-activated account (no password, no Google) that isn't in any other group is deleted completely:
 // nobody has ever logged in to it, so nobody loses anything of their own. See deleteUnactivatedAccount below.
@@ -327,7 +327,7 @@ router.delete("/:id/members/:userId", async (req, res) => {
             [groupId, userId]
         );
         if (!target) throw new HttpError(404, "Användaren är inte med i gruppen");
-        // Children follow their parents – they can't be removed on their own
+        // Children follow their parents - they can't be removed on their own
         if (target.is_child) throw new HttpError(403, "Barn är med automatiskt via sina föräldrar och kan inte tas bort för sig");
 
         if (target.is_admin) {
@@ -347,7 +347,7 @@ router.delete("/:id/members/:userId", async (req, res) => {
 
         await db.query("DELETE FROM group_members WHERE group_id = $1 AND user_id = $2", [groupId, userId]);
         const deleted = leaving ? null : await deleteUnactivatedAccount(db, userId);
-        // Their children leave too – unless the other parent is still in the group
+        // Their children leave too - unless the other parent is still in the group
         await syncChildGroups(db);
         return deleted ?? { imageUrls: null };
     });
@@ -359,7 +359,7 @@ router.delete("/:id/members/:userId", async (req, res) => {
 });
 
 // Called right after the user was removed from a group. Deletes the whole account if it was never activated
-// and is now in no group at all – otherwise does nothing and returns null.
+// and is now in no group at all - otherwise does nothing and returns null.
 // Like deleting a child: lists where they are the only recipient go (with wishes, gifts and images);
 // on lists with other recipients too they're just removed as a recipient. The rest goes by ON DELETE CASCADE
 // (links, wish profile, Secret Santa pairs …). Returns { imageUrls } to delete once the transaction is done.
@@ -369,7 +369,7 @@ async function deleteUnactivatedAccount(db, userId) {
          WHERE u.id = $1 AND NOT u.is_child
            AND u.password_hash IS NULL AND u.google_sub IS NULL
            AND NOT EXISTS (SELECT 1 FROM group_members WHERE user_id = u.id)
-           -- Never logged in, so this can't happen – but these keys have no ON DELETE, so check anyway
+           -- Never logged in, so this can't happen - but these keys have no ON DELETE, so check anyway
            AND NOT EXISTS (SELECT 1 FROM groups WHERE created_by = u.id)
            AND NOT EXISTS (SELECT 1 FROM lists WHERE created_by = u.id)
          FOR UPDATE`,

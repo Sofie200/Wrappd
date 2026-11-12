@@ -4,7 +4,7 @@ import { api } from "../api.js";
 
 // Find someone to add to a group. Two kinds of search, to protect people's privacy:
 //  - As you type: only people you already share a group with, on part of their name or username.
-//  - The "Sök" button (or Enter): anyone – but only on their exact username.
+//  - The "Sök" button (or Enter): anyone - but only on their exact username.
 // excludeGroupId hides people who are already in that group.
 export default function UserSearch({ excludeGroupId, onSelect, busy }) {
     const [q, setQ] = useState("");

@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { api } from "../api.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useFetch } from "../hooks/useFetch.js";
@@ -27,7 +27,7 @@ export default function GroupPage() {
     const [actionError, setActionError] = useState(null);
     const [busy, setBusy] = useState(false);
     const [editingSettings, setEditingSettings] = useState(false); // the group settings modal
-    const [shownLink, setShownLink] = useState(null); // { user, link } – a link to copy and send
+    const [shownLink, setShownLink] = useState(null); // { user, link } - a link to copy and send
     const [addingMember, setAddingMember] = useState(false); // the "add member" modal
     const [createdLink, setCreatedLink] = useState(null); // { user, link } for a user just created there
 
@@ -85,7 +85,7 @@ export default function GroupPage() {
         // A never-activated account that isn't in any other group is deleted completely by the server
         const message = member.isActivated
             ? `Ta bort ${member.name} ur gruppen?`
-            : `Ta bort ${member.name} ur gruppen?\n\nKontot är inte aktiverat. Är ${member.name} inte med i någon annan grupp raderas kontot helt – med listor och önskningar som bara är till ${member.name}. Aktiveringslänken slutar då att fungera.`;
+            : `Ta bort ${member.name} ur gruppen?\n\nKontot är inte aktiverat. Är ${member.name} inte med i någon annan grupp raderas kontot helt - med listor och önskningar som bara är till ${member.name}. Aktiveringslänken slutar då att fungera.`;
         if (!window.confirm(message)) return;
         run(() => api(`/groups/${id}/members/${member.id}`, { method: "DELETE" }));
     }
@@ -182,7 +182,7 @@ export default function GroupPage() {
                         const isMe = member.id === user.id;
                         const onlyAdmin = member.isAdmin && adminCount === 1;
 
-                        // Children are managed by their parents (Mina barn) – no admin actions here
+                        // Children are managed by their parents (Mina barn) - no admin actions here
                         if (member.isChild) {
                             return (
                                 <li key={member.id}>
@@ -289,7 +289,16 @@ export default function GroupPage() {
                     </button>
                 </div>
                 {shownLists.length === 0 ? (
-                    <Empty>{showArchive ? "Inga arkiverade listor i gruppen." : "Inga publika listor i gruppen än."}</Empty>
+                    <Empty>
+                        {showArchive ? (
+                            "Gruppens gamla listor hamnar här när firandet är över."
+                        ) : (
+                            <>
+                                Det är tyst i gruppen just nu. Bli först - <Link to="/lists/new">skapa en lista</Link> som
+                                alla här kan se.
+                            </>
+                        )}
+                    </Empty>
                 ) : (
                     <div className="cards list-cards">
                         {shownLists.map((list) => (

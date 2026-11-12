@@ -21,7 +21,7 @@ function requireToken() {
 }
 
 /**
- * Uploads a wish image. A NEW, unique path every time – never the user's own file name.
+ * Uploads a wish image. A NEW, unique path every time - never the user's own file name.
  * @param {number} listId
  * @param {{ buffer: Buffer, mimeType: string }} image
  * @returns {Promise<string>} the public URL

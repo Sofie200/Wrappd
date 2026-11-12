@@ -30,7 +30,7 @@ const ListBody = z.object({
     endDate: z.iso.date({ error: "Ange ett giltigt slutdatum" }),
     groupIds: ids("Välj minst en grupp").transform(unique),
     recipientIds: ids("Välj minst en mottagare").transform(unique),
-    // Optional when creating (the creator is added anyway). Editing requires at least one – checked in PUT.
+    // Optional when creating (the creator is added anyway). Editing requires at least one - checked in PUT.
     adminIds: z
         .array(z.coerce.number().int().positive(), { error: "Ogiltiga admins" })
         .max(100)
@@ -132,7 +132,7 @@ router.get("/:id", async (req, res) => {
         });
     }
 
-    // My own gifts (bought outside the list) linked to this list – shown in a section of their own,
+    // My own gifts (bought outside the list) linked to this list - shown in a section of their own,
     // only to me and those I share them with. Never to recipients (they can't have any here anyway).
     const { rows: myGifts } = access.seesReservations
         ? await pool.query(
@@ -180,7 +180,7 @@ router.get("/:id", async (req, res) => {
     });
 });
 
-/* --- PUT /api/lists/:id  { title, description, endDate, groupIds, recipientIds, adminIds } – edit (admin) --- */
+/* --- PUT /api/lists/:id  { title, description, endDate, groupIds, recipientIds, adminIds } - edit (admin) --- */
 // A public list can get more groups, but never lose any (it can't become private again).
 router.put("/:id", async (req, res) => {
     const listId = parseId(req.params.id);
@@ -218,7 +218,7 @@ router.put("/:id", async (req, res) => {
     res.json({ id: listId });
 });
 
-/* --- POST /api/lists/:id/publish – make the list public for its groups (admin). Can't be undone. --- */
+/* --- POST /api/lists/:id/publish - make the list public for its groups (admin). Can't be undone. --- */
 router.post("/:id/publish", async (req, res) => {
     const listId = parseId(req.params.id);
     const access = await getListAccess(pool, listId, req.user.id);
@@ -231,9 +231,9 @@ router.post("/:id/publish", async (req, res) => {
     res.json({ id: listId, isPublic: true });
 });
 
-/* --- DELETE /api/lists/:id – delete the list (admin, also when archived) --- */
+/* --- DELETE /api/lists/:id - delete the list (admin, also when archived) --- */
 // Gifts on it are NOT deleted: the database turns them into gifts for an own event (the list's name, date and
-// recipients – see migration 018), so those who bought something keep it. Their images stay too.
+// recipients - see migration 018), so those who bought something keep it. Their images stay too.
 router.delete("/:id", async (req, res) => {
     const listId = parseId(req.params.id);
 
@@ -243,7 +243,7 @@ router.delete("/:id", async (req, res) => {
         if (!access.isAdmin) throw new HttpError(403, "Bara listans admins kan radera listan");
 
         const { rows } = await db.query(
-            // The wishes' images – deleted afterwards unless a gift now uses them
+            // The wishes' images - deleted afterwards unless a gift now uses them
             "SELECT image_url FROM wishes WHERE list_id = $1 AND image_url IS NOT NULL",
             [listId]
         );
@@ -267,7 +267,7 @@ router.post("/:id/wishes", receiveImage, async (req, res) => {
     // 0. Full already? Then don't even upload the image
     if ((await countWishes(pool, listId)) >= MAX_WISHES_PER_LIST) throw new HttpError(409, TOO_MANY_WISHES);
 
-    // 1. The image first – an uploaded file, or a copy of the shop's image.
+    // 1. The image first - an uploaded file, or a copy of the shop's image.
     //    If that fails, nothing is saved and the user can try again.
     const imageUrl = await uploadNewWishImage(listId, req.file, body.imageFromUrl);
 

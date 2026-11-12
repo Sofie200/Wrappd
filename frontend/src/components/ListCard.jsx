@@ -18,7 +18,7 @@ function DaysLeft({ iso }) {
     );
 }
 
-// One list in an overview. Lists TO me that I don't administer have no link – I can't open them.
+// One list in an overview. Lists TO me that I don't administer have no link - I can't open them.
 export default function ListCard({ list, extra }) {
     const canOpen = !list.isRecipient || list.isAdmin;
 

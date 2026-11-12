@@ -61,7 +61,7 @@ export default function ListFormPage() {
         }));
     }, [myChildren.data, myGroups.data, forChildId]);
 
-    // Everyone in the chosen groups – recipients and admins are picked among them
+    // Everyone in the chosen groups - recipients and admins are picked among them
     const idsKey = form ? [...form.groupIds].sort((a, b) => a - b).join(",") : "";
     const candidates = useFetch(idsKey ? `/groups/members?ids=${idsKey}` : null);
 
@@ -72,7 +72,7 @@ export default function ListFormPage() {
     if (isEdit && !existing.data.me.canEdit) {
         return (
             <div className="page">
-                <Notice>Listan kan inte ändras – den är arkiverad, eller så är du inte admin för den.</Notice>
+                <Notice>Listan kan inte ändras - den är arkiverad, eller så är du inte admin för den.</Notice>
                 <Link to={`/lists/${id}`}>Tillbaka till listan</Link>
             </div>
         );
@@ -85,7 +85,8 @@ export default function ListFormPage() {
                     <ScrollText size={28} aria-hidden="true" /> Ny lista
                 </h1>
                 <Empty>
-                    En lista hör till en eller flera grupper. <Link to="/groups">Skapa eller gå med i en grupp</Link> först.
+                    En lista behöver någon att delas med. <Link to="/groups">Skapa en grupp</Link> först - eller be någon
+                    bjuda in dig till sin.
                 </Empty>
             </div>
         );
@@ -131,7 +132,7 @@ export default function ListFormPage() {
         setBusy(true);
         setError(null);
 
-        // People who are no longer in any chosen group are dropped – the server would refuse them anyway
+        // People who are no longer in any chosen group are dropped - the server would refuse them anyway
         const body = {
             title: form.title,
             description: form.description,
@@ -227,7 +228,7 @@ export default function ListFormPage() {
                     </div>
                 </fieldset>
 
-                {/* Who it's for and the admins come from the groups – shown once at least one group is chosen */}
+                {/* Who it's for and the admins come from the groups - shown once at least one group is chosen */}
                 {form.groupIds.length > 0 && (
                     <>
                     {candidates.error && <ErrorMessage message={candidates.error} onRetry={candidates.reload} />}
@@ -255,7 +256,7 @@ export default function ListFormPage() {
                         lockedIds={isEdit ? [] : [user.id]}
                         emptyText={
                             childRecipients.length > 0
-                                ? "Ingen av barnets föräldrar är med i de valda grupperna."
+                                ? "Barnets föräldrar är inte med i någon av de valda grupperna - välj en grupp där de finns."
                                 : "Välj en grupp först."
                         }
                     />

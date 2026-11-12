@@ -35,7 +35,7 @@ export default function GroupsPage() {
             <section className="section">
                 {!data && loading && <Loading />}
                 {!data && <ErrorMessage message={error} onRetry={reload} />}
-                {data && data.data.length === 0 && <Empty>Du är inte med i någon grupp än. Skapa en nedan.</Empty>}
+                {data && data.data.length === 0 && <Empty>Allt blir roligare tillsammans! Skapa en grupp för familjen eller vännerna nedan - eller be någon bjuda in dig.</Empty>}
                 {data && data.data.length > 0 && (
                     <div className="cards">
                         {data.data.map((group) => (

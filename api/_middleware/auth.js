@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken";
 
-// As long as possible was the wish – a year, then the user logs in again
+// As long as possible was the wish - a year, then the user logs in again
 const EXPIRES_IN = "365d";
 const MAX_AGE_MS = 365 * 24 * 60 * 60 * 1000;
 
@@ -47,7 +47,7 @@ function readCookie(req, name) {
     return null;
 }
 
-// The token: from the cookie – or, only while moving over from the old localStorage login,
+// The token: from the cookie - or, only while moving over from the old localStorage login,
 // from "Authorization: Bearer <token>" (req.fromHeader tells /auth/me to move it into a cookie)
 function readToken(req) {
     const fromCookie = readCookie(req, COOKIE_NAME);

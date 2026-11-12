@@ -12,14 +12,14 @@ router.get("/", async (req, res) => {
     const me = req.user.id;
 
     const [upcoming, gifts, adminLists, santas, profile] = await Promise.all([
-        // Coming events: public lists in my groups whose end date hasn't passed – also lists to me
+        // Coming events: public lists in my groups whose end date hasn't passed - also lists to me
         pool.query(
             `SELECT l.id, l.title, l.end_date AS "endDate",
                     EXISTS (SELECT 1 FROM list_admins WHERE list_id = l.id AND user_id = $1) AS "isAdmin",
                     EXISTS (SELECT 1 FROM list_recipients WHERE list_id = l.id AND user_id = $1) AS "isRecipient",
                     ${RECIPIENTS} AS recipients,
                     (SELECT count(*)::int FROM wishes WHERE list_id = l.id) AS "wishCount",
-                    -- Fully reserved wishes – never for lists to me (that's a surprise)
+                    -- Fully reserved wishes - never for lists to me (that's a surprise)
                     CASE WHEN EXISTS (SELECT 1 FROM list_recipients WHERE list_id = l.id AND user_id = $1) THEN NULL
                          ELSE (SELECT count(*)::int FROM wishes w
                                WHERE w.list_id = l.id
@@ -40,9 +40,9 @@ router.get("/", async (req, res) => {
             [me]
         ),
 
-        // Gifts I share – on wishes, and bought outside the wish list. price is the total;
+        // Gifts I share - on wishes, and bought outside the wish list. price is the total;
         // myShare is my custom amount, or the price split equally.
-        // A gift outside the list without a list has its own recipient and date – or, linked to a Secret Santa,
+        // A gift outside the list without a list has its own recipient and date - or, linked to a Secret Santa,
         // the draw's date and who I give to (I'm the only member, so nobody else learns who that is).
         pool.query(
             `SELECT g.id, g.title, g.quantity, g.price, g.comment, g.split,
@@ -53,7 +53,7 @@ router.get("/", async (req, res) => {
                     (SELECT string_agg(u.name, ', ' ORDER BY u.name) FROM gift_members o
                      JOIN users u ON u.id = o.user_id
                      WHERE o.gift_id = g.id AND o.user_id <> $1) AS "sharedWith",
-                    -- Everyone in the gift (me too), with profile icons – shown as avatars when it's shared
+                    -- Everyone in the gift (me too), with profile icons - shown as avatars when it's shared
                     (SELECT json_agg(json_build_object('id', u.id, 'name', u.name,
                                                        'avatarIcon', u.avatar_icon, 'avatarColor', u.avatar_color)
                                      ORDER BY u.name)
@@ -72,7 +72,7 @@ router.get("/", async (req, res) => {
                     COALESCE(${RECIPIENTS}, ru.name, ge.recipient_text, wo.name, sr.name,
                              CASE WHEN ge.recipient_unknown THEN 'Okänd mottagare' END) AS recipients,
                     -- A gift for an event (no list, no Santa): the event's name
-                    -- A logged gift ("Loggade gåvor"): its event – the gifts page groups on eventId
+                    -- A logged gift ("Loggade gåvor"): its event - the gifts page groups on eventId
                     g.event_id AS "eventId", ge.name AS "eventName",
                     ge.recipient_id AS "recipientId"
              FROM gift_members me
@@ -90,12 +90,12 @@ router.get("/", async (req, res) => {
             [me]
         ),
 
-        // Lists I administer – private, public and archived
+        // Lists I administer - private, public and archived
         pool.query(
             `SELECT l.id, l.title, l.end_date AS "endDate", l.is_public AS "isPublic",
                     l.end_date < ${TODAY} AS archived,
                     (SELECT count(*)::int FROM wishes WHERE list_id = l.id) AS "wishCount",
-                    -- Fully reserved wishes – not on lists to me (that's a surprise, also for admins)
+                    -- Fully reserved wishes - not on lists to me (that's a surprise, also for admins)
                     CASE WHEN EXISTS (SELECT 1 FROM list_recipients WHERE list_id = l.id AND user_id = $1) THEN NULL
                          ELSE (SELECT count(*)::int FROM wishes w
                                WHERE w.list_id = l.id
@@ -108,12 +108,12 @@ router.get("/", async (req, res) => {
             [me]
         ),
 
-        // Coming Secret Santas I take part in, or made. receiver = who *I* give to – never anyone else's pair.
+        // Coming Secret Santas I take part in, or made. receiver = who *I* give to - never anyone else's pair.
         pool.query(
             `SELECT s.id, s.title, s.event_date AS "date", s.budget, g.name AS "groupName",
                     s.created_by = $1 AS "isCreator",
                     (SELECT count(*)::int FROM secret_santa_pairs WHERE santa_id = s.id) AS "participantCount",
-                    -- Who takes part (everyone gives once) – never who gives to whom
+                    -- Who takes part (everyone gives once) - never who gives to whom
                     (SELECT json_agg(json_build_object('id', u.id, 'name', u.name,
                                                        'avatarIcon', u.avatar_icon, 'avatarColor', u.avatar_color)
                                      ORDER BY u.name)

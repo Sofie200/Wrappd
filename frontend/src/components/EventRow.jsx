@@ -23,9 +23,9 @@ export const sumPrices = (rows) =>
         : null;
 
 // One event per wish list, with my gifts for it. `lists` are the public, coming lists in my groups
-// (mine and others') – they're shown even when I haven't bought anything yet. Gifts for a list that
+// (mine and others') - they're shown even when I haven't bought anything yet. Gifts for a list that
 // isn't among them, gifts for a Secret Santa (one event per draw), gifts from someone's wish profile
-// (one event per person), and logged gifts (one per event of my own – "Loggade gåvor", eventId)
+// (one event per person), and logged gifts (one per event of my own - "Loggade gåvor", eventId)
 // get an event of their own.
 export function buildEvents(lists, gifts, { newestFirst = false } = {}) {
     const events = new Map();
@@ -58,11 +58,11 @@ export function buildEvents(lists, gifts, { newestFirst = false } = {}) {
                 key,
                 listId: g.listId,
                 santaId: g.listId ? null : g.santaId,
-                // A Secret Santa: who I give to – "Från önskeprofilen" opens their wish profile
+                // A Secret Santa: who I give to - "Från önskeprofilen" opens their wish profile
                 santaReceiverId: g.listId ? null : g.santaReceiverId,
                 personId: g.listId || g.santaId ? null : g.personId,
                 title: g.listTitle ?? g.santaTitle ?? g.eventName,
-                // An event of my own: its id, name and linked person – so more gifts can be logged on it
+                // An event of my own: its id, name and linked person - so more gifts can be logged on it
                 eventId: g.eventId,
                 eventName: g.eventName,
                 recipientId: g.recipientId,
@@ -140,14 +140,14 @@ export function GiftTable({ rows, onChanged, totalLabel = "Totalt" }) {
                                     )}
                                 </td>
                                 <td className="num col-optional">{g.quantity}</td>
-                                <td className="num col-optional">{g.price === null ? "–" : formatPrice(g.price)}</td>
-                                <td className="num share">{g.myShare === null ? "–" : formatPrice(g.myShare)}</td>
+                                <td className="num col-optional">{g.price === null ? "-" : formatPrice(g.price)}</td>
+                                <td className="num share">{g.myShare === null ? "-" : formatPrice(g.myShare)}</td>
                                 <td className="row-actions">
                                     <SettingsMenu label={`Alternativ för ${g.title}`} icon={Ellipsis}>
                                         <button type="button" className="menu-item" role="menuitem" onClick={() => setEditing(g)}>
                                             <Pencil size={16} aria-hidden="true" /> Redigera
                                         </button>
-                                        {/* A reservation can't be undone after the event – a gift outside the list always can */}
+                                        {/* A reservation can't be undone after the event - a gift outside the list always can */}
                                         {(g.offList || !g.archived) && (
                                             <button
                                                 type="button"
@@ -156,7 +156,7 @@ export function GiftTable({ rows, onChanged, totalLabel = "Totalt" }) {
                                                 onClick={() => remove(g)}
                                                 disabled={busyId === g.id}
                                             >
-                                                {/* An own gift is deleted; a reservation is released – like on the list */}
+                                                {/* An own gift is deleted; a reservation is released - like on the list */}
                                                 {g.offList ? (
                                                     <>
                                                         <Trash2 size={16} aria-hidden="true" /> Ta bort
@@ -178,7 +178,7 @@ export function GiftTable({ rows, onChanged, totalLabel = "Totalt" }) {
                             {/* Separate cells, so the row still lines up when Antal and Pris are hidden on mobile */}
                             <td>{totalLabel}</td>
                             <td className="col-optional" />
-                            <td className="num col-optional">{sumPrices(rows) === null ? "–" : formatPrice(sumPrices(rows))}</td>
+                            <td className="num col-optional">{sumPrices(rows) === null ? "-" : formatPrice(sumPrices(rows))}</td>
                             <td className="num share">{formatPrice(sumShares(rows))}</td>
                             <td />
                         </tr>
@@ -270,12 +270,12 @@ export function EventRow({ event, archived = false, onChanged }) {
     const kicker = listId ? "Önskelista" : santaId ? "Secret Santa" : personId ? "Önskeprofil" : "Loggade gåvor";
     const KickerIcon = listId ? ScrollText : santaId ? HatGlasses : personId ? null : Table2;
 
-    // The buttons for adding a gift: in the section's head – on phones up in the "Mina gåvor" bar
+    // The buttons for adding a gift: in the section's head - on phones up in the "Mina gåvor" bar
     const actions = isRecipient ? null : <EventAddButtons event={event} archived={archived} onChanged={onChanged} />;
 
     return (
         <div className={`event-group${variant}`}>
-            {/* Above the card: the kind of event as a tab on its top-left corner, and who it's for beside it –
+            {/* Above the card: the kind of event as a tab on its top-left corner, and who it's for beside it -
                 a list's recipients, or the person linked to an own event */}
             <div className="event-tab-row">
                 <p className="event-kicker">
@@ -293,7 +293,7 @@ export function EventRow({ event, archived = false, onChanged }) {
                         {endDate && <DateBadge iso={endDate} />}
                         <div className="event-title">
                             <h3>
-                                {/* A list's title opens the list too – it looks the same as before */}
+                                {/* A list's title opens the list too - it looks the same as before */}
                                 {listId && canOpen ? (
                                     <Link to={`/lists/${listId}`} className="event-title-link">
                                         {title}

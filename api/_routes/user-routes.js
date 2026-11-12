@@ -15,13 +15,13 @@ const Search = z.object({
 // To protect people's privacy, you can't browse everyone who has an account. Two kinds of search:
 //  - Without exact (as you type): only people I already share a group with, on part of their
 //    name or username.
-//  - exact=true (the "Sök" button): anyone, but only on their EXACT username (not case-sensitive) –
+//  - exact=true (the "Sök" button): anyone, but only on their EXACT username (not case-sensitive) -
 //    you have to know it.
 // excludeGroupId hides people who are already in that group. Never children, never me.
 router.get("/search", async (req, res) => {
     const { q, excludeGroupId, exact } = parse(Search, req.query);
 
-    // $1 is the search text – the exact username, or a pattern for part of a name.
+    // $1 is the search text - the exact username, or a pattern for part of a name.
     // (Only parameters the query uses may be sent: Postgres can't tell the type of an unused one.)
     let text;
     let match;
@@ -29,7 +29,7 @@ router.get("/search", async (req, res) => {
         text = q.replace(/^@/, "").toLowerCase(); // usernames are stored in lower case
         match = "u.username = $1";
     } else {
-        // % and _ are wildcards in ILIKE – escape them, so "50%" means the text "50%"
+        // % and _ are wildcards in ILIKE - escape them, so "50%" means the text "50%"
         text = `%${q.replace(/[\\%_]/g, (c) => "\\" + c)}%`;
         match = `(u.name ILIKE $1 OR u.username ILIKE $1)
                  AND EXISTS (SELECT 1 FROM group_members a

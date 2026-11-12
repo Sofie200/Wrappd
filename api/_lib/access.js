@@ -4,12 +4,12 @@ import { HttpError } from "./http.js";
 
 /**
  * Loads a list and the current user's role in it.
- * Throws 404 if the list doesn't exist OR the user may not see it – so nobody can find out
+ * Throws 404 if the list doesn't exist OR the user may not see it - so nobody can find out
  * that a list exists by guessing ids.
  *
  * Rules:
  *  - Admins always see the list (also before it is public, and also if they are a recipient).
- *  - Others see it when it is public AND they are a member of one of its groups – but never recipients.
+ *  - Others see it when it is public AND they are a member of one of its groups - but never recipients.
  *  - Recipients never see reservations, not even when they are admins.
  *  - Nothing can be changed or reserved once the list is archived (the day after end_date).
  */
@@ -48,7 +48,7 @@ export async function getListAccess(db, listId, userId) {
  * Rules:
  *  - I see my own profile, my children's, and everyone's I share at least one group with.
  *  - I edit my own and my children's (children can't log in).
- *  - Everyone but the person themselves can reserve, and sees what is reserved – the person never does.
+ *  - Everyone but the person themselves can reserve, and sees what is reserved - the person never does.
  *  - A profile is never archived.
  */
 export async function getPersonAccess(db, personId, userId) {
@@ -80,7 +80,7 @@ export async function getPersonAccess(db, personId, userId) {
     };
 }
 
-// A wish is on a list or on a person's profile – the access rules follow from that
+// A wish is on a list or on a person's profile - the access rules follow from that
 export function getWishAccess(db, wish, userId) {
     return wish.list_id ? getListAccess(db, wish.list_id, userId) : getPersonAccess(db, wish.user_id, userId);
 }

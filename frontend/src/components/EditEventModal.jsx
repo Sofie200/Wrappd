@@ -6,7 +6,7 @@ import Modal from "./Modal.jsx";
 import EventFields, { useGroupPeople } from "./EventFields.jsx";
 import { ErrorMessage, Loading } from "./Feedback.jsx";
 
-// "Redigera händelse": an event of my own ("Loggade gåvor") – name, date and who it's for.
+// "Redigera händelse": an event of my own ("Loggade gåvor") - name, date and who it's for.
 // Changes it for all the event's gifts, and for everyone in them.
 export default function EditEventModal({ eventId, onClose, onSaved }) {
     const events = useFetch("/gifts/events");

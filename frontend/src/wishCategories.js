@@ -1,4 +1,4 @@
-// Categories in the wish profile – someone can like or not like each. The keys are what's saved
+// Categories in the wish profile - someone can like or not like each. The keys are what's saved
 // (the same list is in api/_lib/profileSchema.js).
 import {
     BookOpen, Candy, Clapperboard, Coffee, Dumbbell, Gamepad2, Gem, Headphones, Palette, Plane,

@@ -1,7 +1,7 @@
 import { Gift, Plus } from "lucide-react";
 
 // "Add a gift": lucide's Gift with a small round plus badge in its bottom-right corner
-// (lucide has no combined icon). Decorative – the button's text says what it does.
+// (lucide has no combined icon). Decorative - the button's text says what it does.
 // The badge and its plus grow with the icon, so the plus stays centred at any size
 // (at 16px: a 10px badge with an 8px plus, as before).
 export default function GiftPlusIcon({ size = 16 }) {

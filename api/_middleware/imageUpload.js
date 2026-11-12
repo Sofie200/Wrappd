@@ -1,16 +1,16 @@
 import multer from "multer";
 import { HttpError } from "../_lib/http.js";
 
-// 4 MB – Vercel stops requests over 4.5 MB before they reach our code
+// 4 MB - Vercel stops requests over 4.5 MB before they reach our code
 export const MAX_IMAGE_SIZE = 4 * 1024 * 1024;
 
-// The file stays in memory (req.file.buffer) – we send it on to Vercel Blob, never save it here
+// The file stays in memory (req.file.buffer) - we send it on to Vercel Blob, never save it here
 const upload = multer({
     storage: multer.memoryStorage(),
     limits: { fileSize: MAX_IMAGE_SIZE, files: 1 },
 });
 
-// The file's first bytes tell what it REALLY is – the mimetype only comes from the file name
+// The file's first bytes tell what it REALLY is - the mimetype only comes from the file name
 export function realImageType(buffer) {
     const isPng = buffer.length > 8 && buffer[0] === 0x89 && buffer[1] === 0x50 && buffer[2] === 0x4e && buffer[3] === 0x47;
     if (isPng) return "image/png";

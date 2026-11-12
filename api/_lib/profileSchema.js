@@ -8,7 +8,7 @@ export const WISH_CATEGORIES = [
 ];
 
 // Unknown keys are dropped rather than rejected, so a profile that still has a removed category
-// (e.g. "animals") can be saved – the old choice just disappears.
+// (e.g. "animals") can be saved - the old choice just disappears.
 const categories = z
     .array(z.string(), { error: "Ogiltiga kategorier" })
     .max(50)

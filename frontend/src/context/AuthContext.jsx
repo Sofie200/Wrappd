@@ -9,14 +9,14 @@ export function AuthProvider({ children }) {
     const [checking, setChecking] = useState(true);
     const [error, setError] = useState(null);
 
-    // Forget the user here at once; the server removes the cookie (JavaScript can't – it's httpOnly)
+    // Forget the user here at once; the server removes the cookie (JavaScript can't - it's httpOnly)
     const logout = useCallback(() => {
         setUser(null);
         api("/auth/logout", { method: "POST" }).catch(() => {});
     }, []);
 
     useEffect(() => {
-        // A 401 anywhere: the login is gone – just forget the user (the server has already cleared the cookie)
+        // A 401 anywhere: the login is gone - just forget the user (the server has already cleared the cookie)
         setUnauthorizedHandler(() => setUser(null));
     }, []);
 
@@ -45,8 +45,8 @@ export function AuthProvider({ children }) {
         setUser(data.user);
     }
 
-    // credential = the ID token from Google's button. Returns nothing when logged in, or – for someone
-    // without an account – { name, username, email }: suggestions for the last step (GoogleSignupPage)
+    // credential = the ID token from Google's button. Returns nothing when logged in, or - for someone
+    // without an account - { name, username, email }: suggestions for the last step (GoogleSignupPage)
     async function loginWithGoogle(credential) {
         const data = await api("/auth/google", { method: "POST", body: { credential } });
         if (data.signup) return data.signup;
@@ -59,7 +59,7 @@ export function AuthProvider({ children }) {
         setUser(data.user);
     }
 
-    // Connect / disconnect Google on the profile page – the login cookie stays as it is
+    // Connect / disconnect Google on the profile page - the login cookie stays as it is
     async function connectGoogle(credential) {
         const data = await api("/auth/google/connect", { method: "POST", body: { credential } });
         setUser(data.user);
@@ -86,7 +86,7 @@ export function AuthProvider({ children }) {
         setUser(data.user);
     }
 
-    // Choose a password via an activation or reset link – logs in directly afterwards
+    // Choose a password via an activation or reset link - logs in directly afterwards
     async function choosePassword(linkToken, password) {
         const data = await api(`/auth/link/${linkToken}`, { method: "POST", body: { password } });
         setUser(data.user);

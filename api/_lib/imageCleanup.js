@@ -1,4 +1,4 @@
-// Deleting images from the store – but only those nothing uses any more.
+// Deleting images from the store - but only those nothing uses any more.
 // Since migration 018 a gift keeps the wish's image when the wish (or its list) is deleted, and several
 // gifts can share one image. So before deleting, check that no wish and no gift still points to it.
 import { pool } from "../_db/pool.js";

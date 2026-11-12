@@ -2,17 +2,17 @@ import { useId, useState } from "react";
 import { ChartBar, Table2 } from "lucide-react";
 import { formatPrice } from "../format.js";
 
-// "2026-05-11" → "11 maj 2026" (read as a local date – new Date("2026-05-11") would be UTC)
+// "2026-05-11" → "11 maj 2026" (read as a local date - new Date("2026-05-11") would be UTC)
 function formatDate(isoDate) {
     const [y, m, d] = isoDate.split("-").map(Number);
     return new Date(y, m - 1, d).toLocaleDateString("sv-SE", { day: "numeric", month: "long", year: "numeric" });
 }
 
-// "Vem har jag köpt till?" – a horizontal bar chart: how much I've spent (my share) per recipient,
+// "Vem har jag köpt till?" - a horizontal bar chart: how much I've spent (my share) per recipient,
 // for gifts to events in the chosen period. One series, so one colour (the brand rose) and no legend.
 // Values at the bar tips, a tooltip on hover/focus with the number of gifts, and a table view.
 //
-// The period counts from N months back up to today – and includes coming events I've already bought
+// The period counts from N months back up to today - and includes coming events I've already bought
 // for, plus gifts from wish profiles (they have no date). "Eget": two dates, from and to (both included);
 // gifts without a date aren't in a range of my own. Several recipients on one list ("Anna, Bert")
 // make one bar. More than MAX_BARS people: the rest fold into "Övriga".
@@ -49,13 +49,13 @@ function niceScale(max) {
     return { top, ticks };
 }
 
-// "1 200 kr" on the axis without "kr" – the column title says it
+// "1 200 kr" on the axis without "kr" - the column title says it
 const tickText = (v) => new Intl.NumberFormat("sv-SE").format(v);
 
 export default function SpendingChart({ gifts }) {
     // "Eget" (the coming events, see below) is chosen from the start
     const [periodKey, setPeriodKey] = useState("custom");
-    // "Eget": the coming events to begin with – from today to the last coming event's date
+    // "Eget": the coming events to begin with - from today to the last coming event's date
     // (six months ahead if there's none)
     const [custom, setCustom] = useState(() => {
         const today = iso(new Date());
@@ -111,7 +111,7 @@ export default function SpendingChart({ gifts }) {
                         Min del av gåvorna
                         {isCustom
                             ? start && end
-                                ? ` ${formatDate(start)} – ${formatDate(end)}`
+                                ? ` ${formatDate(start)} - ${formatDate(end)}`
                                 : start
                                   ? ` sedan ${formatDate(start)}`
                                   : end
@@ -183,7 +183,7 @@ export default function SpendingChart({ gifts }) {
             )}
 
             {rows.length === 0 ? (
-                <p className="muted spending-empty">Inga gåvor med pris under den här perioden.</p>
+                <p className="muted spending-empty">Inga utgifter under den här perioden - plånboken tackar.</p>
             ) : asTable ? (
                 <div className="table-wrap">
                     <table className="table">

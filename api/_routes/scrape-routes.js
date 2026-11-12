@@ -17,7 +17,7 @@ const ScrapeBody = z.object({
 });
 
 /* --- POST /api/scrape  { url } → { title, description, price, currency, imageUrl, imageUnsupported } --- */
-// Reads the product page and returns what it found. Nothing is saved – the form decides.
+// Reads the product page and returns what it found. Nothing is saved - the form decides.
 router.post("/", async (req, res) => {
     const { url } = parse(ScrapeBody, req.body);
     try {
