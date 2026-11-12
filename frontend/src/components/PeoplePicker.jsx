@@ -9,6 +9,7 @@ import Avatar from "./Avatar.jsx";
 // single: at most one person - picking someone replaces the choice, and the search hides once someone is chosen.
 // bare: no fieldset or legend of its own - for when it sits inside another fieldset (legend is then only
 // used to label the search field for screen readers).
+// onNotFound: adds a last choice "Hittar du inte den du söker?" to the suggestions, which calls it.
 const MAX_SUGGESTIONS = 8;
 
 export default function PeoplePicker({
@@ -23,6 +24,7 @@ export default function PeoplePicker({
     emptyText = "Välj en grupp först.",
     single = false,
     bare = false,
+    onNotFound,
 }) {
     const [query, setQuery] = useState("");
     const [open, setOpen] = useState(false);
@@ -46,6 +48,11 @@ export default function PeoplePicker({
         setActive(0);
     }
 
+    function notFound() {
+        setOpen(false);
+        onNotFound();
+    }
+
     function remove(id) {
         onChange(selected.filter((x) => x !== id));
     }
@@ -62,6 +69,7 @@ export default function PeoplePicker({
             // Pick the highlighted one - and never submit the form from here
             e.preventDefault();
             if (open && pickable[active]) add(pickable[active]);
+            else if (open && onNotFound) notFound();
         } else if (e.key === "Escape") {
             setOpen(false);
         } else if (e.key === "Backspace" && query === "") {
@@ -118,7 +126,7 @@ export default function PeoplePicker({
                             autoComplete="off"
                             role="combobox"
                             aria-label={`Sök - ${legend}`}
-                            aria-expanded={open && suggestions.length > 0}
+                            aria-expanded={open && (suggestions.length > 0 || Boolean(onNotFound))}
                             aria-controls={listId}
                             aria-activedescendant={open ? activeId : undefined}
                         />
@@ -164,6 +172,20 @@ export default function PeoplePicker({
                                             </li>
                                         );
                                     })
+                                )}
+                                {onNotFound && (
+                                    <li
+                                        className="people-suggestion people-suggestion-help"
+                                        role="option"
+                                        aria-selected={false}
+                                        // mousedown, like the people above: before the field loses focus
+                                        onMouseDown={(e) => {
+                                            e.preventDefault();
+                                            notFound();
+                                        }}
+                                    >
+                                        Hittar du inte den du söker?
+                                    </li>
                                 )}
                             </ul>
                         )}

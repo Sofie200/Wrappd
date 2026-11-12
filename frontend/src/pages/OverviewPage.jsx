@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, Coins, Users, Ellipsis, Eye, HatGlasses, Heart, Trash2 } from "lucide-react";
+import { ArrowRight, Coins, Users, Ellipsis, Eye, HatGlasses, Trash2 } from "lucide-react";
 import { api } from "../api.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useFetch } from "../hooks/useFetch.js";
@@ -10,7 +10,7 @@ import Modal from "../components/Modal.jsx";
 import PersonLink from "../components/PersonLink.jsx";
 import SettingsMenu from "../components/SettingsMenu.jsx";
 import { buildEvents, dateOrder, EventRow, GiftsCollapse, GiftTable } from "../components/EventRow.jsx";
-import { formatPrice } from "../format.js";
+import { daysUntil, formatPrice } from "../format.js";
 import DateBadge, { EventDate } from "../components/DateBadge.jsx";
 import AddGiftButton from "../components/AddGiftButton.jsx";
 import ListPanelCard from "../components/ListPanelCard.jsx";
@@ -208,6 +208,124 @@ function SantaRow({ santa, gifts = [], onChanged }) {
     );
 }
 
+// The suggestion under the greeting: always exactly one - the first that applies, in this order.
+//  1. Not in any group - almost nothing works without one
+//  2. Drawn in a Secret Santa, but the wish profile is empty - someone is waiting to know what to buy
+//  3. A private list of mine with wishes - ready to be published
+//  4. A list of mine (private or published) without wishes
+//  5. In a group, but no current list of my own
+//  6. Someone else's celebration within 30 days where I haven't reserved anything
+//  7. An empty wish profile (no Secret Santa)
+//  8. Otherwise: something to celebrate?
+const SOON_DAYS = 30;
+
+function pickNudge({ data, user, gifts, upcoming, adminLists, santas, profileEmpty }) {
+    const profileLink = { to: `/people/${user.id}/edit`, button: "Min önskeprofil" };
+    // My current lists - the server sorts them soonest first
+    const myLists = adminLists.filter((list) => !list.archived);
+
+    if (data.hasGroups === false) {
+        return {
+            title: "Firanden är roligare tillsammans! 🥳",
+            text: "Börja med att skapa en grupp för familjen eller vännerna. Sen kan ni göra önskelistor, reservera gåvor och lotta Secret Santa.",
+            to: "/groups",
+            button: "Skapa en grupp",
+        };
+    }
+
+    if (profileEmpty && santas.some((santa) => santa.receiver)) {
+        return {
+            title: "Du är med i en Secret Santa! 🕵️",
+            text: "Fyll i din önskeprofil, så vet den som har fått dig vad du gillar.",
+            ...profileLink,
+        };
+    }
+
+    const readyToPublish = myLists.filter((list) => !list.isPublic && list.wishCount > 0);
+    if (readyToPublish.length > 0) {
+        const one = readyToPublish.length === 1;
+        return {
+            title: "Redo att visa listan? ✨",
+            text: `${
+                one
+                    ? `"${readyToPublish[0].title}" är fortfarande privat och syns bara för listans admins.`
+                    : `Du har ${readyToPublish.length} listor som fortfarande är privata och bara syns för listornas admins.`
+            } Publicera när du är klar, så kan gruppen börja fixa.`,
+            to: one ? `/lists/${readyToPublish[0].id}` : "/lists",
+            button: one ? "Till listan" : "Mina listor",
+        };
+    }
+
+    const emptyList = myLists.find((list) => list.wishCount === 0);
+    if (emptyList) {
+        return {
+            title: "Dags att fylla listan! 📝",
+            text: `"${emptyList.title}" har inga önskningar än - vad ska stå på den?`,
+            to: `/lists/${emptyList.id}`,
+            button: "Till listan",
+        };
+    }
+
+    if (myLists.length === 0) {
+        return {
+            title: "Dags för en önskelista? 🎁",
+            text: "Gör en lista till nästa födelsedag, jul eller annat firande - till dig själv, ditt barn eller någon annan i gruppen.",
+            to: "/lists/new",
+            button: "Skapa en lista",
+        };
+    }
+
+    // Someone else's list (not to me, not one I run) coming up soon, with something left to reserve
+    // and nothing from me on it yet
+    const soon = upcoming.find(
+        (list) =>
+            !list.isRecipient &&
+            !list.isAdmin &&
+            list.wishCount > 0 &&
+            daysUntil(list.endDate) <= SOON_DAYS &&
+            !gifts.current.some((g) => g.listId === list.id)
+    );
+    if (soon) {
+        const days = daysUntil(soon.endDate);
+        const when = days === 0 ? "Det är idag" : days === 1 ? "Det är imorgon" : `Det är ${days} dagar kvar`;
+        return {
+            title: `Snart firar ni ${soon.recipients}! 🥳`,
+            text: `${when} till "${soon.title}" - har du hittat något?`,
+            to: `/lists/${soon.id}`,
+            button: "Till listan",
+        };
+    }
+
+    if (profileEmpty) {
+        return {
+            title: "Berätta vad du gillar 💝",
+            text: "Med en önskeprofil blir det lättare för andra att hitta rätt, även utan lista.",
+            ...profileLink,
+        };
+    }
+
+    return {
+        title: "Något att fira? 🎉",
+        text: "Skapa en önskelista eller lotta en Secret Santa med gruppen.",
+        to: "/lists/new",
+        button: "Ny lista",
+    };
+}
+
+function Nudge({ nudge }) {
+    return (
+        <div className="santa-nudge" role="status">
+            <div>
+                <p className="santa-nudge-title">{nudge.title}</p>
+                <p>{nudge.text}</p>
+            </div>
+            <Link to={nudge.to} className="btn btn-small btn-primary">
+                {nudge.button} <ArrowRight size={16} aria-hidden="true" />
+            </Link>
+        </div>
+    );
+}
+
 export default function OverviewPage() {
     const { user } = useAuth();
     const { data, error, loading, reload } = useFetch("/profile");
@@ -216,8 +334,6 @@ export default function OverviewPage() {
     if (!data) return <ErrorMessage message={error} onRetry={reload} />;
 
     const { upcoming, gifts, adminLists, santas = [], profileEmpty = false } = data;
-    // In a Secret Santa (someone has drawn me) but nothing in my wish profile - they won't know what to buy
-    const santaNeedsProfile = profileEmpty && santas.some((santa) => santa.receiver);
     // Published lists are among the events above - here only my coming lists that aren't published yet
     const privateLists = adminLists.filter((list) => !list.archived && !list.isPublic);
 
@@ -249,19 +365,8 @@ export default function OverviewPage() {
             <header className="page-intro">
                 <h1>Hej {user.name}!</h1>
 
-                {santaNeedsProfile && (
-                    <div className="santa-nudge" role="status">
-                        <div>
-                            <p className="santa-nudge-title">
-                                Du är med i en Secret Santa! <HatGlasses size={20} aria-hidden="true" />
-                            </p>
-                            <p>Fyll i din önskeprofil, så vet den som har fått dig vad du gillar.</p>
-                        </div>
-                        <Link to={`/people/${user.id}/edit`} className="btn btn-small btn-primary">
-                            <Heart size={16} aria-hidden="true" /> Min önskeprofil <ArrowRight size={16} aria-hidden="true" />
-                        </Link>
-                    </div>
-                )}
+                {/* One suggestion at a time - the most important one (see pickNudge) */}
+                <Nudge nudge={pickNudge({ data, user, gifts, upcoming, adminLists, santas, profileEmpty })} />
             </header>
 
             <section className="section">
@@ -270,10 +375,8 @@ export default function OverviewPage() {
                 </div>
 
                 {events.length === 0 ? (
-                    <Empty>
-                        Lugnt just nu - men allt kan firas 🎉 <Link to="/lists/new">Skapa en önskelista</Link> så har du något att
-                        se fram emot.
-                    </Empty>
+                    // No link here - the suggestion at the top always says what to do next
+                    <Empty>Lugnt just nu - men allt kan firas 🎉</Empty>
                 ) : (
                     <div className="events">
                         {events.map((event) =>

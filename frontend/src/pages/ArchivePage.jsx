@@ -17,7 +17,9 @@ export default function ArchivePage() {
         <div className="page">
             <Breadcrumbs items={[{ label: "Mina listor", to: "/lists" }, { label: "Arkiv" }]} />
             <h1>Arkiv</h1>
-            <p className="muted">Önskelistor du administrerar vars datum har passerat. De kan inte längre ändras.</p>
+            {archived.length > 0 && (
+                <p className="muted">Önskelistor du administrerar vars datum har passerat. De kan inte längre ändras.</p>
+            )}
 
             <section className="section">
                 {archived.length === 0 ? (

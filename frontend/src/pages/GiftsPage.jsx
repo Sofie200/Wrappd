@@ -59,7 +59,7 @@ export default function GiftsPage() {
             {showArchive ? (
                 <section className="section">
                     <h2>Arkiv</h2>
-                    <p className="muted">Gåvor till händelser vars datum har passerat.</p>
+                    {history.length > 0 && <p className="muted">Gåvor till händelser vars datum har passerat.</p>}
                     {history.length === 0 ? (
                         <Empty>Här hamnar gåvorna när händelsen är över - ett litet minnesalbum över allt du gett bort.</Empty>
                     ) : (
@@ -72,7 +72,7 @@ export default function GiftsPage() {
                 </section>
             ) : (
                 <section className="section">
-                    <h2>Aktuella</h2>
+                    {current.length > 0 && <h2>Aktuella</h2>}
                     {current.length === 0 ? (
                         // A div, not <Empty>'s <p>: the "logga en gåva" button carries its modal (a <dialog>)
                         <div className="empty">

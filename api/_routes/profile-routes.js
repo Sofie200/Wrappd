@@ -133,9 +133,11 @@ router.get("/", async (req, res) => {
         ),
 
         // Have I filled in my wish profile? (Nothing written, no categories and no wishes = empty)
+        // And am I in any group? (Without one there's little to do - the overview suggests creating one)
         pool.query(
             `SELECT (wish_about IS NULL AND cardinality(likes) = 0 AND cardinality(dislikes) = 0
-                     AND NOT EXISTS (SELECT 1 FROM wishes WHERE user_id = u.id)) AS empty
+                     AND NOT EXISTS (SELECT 1 FROM wishes WHERE user_id = u.id)) AS empty,
+                    EXISTS (SELECT 1 FROM group_members WHERE user_id = u.id) AS has_groups
              FROM users u WHERE u.id = $1`,
             [me]
         ),
@@ -151,6 +153,7 @@ router.get("/", async (req, res) => {
         adminLists: adminLists.rows,
         santas: santas.rows,
         profileEmpty: profile.rows[0]?.empty ?? false,
+        hasGroups: profile.rows[0]?.has_groups ?? true,
     });
 });
 

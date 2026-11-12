@@ -6,6 +6,7 @@ import { useAuth } from "../context/AuthContext.jsx";
 import { useFetch } from "../hooks/useFetch.js";
 import { Empty, ErrorMessage, Loading, Notice } from "../components/Feedback.jsx";
 import PeoplePicker from "../components/PeoplePicker.jsx";
+import MissingPersonModal from "../components/MissingPersonModal.jsx";
 import Breadcrumbs from "../components/Breadcrumbs.jsx";
 import { todayIso } from "../format.js";
 
@@ -26,6 +27,7 @@ export default function ListFormPage() {
     );
     const [error, setError] = useState(null);
     const [busy, setBusy] = useState(false);
+    const [missingOpen, setMissingOpen] = useState(false); // "Hittar du inte den du söker?"
 
     // Edit: fill the form once, from the loaded list
     useEffect(() => {
@@ -241,6 +243,7 @@ export default function ListFormPage() {
                         onChange={update("recipientIds")}
                         disabledIds={othersChildren}
                         disabledHint="Bara barnets föräldrar kan göra listor till barnet"
+                        onNotFound={() => setMissingOpen(true)}
                     />
 
                     <PeoplePicker
@@ -275,6 +278,21 @@ export default function ListFormPage() {
                     </Link>
                 </div>
             </form>
+
+            {/* Outside the form: the modal has forms of its own */}
+            {missingOpen && (
+                <MissingPersonModal
+                    groups={groupOptions.filter((g) => form.groupIds.includes(g.id))}
+                    onAdded={(userId) => {
+                        // Chosen right away - the chip shows once the members are fetched again
+                        setForm((prev) =>
+                            prev.recipientIds.includes(userId) ? prev : { ...prev, recipientIds: [...prev.recipientIds, userId] }
+                        );
+                        candidates.reload();
+                    }}
+                    onClose={() => setMissingOpen(false)}
+                />
+            )}
         </div>
     );
 }

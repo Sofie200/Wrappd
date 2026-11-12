@@ -4628,14 +4628,23 @@ button.event-edit {
 }
 
 /* A checkbox with its help text right under it, lined up with the label's text */
+/* A checkbox with a hint under it: a grid, so the hint starts exactly where the label's text does
+   (like .check-with-hint) - whatever size the browser draws the box */
 .check-field {
-    display: flex;
-    flex-direction: column;
-    gap: 0.15rem;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    column-gap: 0.5rem; /* the same gap as .check */
+    row-gap: 0.15rem;
+    align-items: center;
+}
+
+/* The label's own box steps aside, so its checkbox and text become cells of the grid */
+.check-field > .check {
+    display: contents;
 }
 
 .check-field > small {
-    padding-left: calc(13px + 0.5rem); /* the checkbox's width + the gap in .check */
+    grid-column: 2;
     font-size: 0.875rem;
 }
 
@@ -4738,6 +4747,16 @@ button.event-edit {
     padding: 0.45rem 0.6rem;
     color: var(--muted);
     font-size: 0.9rem;
+}
+
+/* "Hittar du inte den du söker?" - last in the list, set apart by a thin line, in link style */
+.people-suggestion-help {
+    margin-top: 0.25rem;
+    border-top: 1px solid var(--line);
+    border-radius: 0 0 8px 8px;
+    font-size: 0.9rem;
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
 }
 
 /* Gift icon with a small plus badge (GiftPlusIcon) */

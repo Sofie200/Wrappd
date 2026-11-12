@@ -48,7 +48,9 @@ export default function ListsPage() {
             {showArchive ? (
                 <section className="section">
                     <h2>Arkiv</h2>
-                    <p className="muted">Listor vars datum har passerat. De kan inte längre ändras.</p>
+                    {archivedLists.length > 0 && (
+                        <p className="muted">Listor vars datum har passerat. De kan inte längre ändras.</p>
+                    )}
                     {archivedLists.length === 0 ? (
                         <Empty>Gamla listor sparas här när de har gjort sitt - med allt som önskades och gavs.</Empty>
                     ) : (
@@ -61,31 +63,37 @@ export default function ListsPage() {
                 </section>
             ) : (
                 <>
-                    <section className="section">
-                        <h2>Publicerade</h2>
-                        {publishedLists.length === 0 ? (
-                            <Empty>Ingen lista är synlig för andra just nu. Publicera en, så kan gruppen börja fixa.</Empty>
-                        ) : (
+                    {/* A heading only when there's a list under it - with none at all, one empty state instead */}
+                    {currentCount === 0 && (
+                        <section className="section">
+                            <Empty>
+                                Inga listor på gång just nu - <Link to="/lists/new">skapa en önskelista</Link> till nästa
+                                firande!
+                            </Empty>
+                        </section>
+                    )}
+
+                    {publishedLists.length > 0 && (
+                        <section className="section">
+                            <h2>Publicerade</h2>
                             <div className="cards list-cards">
                                 {publishedLists.map((list) => (
                                     <ListPanelCard key={list.id} list={list} />
                                 ))}
                             </div>
-                        )}
-                    </section>
+                        </section>
+                    )}
 
-                    <section className="section">
-                        <h2>Privata</h2>
-                        {privateLists.length === 0 ? (
-                            <Empty>Inga utkast på gång. Här kan du förbereda en lista i lugn och ro innan du visar den.</Empty>
-                        ) : (
+                    {privateLists.length > 0 && (
+                        <section className="section">
+                            <h2>Privata</h2>
                             <div className="cards list-cards">
                                 {privateLists.map((list) => (
                                     <ListPanelCard key={list.id} list={list} />
                                 ))}
                             </div>
-                        )}
-                    </section>
+                        </section>
+                    )}
                 </>
             )}
         </div>

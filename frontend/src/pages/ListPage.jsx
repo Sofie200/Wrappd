@@ -156,7 +156,7 @@ export default function ListPage() {
                 </Notice>
             )}
             {me.isRecipient && (
-                <Notice>Listan är till dig, så du ser inte vad som är reserverat - det är en överraskning.</Notice>
+                <Notice>Listan är till dig, så du ser inte vad som är reserverat - det blir en överraskning.</Notice>
             )}
             {list.archived && <Notice>Eventet har varit. Listan är arkiverad och kan inte längre ändras.</Notice>}
 

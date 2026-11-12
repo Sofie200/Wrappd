@@ -28,6 +28,10 @@ export default function CreateUserForm({ groupId, onCreated }) {
 
     return (
         <form onSubmit={handleSubmit} className="form">
+            {/* First, right under the heading above the form ("Eller skapa en ny användare") */}
+            <small className="muted">
+                Personen läggs till i gruppen direkt. Du får en länk där hen väljer sitt lösenord.
+            </small>
             <div className="field-row">
                 <label className="field">
                     <span>Namn</span>
@@ -45,9 +49,6 @@ export default function CreateUserForm({ groupId, onCreated }) {
                     />
                 </label>
             </div>
-            <small className="muted">
-                Personen läggs till i gruppen direkt. Du får en länk där hen väljer sitt lösenord.
-            </small>
             <ErrorMessage message={error} />
             <div>
                 <button type="submit" className="btn btn-primary" disabled={busy}>

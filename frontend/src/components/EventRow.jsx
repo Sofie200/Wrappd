@@ -338,7 +338,7 @@ export function EventRow({ event, archived = false, onChanged }) {
                 <div className="event-gifts">
                     {isRecipient ? (
                         <p className="event-note">
-                            🎁 Listan är till dig, så vad andra har köpt är en överraskning.
+                            🎁 Listan är till dig, så vad andra har köpt blir en överraskning.
                         </p>
                     ) : (
                         <>
