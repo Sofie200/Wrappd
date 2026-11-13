@@ -38,14 +38,21 @@ async function requireGroupAdmin(db, groupId, userId) {
     return member;
 }
 
-/* --- GET /api/groups → { data: [{ id, name, isAdmin, includeChildren, memberCount, activeListCount }] } - my groups --- */
+/* --- GET /api/groups → { data: [{ id, name, isAdmin, includeChildren, memberCount, activeListCount, memberPreview }] } - my groups --- */
 // activeListCount: published lists shared with the group whose date hasn't passed
 router.get("/", async (req, res) => {
     const { rows } = await pool.query(
         `SELECT g.id, g.name, gm.is_admin AS "isAdmin", g.include_children AS "includeChildren",
                 (SELECT count(*)::int FROM group_members WHERE group_id = g.id) AS "memberCount",
                 (SELECT count(*)::int FROM list_groups lg JOIN lists l ON l.id = lg.list_id
-                 WHERE lg.group_id = g.id AND l.is_public AND l.end_date >= ${TODAY}) AS "activeListCount"
+                 WHERE lg.group_id = g.id AND l.is_public AND l.end_date >= ${TODAY}) AS "activeListCount",
+                -- A few members for the card's row of avatars: admins first, then by name
+                (SELECT json_agg(m) FROM (
+                    SELECT u.id, u.name, u.is_child AS "isChild", u.avatar_icon AS "avatarIcon", u.avatar_color AS "avatarColor"
+                    FROM group_members x JOIN users u ON u.id = x.user_id
+                    WHERE x.group_id = g.id
+                    ORDER BY x.is_admin DESC, u.name
+                    LIMIT 5) m) AS "memberPreview"
          FROM groups g
          JOIN group_members gm ON gm.group_id = g.id AND gm.user_id = $1
          ORDER BY g.name`,
@@ -311,6 +318,33 @@ router.patch("/:id/members/:userId", async (req, res) => {
     });
 
     res.json({ userId, isAdmin });
+});
+
+/* --- DELETE /api/groups/:id → { privateListCount } - delete the group (admin) --- */
+// Members, invitations and Secret Santas go with it (ON DELETE CASCADE). Lists stay:
+// - shared with other groups too: they just lose this one
+// - shared only with this group: they become private (only their admins see them) and can be given new groups
+router.delete("/:id", async (req, res) => {
+    const groupId = parseId(req.params.id);
+
+    const privateListCount = await withTransaction(async (db) => {
+        await db.query("SELECT id FROM groups WHERE id = $1 FOR UPDATE", [groupId]);
+        await requireGroupAdmin(db, groupId, req.user.id);
+
+        const { rowCount } = await db.query(
+            `UPDATE lists SET is_public = false
+             WHERE id IN (SELECT list_id FROM list_groups WHERE group_id = $1)
+               AND NOT EXISTS (SELECT 1 FROM list_groups o WHERE o.list_id = lists.id AND o.group_id <> $1)
+               AND is_public`,
+            [groupId]
+        );
+        await db.query("DELETE FROM list_groups WHERE group_id = $1", [groupId]);
+        await db.query("DELETE FROM groups WHERE id = $1", [groupId]);
+        await syncChildGroups(db);
+        return rowCount;
+    });
+
+    res.json({ privateListCount });
 });
 
 /* --- DELETE /api/groups/:id/members/:userId → { removed, accountDeleted } - remove a member (admin), or leave (yourself) --- */

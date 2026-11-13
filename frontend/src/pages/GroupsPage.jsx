@@ -3,7 +3,9 @@ import { Link, useNavigate } from "react-router-dom";
 import { api } from "../api.js";
 import { useFetch } from "../hooks/useFetch.js";
 import { Empty, ErrorMessage, Loading } from "../components/Feedback.jsx";
-import { Plus, Users } from "lucide-react";
+import { ArrowRight, Baby, Plus, ScrollText, Users } from "lucide-react";
+import Avatar from "../components/Avatar.jsx";
+import InfoTip from "../components/InfoTip.jsx";
 
 export default function GroupsPage() {
     const navigate = useNavigate();
@@ -32,31 +34,8 @@ export default function GroupsPage() {
                 <Users size={28} aria-hidden="true" /> Mina grupper
             </h1>
 
-            <section className="section">
-                {!data && loading && <Loading />}
-                {!data && <ErrorMessage message={error} onRetry={reload} />}
-                {data && data.data.length === 0 && <Empty>Allt blir roligare tillsammans! Skapa en grupp för familjen eller vännerna nedan - eller be någon bjuda in dig.</Empty>}
-                {data && data.data.length > 0 && (
-                    <div className="cards">
-                        {data.data.map((group) => (
-                            <Link key={group.id} to={`/groups/${group.id}`} className="card card-link">
-                                <div className="card-top">
-                                    <h3>{group.name}</h3>
-                                    {group.isAdmin && <span className="badge">Admin</span>}
-                                </div>
-                                <p className="muted">
-                                    {group.memberCount} {group.memberCount === 1 ? "medlem" : "medlemmar"} ·{" "}
-                                    {group.activeListCount} {group.activeListCount === 1 ? "aktiv lista" : "aktiva listor"}
-                                </p>
-                            </Link>
-                        ))}
-                    </div>
-                )}
-            </section>
-
             <section className="section panel">
                 <h2>Skapa en grupp</h2>
-                <p className="muted">Du blir admin och kan lägga till andra.</p>
                 <form onSubmit={handleCreate} className="create-group-form">
                     <ErrorMessage message={createError} />
                     <input
@@ -76,13 +55,13 @@ export default function GroupsPage() {
                                     checked={includeChildren}
                                     onChange={(e) => setIncludeChildren(e.target.checked)}
                                     disabled={busy}
-                                    aria-describedby="include-children-help"
                                 />
                                 Inkludera barn
                             </label>
-                            <small id="include-children-help" className="muted">
+                            {/* Outside the label: a button inside it would take over as the label's control */}
+                            <InfoTip label="Om att inkludera barn">
                                 Alla medlemmars barn kommer då med automatiskt. Kan ändras senare.
-                            </small>
+                            </InfoTip>
                         </div>
                         <button type="submit" className="btn btn-primary" disabled={busy}>
                             <Plus size={16} className="icon-lead" aria-hidden="true" />
@@ -90,6 +69,62 @@ export default function GroupsPage() {
                         </button>
                     </div>
                 </form>
+            </section>
+
+            <section className="section">
+                {!data && loading && <Loading />}
+                {!data && <ErrorMessage message={error} onRetry={reload} />}
+                {data && data.data.length === 0 && <Empty>Allt blir roligare tillsammans! Skapa en grupp för familjen eller vännerna ovan - eller be någon bjuda in dig.</Empty>}
+                {data && data.data.length > 0 && (
+                    <div className="cards">
+                        {data.data.map((group) => {
+                            const preview = group.memberPreview ?? [];
+                            const more = group.memberCount - preview.length;
+                            return (
+                                <Link
+                                    key={group.id}
+                                    to={`/groups/${group.id}`}
+                                    className="card card-link group-card"
+                                >
+                                    <div className="group-card-head">
+                                        <div className="group-card-title">
+                                            <h3>{group.name}</h3>
+                                            <div className="badges">
+                                                {group.isAdmin && <span className="badge">Admin</span>}
+                                                {group.includeChildren && (
+                                                    <span className="badge badge-gift">
+                                                        <Baby size={12} aria-hidden="true" /> Inkl. barn
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <ArrowRight size={18} className="group-card-arrow" aria-hidden="true" />
+                                    </div>
+
+                                    <div className="group-card-foot">
+                                        <div className="avatar-stack">
+                                            <span className="visually-hidden">
+                                                {group.memberCount} {group.memberCount === 1 ? "medlem" : "medlemmar"}
+                                            </span>
+                                            {preview.map((m) =>
+                                                m.isChild ? (
+                                                    <Avatar key={m.id} isChild id={m.id} size={30} />
+                                                ) : (
+                                                    <Avatar key={m.id} icon={m.avatarIcon} color={m.avatarColor} size={30} />
+                                                )
+                                            )}
+                                            {more > 0 && <span className="avatar-stack-more">+{more}</span>}
+                                        </div>
+                                        <span className="group-card-stat">
+                                            <ScrollText size={14} aria-hidden="true" />
+                                            {group.activeListCount} {group.activeListCount === 1 ? "aktiv lista" : "aktiva listor"}
+                                        </span>
+                                    </div>
+                                </Link>
+                            );
+                        })}
+                    </div>
+                )}
             </section>
         </div>
     );

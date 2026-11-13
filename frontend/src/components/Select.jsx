@@ -1,22 +1,55 @@
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { ChevronDown } from "lucide-react";
 
 // A drop-down list in the same look as the people search's suggestions (a native <select> can't be styled
 // when open). options: [{ value, label }]. value "" = nothing chosen yet, shown as the placeholder.
 // Keyboard: Enter/Space/↓ opens, ↑↓ moves, Enter picks, Escape closes, Home/End jump.
+// The list is position: fixed, placed from the button - so a scrolling parent (a modal) can't clip it.
+// It opens upwards when there's more room above, and follows the button when something scrolls.
 export default function Select({ value, onChange, options, placeholder = "Välj", disabled = false, label }) {
     const [open, setOpen] = useState(false);
     const [active, setActive] = useState(0);
     const listId = useId();
     const wrap = useRef(null);
+    const button = useRef(null);
+    const [pos, setPos] = useState(null); // where the list sits on screen
 
     const chosen = options.find((o) => String(o.value) === String(value));
 
-    // Close when clicking outside
+    // Place the list under (or over) the button - again whenever anything scrolls or the window resizes
+    useLayoutEffect(() => {
+        if (!open) return;
+        function place() {
+            const r = button.current.getBoundingClientRect();
+            const below = window.innerHeight - r.bottom - 8;
+            const above = r.top - 8;
+            const up = below < 180 && above > below;
+            setPos({
+                left: r.left,
+                width: r.width,
+                // "auto", not undefined: the CSS of .people-suggestions sets a top of its own
+                top: up ? "auto" : r.bottom + 4,
+                bottom: up ? window.innerHeight - r.top + 4 : "auto",
+                maxHeight: Math.min(288, Math.max(up ? above : below, 120)),
+            });
+        }
+        place();
+        window.addEventListener("scroll", place, true); // true: also scrolling inside a modal
+        window.addEventListener("resize", place);
+        return () => {
+            window.removeEventListener("scroll", place, true);
+            window.removeEventListener("resize", place);
+        };
+    }, [open]);
+
+    // Close when clicking outside - but not on a scrollbar (a mousedown straight on the scrolling
+    // <dialog> or page): scrolling the modal keeps the list open
     useEffect(() => {
         if (!open) return;
         const onDown = (e) => {
-            if (!wrap.current?.contains(e.target)) setOpen(false);
+            if (wrap.current?.contains(e.target)) return;
+            if (e.target.tagName === "DIALOG" || e.target === document.documentElement) return;
+            setOpen(false);
         };
         document.addEventListener("mousedown", onDown);
         return () => document.removeEventListener("mousedown", onDown);
@@ -66,6 +99,7 @@ export default function Select({ value, onChange, options, placeholder = "Välj"
     return (
         <div className="select" ref={wrap}>
             <button
+                ref={button}
                 type="button"
                 className={`select-button${chosen ? "" : " is-placeholder"}`}
                 onClick={() => (open ? setOpen(false) : openList())}
@@ -82,8 +116,8 @@ export default function Select({ value, onChange, options, placeholder = "Välj"
                 <ChevronDown size={18} aria-hidden="true" />
             </button>
 
-            {open && (
-                <ul className="people-suggestions" id={listId} role="listbox">
+            {open && pos && (
+                <ul className="people-suggestions select-list" id={listId} role="listbox" style={pos}>
                     {options.map((option, i) => (
                         <li
                             key={option.value}

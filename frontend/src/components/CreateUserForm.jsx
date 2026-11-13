@@ -4,11 +4,17 @@ import { api } from "../api.js";
 import { ErrorMessage } from "./Feedback.jsx";
 
 // A group admin creates an account for someone. onCreated gets { user, link }.
-export default function CreateUserForm({ groupId, onCreated }) {
+// groupPicker: shown above the button once name and username are filled in (to pick the group last).
+// hideIntro: leave out the line about the link - the caller shows it its own way (e.g. in an InfoTip).
+export default function CreateUserForm({ groupId, onCreated, groupPicker = null, hideIntro = false }) {
     const [name, setName] = useState("");
     const [username, setUsername] = useState("");
     const [error, setError] = useState(null);
     const [busy, setBusy] = useState(false);
+
+    // Everything needed is filled in: a name, a valid username and a group
+    const USERNAME = /^[A-Za-z0-9._-]{3,30}$/;
+    const ready = name.trim().length > 0 && USERNAME.test(username) && Boolean(groupId);
 
     async function handleSubmit(e) {
         e.preventDefault();
@@ -29,9 +35,7 @@ export default function CreateUserForm({ groupId, onCreated }) {
     return (
         <form onSubmit={handleSubmit} className="form">
             {/* First, right under the heading above the form ("Eller skapa en ny användare") */}
-            <small className="muted">
-                Personen läggs till i gruppen direkt. Du får en länk där hen väljer sitt lösenord.
-            </small>
+            {!hideIntro && <small className="muted">{CREATE_USER_INTRO}</small>}
             <div className="field-row">
                 <label className="field">
                     <span>Namn</span>
@@ -49,9 +53,10 @@ export default function CreateUserForm({ groupId, onCreated }) {
                     />
                 </label>
             </div>
+            {groupPicker && name.trim() && username.trim() && groupPicker}
             <ErrorMessage message={error} />
             <div>
-                <button type="submit" className="btn btn-primary" disabled={busy}>
+                <button type="submit" className="btn btn-primary" disabled={busy || !ready}>
                     <Plus size={16} className="icon-lead" aria-hidden="true" />
                     {busy ? "Skapar…" : "Skapa användare"}
                 </button>
@@ -59,3 +64,5 @@ export default function CreateUserForm({ groupId, onCreated }) {
         </form>
     );
 }
+
+export const CREATE_USER_INTRO = "Personen läggs till i gruppen direkt. Du får en länk till en sida där hen kan välja lösenord.";

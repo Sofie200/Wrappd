@@ -4541,12 +4541,15 @@ button.event-edit {
 }
 
 /* "You're in a Secret Santa - fill in your wish profile", above the events */
+/* "Nästa steg" on the overview (and a new group): centred, the text with the button under it */
 .santa-nudge {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: 1rem 2.25rem; /* more air between the text and the button beside it */
-    flex-wrap: wrap;
-    margin: 2.25rem 0 0;
+    text-align: center;
+    gap: 1.25rem;
+    max-width: 32rem;
+    margin: 2.25rem auto 0;
 }
 
 .santa-nudge-title svg {
@@ -4556,9 +4559,7 @@ button.event-edit {
     color: var(--ink);
 }
 
-/* Only as wide as the text, so the button sits right after it */
 .santa-nudge > div {
-    flex: 0 1 auto;
     min-width: 200px;
 }
 
@@ -4569,6 +4570,11 @@ button.event-edit {
 .santa-nudge-title {
     font-weight: 600;
     font-size: 1.05rem;
+}
+
+/* Two classes, so it beats ".santa-nudge p { margin: 0 }" */
+.santa-nudge .santa-nudge-title {
+    margin-bottom: 0.35rem;
 }
 
 /* "Sigrids önskeprofil →" at the bottom of a child's card */
@@ -5261,4 +5267,219 @@ button.event-edit {
 /* "(9 valda)" next to a legend - normal weight, so it reads as a note to the heading */
 .legend-count {
     font-weight: 400;
+}
+
+/* The close button up in the modal's top-right corner, closer to the edge than the content's padding.
+   (Not the floating one - that sits over the content, e.g. a wish's image.) */
+.modal-head:not(.modal-head-floating) .modal-close {
+    margin: -0.75rem -1rem 0 0;
+}
+
+/* "Hittar du inte den du söker?": the person found, and the group to add them to */
+.picked-person {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.picked-person > p {
+    margin: 0;
+}
+
+/* A sub heading with a discreet line above it - sets the parts of a modal apart */
+.subhead.subhead-divided {
+    border-top: 1px solid var(--line);
+    padding-top: 1.25rem;
+    margin-top: 1.5rem;
+}
+
+/* Select's list: fixed on screen, placed from the button in JS (so a modal's scrolling can't clip it) */
+.people-suggestions.select-list {
+    position: fixed;
+    right: auto;
+    z-index: 30;
+}
+
+/* A checkbox with an (i) instead of a hint underneath: checkbox, text and (i) on one line */
+.check-field:has(> .info-tip) {
+    display: flex;
+    align-items: center;
+    gap: 0.15rem; /* the (i) close to the text */
+}
+
+.check-field:has(> .info-tip) > .check {
+    display: flex;
+}
+
+/* ...with the (i) one pixel lower, level with the text */
+.check-field > .info-tip {
+    position: relative;
+    top: 1px;
+}
+
+/* Create a group: only "Inkludera barn" moves up, closer to the name field - the button stays */
+.create-group-row > .check-field {
+    position: relative;
+    top: -0.7rem;
+}
+
+/* ---------- Mina grupper: group cards ---------- */
+.group-card {
+    gap: 1rem;
+}
+
+.group-card-head {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.85rem;
+}
+
+.group-card-title {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+}
+
+.group-card-title h3 {
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+
+.group-card-title .badge {
+    margin-left: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+/* The arrow slides in on hover */
+.group-card-arrow {
+    flex: none;
+    margin-top: 0.3rem;
+    color: var(--muted);
+    opacity: 0;
+    transform: translateX(-4px);
+    transition: opacity 0.15s, transform 0.15s;
+}
+
+.group-card:hover .group-card-arrow,
+.group-card:focus-visible .group-card-arrow {
+    opacity: 1;
+    transform: none;
+}
+
+.group-card-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-top: auto;
+    padding-top: 0.85rem;
+    border-top: 1px solid var(--line);
+}
+
+/* Overlapping avatars, each with a white ring */
+.avatar-stack {
+    display: flex;
+    align-items: center;
+}
+
+.avatar-stack > .avatar,
+.avatar-stack > .avatar-stack-more {
+    box-shadow: 0 0 0 2px var(--surface);
+}
+
+.avatar-stack > .avatar + .avatar,
+.avatar-stack > .avatar + .avatar-stack-more {
+    margin-left: -8px;
+}
+
+.avatar-stack-more {
+    display: inline-grid;
+    place-items: center;
+    height: 30px;
+    min-width: 30px;
+    padding: 0 0.4rem;
+    border-radius: 999px;
+    background: var(--surface-soft);
+    color: var(--muted);
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.group-card-stat {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    color: var(--muted);
+    font-size: 0.85rem;
+    white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .group-card-arrow {
+        transition: none;
+    }
+}
+
+/* A group's lists: the public ones, then the private ones in a grid of their own */
+.list-card-groups {
+    display: flex;
+    flex-direction: column;
+    gap: 1.75rem;
+}
+
+/* A new group with nobody else and no lists: "Vad är nästa steg?" at the top, in the overview's nudge look */
+.santa-nudge.group-next-step {
+    margin: 3.5rem auto 2rem;
+    /* Centred on the page: text, and the buttons under it */
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 1.75rem; /* between the text and the buttons */
+    max-width: 32rem;
+}
+
+.group-next-step .group-next-step-actions {
+    justify-content: center;
+}
+
+.group-next-step-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 0.75rem;
+}
+
+.group-next-step-or {
+    font-size: 0.9rem;
+}
+
+.group-next-step .santa-nudge-title {
+    font-size: 1.35rem;
+    margin-bottom: 0.6rem;
+}
+
+/* The overview's greeting ("Hej Sofie!") centred, like the "nästa steg" under it */
+.overview-intro h1 {
+    text-align: center;
+}
+
+.overview-intro .santa-nudge {
+    margin-top: 1.25rem; /* closer under "Hej Sofie!" */
+}
+
+/* A field's label with an (i) right after it (the (i) can't sit inside the <label>) */
+.field > .field-label-row {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+/* An error box inside a field (e.g. a failed "Hämta"): close under the input, no margin of its own below */
+.field > .alert {
+    margin: 0.25rem 0 0;
 }

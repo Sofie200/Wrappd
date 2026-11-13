@@ -362,7 +362,7 @@ export default function OverviewPage() {
 
     return (
         <div className="page">
-            <header className="page-intro">
+            <header className="page-intro overview-intro">
                 <h1>Hej {user.name}!</h1>
 
                 {/* One suggestion at a time - the most important one (see pickNudge) */}

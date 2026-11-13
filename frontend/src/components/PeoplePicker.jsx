@@ -1,4 +1,4 @@
-import { useId, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { Plus, X } from "lucide-react";
 import Avatar from "./Avatar.jsx";
 
@@ -11,7 +11,8 @@ import Avatar from "./Avatar.jsx";
 // used to label the search field for screen readers).
 // onNotFound: adds a last choice "Hittar du inte den du söker?" to the suggestions, which calls it.
 // compact: once someone is chosen the search hides, and a small + next to the chips opens it again for one more.
-const MAX_SUGGESTIONS = 8;
+// Everyone is suggested, in alphabetical order - the list scrolls when it's long
+const byName = (a, b) => a.name.localeCompare(b.name, "sv") || (a.username ?? "").localeCompare(b.username ?? "", "sv");
 
 export default function PeoplePicker({
     legend,
@@ -41,7 +42,7 @@ export default function PeoplePicker({
     const suggestions = people
         .filter((p) => !isChosen(p.id))
         .filter((p) => !term || p.name.toLowerCase().includes(term) || (p.username ?? "").toLowerCase().includes(term))
-        .slice(0, MAX_SUGGESTIONS);
+        .sort(byName);
     const pickable = suggestions.filter((p) => !disabledIds.includes(p.id));
 
     function add(person) {
@@ -87,6 +88,11 @@ export default function PeoplePicker({
     const showSearch = single ? chosen.length === 0 : !compact || chosen.length === 0 || adding;
 
     const activeId = pickable[active] ? `${listId}-${pickable[active].id}` : undefined;
+
+    // The list can be long now: keep the highlighted one in view when moving with the arrow keys
+    useEffect(() => {
+        if (open && activeId) document.getElementById(activeId)?.scrollIntoView({ block: "nearest" });
+    }, [open, activeId]);
 
     const picker =
             people.length === 0 ? (

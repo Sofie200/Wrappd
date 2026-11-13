@@ -8,6 +8,7 @@ import { ErrorMessage, Loading, Notice } from "../components/Feedback.jsx";
 import ImageField from "../components/ImageField.jsx";
 import Breadcrumbs from "../components/Breadcrumbs.jsx";
 import ProductLinkField from "../components/ProductLinkField.jsx";
+import InfoTip from "../components/InfoTip.jsx";
 import PeoplePicker from "../components/PeoplePicker.jsx";
 import EventFields from "../components/EventFields.jsx";
 import { amountText, formatDate, formatPrice, formatShortDate, parseAmount } from "../format.js";
@@ -471,14 +472,19 @@ function GiftForm({ data, lists, santas, presetListId, presetSantaId, presetEven
                     </label>
                 </div>
 
-                <label className="field">
-                    <span>Kommentar</span>
-                    <textarea value={form.comment} onChange={set("comment")} rows={3} maxLength={1000} disabled={busy} />
-                    {/* Who sees the comment - said for gifts that can be shared: on a list, or a reservation
-                        (not for a Secret Santa gift or a logged one, which are only mine) */}
-                    {form.santaId === "" && !gift?.santaId && (form.listId !== "" || !isFree) && (
-                        <small>Syns bara för den/de som köpt gåvan.</small>
-                    )}
+                <label className="field" htmlFor="gift-comment">
+                    <span>
+                        Kommentar
+                        {/* Who sees the comment - said for gifts that can be shared: on a list, or a reservation
+                            (not for a Secret Santa gift or a logged one, which are only mine) */}
+                        {form.santaId === "" && !gift?.santaId && (form.listId !== "" || !isFree) && (
+                            <>
+                                {" "}
+                                <InfoTip label="Vem ser kommentaren?">Syns bara för den/de som köpt gåvan.</InfoTip>
+                            </>
+                        )}
+                    </span>
+                    <textarea id="gift-comment" value={form.comment} onChange={set("comment")} rows={3} maxLength={1000} disabled={busy} />
                 </label>
 
                 {canShare ? (

@@ -7,10 +7,11 @@ import { Empty, ErrorMessage, Loading } from "../components/Feedback.jsx";
 import ListPanelCard from "../components/ListPanelCard.jsx";
 import Pagination from "../components/Pagination.jsx";
 import UserSearch from "../components/UserSearch.jsx";
-import CreateUserForm from "../components/CreateUserForm.jsx";
+import CreateUserForm, { CREATE_USER_INTRO } from "../components/CreateUserForm.jsx";
+import InfoTip from "../components/InfoTip.jsx";
 import UserLinkBox from "../components/UserLinkBox.jsx";
 import Avatar from "../components/Avatar.jsx";
-import { Archive, Ellipsis, KeyRound, ScrollText, Link2, LogOut, Pencil, ShieldCheck, ShieldOff, UserMinus, UserPlus, Users } from "lucide-react";
+import { Archive, Ellipsis, Plus, Trash2, KeyRound, ScrollText, Link2, LogOut, Pencil, ShieldCheck, ShieldOff, UserMinus, UserPlus, Users } from "lucide-react";
 import Breadcrumbs from "../components/Breadcrumbs.jsx";
 import Modal from "../components/Modal.jsx";
 import GroupSettingsModal from "../components/GroupSettingsModal.jsx";
@@ -124,7 +125,30 @@ export default function GroupPage() {
         }
     }
 
+    // Admins: delete the whole group. Lists shared only with it become private (their admins pick new groups).
+    async function removeGroup() {
+        const ok = window.confirm(
+            `Radera gruppen "${group.name}"?\n\n` +
+                "Alla medlemmar tas bort ur gruppen, och gruppens Secret Santa försvinner. " +
+                "Listor som bara delas med gruppen blir privata - deras admins kan välja nya grupper.\n\n" +
+                "Det går inte att ångra."
+        );
+        if (!ok) return;
+        setBusy(true);
+        setActionError(null);
+        try {
+            await api(`/groups/${id}`, { method: "DELETE" });
+            navigate("/groups");
+        } catch (err) {
+            setActionError(err.message);
+            setBusy(false);
+        }
+    }
+
     const lastAdmin = me.isAdmin && adminCount === 1;
+
+    // A brand new group: nobody but me (and my children) and no lists yet - show what to do next
+    const justMe = members.every((m) => m.id === user.id || m.isChild) && lists.length === 0;
 
     return (
         <div className="page">
@@ -156,157 +180,210 @@ export default function GroupPage() {
                     >
                         <LogOut size={16} aria-hidden="true" /> Lämna gruppen
                     </button>
+                    {me.isAdmin && (
+                        <button
+                            type="button"
+                            className="menu-item menu-item-danger"
+                            role="menuitem"
+                            onClick={removeGroup}
+                            disabled={busy}
+                        >
+                            <Trash2 size={16} aria-hidden="true" /> Radera gruppen
+                        </button>
+                    )}
                 </SettingsMenu>
             </div>
 
             <ErrorMessage message={actionError} />
 
-            <section className="section members-section" ref={membersRef}>
-                <div className="section-head">
-                    <h2>
-                    Medlemmar ({members.length})
-                    {group.includeChildren ? (
-                        <span className="badge badge-gift">Inkl. barn</span>
-                    ) : (
-                        <span className="badge">Utan barn</span>
-                    )}
-                </h2>
-                    {me.isAdmin && (
-                        <button type="button" className="btn btn-small" onClick={() => setAddingMember(true)} disabled={busy}>
-                            <UserPlus size={16} aria-hidden="true" /> Lägg till ny medlem
-                        </button>
-                    )}
+            {justMe && (
+                <div className="santa-nudge group-next-step" role="status">
+                    <div>
+                        <p className="santa-nudge-title">Vad är nästa steg? 🎁</p>
+                        <p>Bjud in andra till gruppen, eller börja med att skapa en önskelista.</p>
+                    </div>
+                    <div className="group-next-step-actions">
+                        {me.isAdmin && (
+                            <button
+                                type="button"
+                                className="btn btn-small btn-primary"
+                                onClick={() => setAddingMember(true)}
+                                disabled={busy}
+                            >
+                                <UserPlus size={16} aria-hidden="true" /> Lägg till medlemmar
+                            </button>
+                        )}
+                        {me.isAdmin && <span className="muted group-next-step-or">eller</span>}
+                        <Link to="/lists/new" className="btn btn-small btn-primary">
+                            <ScrollText size={16} aria-hidden="true" /> Skapa en önskelista
+                        </Link>
+                    </div>
                 </div>
-                <ul className="member-list">
-                    {shownMembers.map((member) => {
-                        const isMe = member.id === user.id;
-                        const onlyAdmin = member.isAdmin && adminCount === 1;
+            )}
 
-                        // Children are managed by their parents (Mina barn) - no admin actions here
-                        if (member.isChild) {
+            {/* A brand new group shows only "Vad är nästa steg?" - the rest comes once there's something in it */}
+            {!justMe && (
+                <>
+                <section className="section members-section" ref={membersRef}>
+                    <div className="section-head">
+                        <h2>
+                        Medlemmar ({members.length})
+                        {group.includeChildren ? (
+                            <span className="badge badge-gift">Inkl. barn</span>
+                        ) : (
+                            <span className="badge">Utan barn</span>
+                        )}
+                    </h2>
+                        {me.isAdmin && (
+                            <button type="button" className="btn btn-small btn-primary" onClick={() => setAddingMember(true)} disabled={busy}>
+                                <UserPlus size={16} aria-hidden="true" /> Lägg till ny medlem
+                            </button>
+                        )}
+                    </div>
+                    <ul className="member-list">
+                        {shownMembers.map((member) => {
+                            const isMe = member.id === user.id;
+                            const onlyAdmin = member.isAdmin && adminCount === 1;
+
+                            // Children are managed by their parents (Mina barn) - no admin actions here
+                            if (member.isChild) {
+                                return (
+                                    <li key={member.id}>
+                                        <span className="member-name">
+                                            <Avatar isChild id={member.id} size={32} />
+                                            <PersonLink person={member} /> <span className="badge badge-gift">Barn</span>
+                                            {member.parents && <span className="muted small"> · Föräldrar: {member.parents}</span>}
+                                        </span>
+                                    </li>
+                                );
+                            }
+
                             return (
                                 <li key={member.id}>
                                     <span className="member-name">
-                                        <Avatar isChild id={member.id} size={32} />
-                                        <PersonLink person={member} /> <span className="badge badge-gift">Barn</span>
-                                        {member.parents && <span className="muted small"> · Föräldrar: {member.parents}</span>}
+                                        <Avatar icon={member.avatarIcon} color={member.avatarColor} size={32} />
+                                        <PersonLink person={member} /> <span className="muted">({member.username})</span>
+                                        {isMe && <span className="muted"> (du)</span>}
+                                        {member.isAdmin && <span className="badge">Admin</span>}
+                                        {!member.isActivated && <span className="badge badge-private">Ej aktiverad</span>}
                                     </span>
+
+                                    {me.isAdmin && (
+                                        <SettingsMenu label={`Alternativ för ${member.name}`} icon={Ellipsis}>
+                                            {!isMe && (
+                                                <button
+                                                    type="button"
+                                                    className="menu-item"
+                                                    role="menuitem"
+                                                    onClick={() => makeLink(member)}
+                                                    disabled={busy}
+                                                >
+                                                    {member.isActivated ? (
+                                                        <>
+                                                            <KeyRound size={16} aria-hidden="true" /> Återställ lösenord
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <Link2 size={16} aria-hidden="true" /> Ny länk
+                                                        </>
+                                                    )}
+                                                </button>
+                                            )}
+                                            {member.isAdmin ? (
+                                                <button
+                                                    type="button"
+                                                    className="menu-item"
+                                                    role="menuitem"
+                                                    onClick={() => setAdmin(member, false)}
+                                                    disabled={busy || onlyAdmin}
+                                                    title={onlyAdmin ? "Gruppen måste ha minst en admin" : undefined}
+                                                >
+                                                    <ShieldOff size={16} aria-hidden="true" /> Ta bort som admin
+                                                </button>
+                                            ) : (
+                                                <button
+                                                    type="button"
+                                                    className="menu-item"
+                                                    role="menuitem"
+                                                    onClick={() => setAdmin(member, true)}
+                                                    disabled={busy}
+                                                >
+                                                    <ShieldCheck size={16} aria-hidden="true" /> Gör till admin
+                                                </button>
+                                            )}
+                                            {!isMe && (
+                                                <button
+                                                    type="button"
+                                                    className="menu-item menu-item-danger"
+                                                    role="menuitem"
+                                                    onClick={() => removeMember(member)}
+                                                    disabled={busy || onlyAdmin}
+                                                >
+                                                    <UserMinus size={16} aria-hidden="true" /> Ta bort ur gruppen
+                                                </button>
+                                            )}
+                                        </SettingsMenu>
+                                    )}
+                                    {/* The link right under the member it's for, so there's no scrolling up */}
+                                    {shownLink?.user.id === member.id && (
+                                        <UserLinkBox {...shownLink} onClose={() => setShownLink(null)} />
+                                    )}
                                 </li>
                             );
-                        }
+                        })}
+                    </ul>
+                    <Pagination page={page} pageCount={memberPageCount} onChange={changeMemberPage} label="Sidor med medlemmar" />
+                </section>
 
-                        return (
-                            <li key={member.id}>
-                                <span className="member-name">
-                                    <Avatar icon={member.avatarIcon} color={member.avatarColor} size={32} />
-                                    <PersonLink person={member} /> <span className="muted">({member.username})</span>
-                                    {isMe && <span className="muted"> (du)</span>}
-                                    {member.isAdmin && <span className="badge">Admin</span>}
-                                    {!member.isActivated && <span className="badge badge-private">Ej aktiverad</span>}
-                                </span>
-
-                                {me.isAdmin && (
-                                    <SettingsMenu label={`Alternativ för ${member.name}`} icon={Ellipsis}>
-                                        {!isMe && (
-                                            <button
-                                                type="button"
-                                                className="menu-item"
-                                                role="menuitem"
-                                                onClick={() => makeLink(member)}
-                                                disabled={busy}
-                                            >
-                                                {member.isActivated ? (
-                                                    <>
-                                                        <KeyRound size={16} aria-hidden="true" /> Återställ lösenord
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <Link2 size={16} aria-hidden="true" /> Ny länk
-                                                    </>
-                                                )}
-                                            </button>
-                                        )}
-                                        {member.isAdmin ? (
-                                            <button
-                                                type="button"
-                                                className="menu-item"
-                                                role="menuitem"
-                                                onClick={() => setAdmin(member, false)}
-                                                disabled={busy || onlyAdmin}
-                                                title={onlyAdmin ? "Gruppen måste ha minst en admin" : undefined}
-                                            >
-                                                <ShieldOff size={16} aria-hidden="true" /> Ta bort som admin
-                                            </button>
-                                        ) : (
-                                            <button
-                                                type="button"
-                                                className="menu-item"
-                                                role="menuitem"
-                                                onClick={() => setAdmin(member, true)}
-                                                disabled={busy}
-                                            >
-                                                <ShieldCheck size={16} aria-hidden="true" /> Gör till admin
-                                            </button>
-                                        )}
-                                        {!isMe && (
-                                            <button
-                                                type="button"
-                                                className="menu-item menu-item-danger"
-                                                role="menuitem"
-                                                onClick={() => removeMember(member)}
-                                                disabled={busy || onlyAdmin}
-                                            >
-                                                <UserMinus size={16} aria-hidden="true" /> Ta bort ur gruppen
-                                            </button>
-                                        )}
-                                    </SettingsMenu>
-                                )}
-                                {/* The link right under the member it's for, so there's no scrolling up */}
-                                {shownLink?.user.id === member.id && (
-                                    <UserLinkBox {...shownLink} onClose={() => setShownLink(null)} />
-                                )}
-                            </li>
-                        );
-                    })}
-                </ul>
-                <Pagination page={page} pageCount={memberPageCount} onChange={changeMemberPage} label="Sidor med medlemmar" />
-            </section>
-
-            <section className="section">
-                <div className="section-head">
-                    <h2>{showArchive ? "Arkiverade listor i gruppen" : "Listor i gruppen"}</h2>
-                    {/* The archive is shown here, in place of the current lists */}
-                    <button type="button" className="btn btn-ghost" onClick={() => setShowArchive(!showArchive)}>
-                        {showArchive ? (
-                            <>
-                                <ScrollText size={16} aria-hidden="true" /> Aktuella listor{currentLists.length > 0 && ` (${currentLists.length})`}
-                            </>
-                        ) : (
-                            <>
-                                <Archive size={16} aria-hidden="true" /> Arkiv{archivedLists.length > 0 && ` (${archivedLists.length})`}
-                            </>
-                        )}
-                    </button>
-                </div>
-                {shownLists.length === 0 ? (
-                    <Empty>
-                        {showArchive ? (
-                            "Gruppens gamla listor hamnar här när firandet är över."
-                        ) : (
-                            <>
-                                Det är tyst i gruppen just nu. Bli först - <Link to="/lists/new">skapa en lista</Link> som
-                                alla här kan se.
-                            </>
-                        )}
-                    </Empty>
-                ) : (
-                    <div className="cards list-cards">
-                        {shownLists.map((list) => (
-                            <ListPanelCard key={list.id} list={list} />
-                        ))}
+                <section className="section">
+                    <div className="section-head">
+                        <h2>{showArchive ? "Arkiverade listor i gruppen" : "Listor i gruppen"}</h2>
+                        <div className="actions">
+                        <Link to="/lists/new" className="btn btn-small btn-primary">
+                            <Plus size={16} className="icon-lead" aria-hidden="true" /> Ny lista
+                        </Link>
+                        {/* The archive is shown here, in place of the current lists - rightmost */}
+                        <button type="button" className="btn btn-small btn-ghost" onClick={() => setShowArchive(!showArchive)}>
+                            {showArchive ? (
+                                <>
+                                    <ScrollText size={16} aria-hidden="true" /> Aktuella listor{currentLists.length > 0 && ` (${currentLists.length})`}
+                                </>
+                            ) : (
+                                <>
+                                    <Archive size={16} aria-hidden="true" /> Arkiv{archivedLists.length > 0 && ` (${archivedLists.length})`}
+                                </>
+                            )}
+                        </button>
+                        </div>
                     </div>
-                )}
-            </section>
+                    {shownLists.length === 0 ? (
+                        <Empty>
+                            {showArchive ? (
+                                "Gruppens gamla listor hamnar här när firandet är över."
+                            ) : (
+                                <>
+                                    Det är tyst i gruppen just nu. Bli först - <Link to="/lists/new">skapa en lista</Link> som
+                                    alla här kan se.
+                                </>
+                            )}
+                        </Empty>
+                    ) : (
+                        // Public lists first, then the private ones (only their admins see them) in a grid of their own
+                        <div className="list-card-groups">
+                            {[shownLists.filter((l) => l.isPublic), shownLists.filter((l) => !l.isPublic)]
+                                .filter((part) => part.length > 0)
+                                .map((part) => (
+                                    <div key={part[0].isPublic ? "public" : "private"} className="cards list-cards">
+                                        {part.map((list) => (
+                                            <ListPanelCard key={list.id} list={list} />
+                                        ))}
+                                    </div>
+                                ))}
+                        </div>
+                    )}
+                </section>
+                </>
+            )}
 
             {editingSettings && (
                 <GroupSettingsModal
@@ -326,10 +403,14 @@ export default function GroupPage() {
                         <UserLinkBox {...createdLink} />
                     ) : (
                         <>
-                            <p className="muted small">
-                                Har personen redan ett konto? Personer i dina grupper dyker upp medan du skriver. Andra
-                                hittar du genom att skriva hela användarnamnet och trycka på Sök.
-                            </p>
+                            {/* The same parts and wording as "Hittar du inte den du söker?" on a new list */}
+                            <h3 className="subhead">
+                                Lägg till en ny medlem{" "}
+                                <InfoTip label="Hur hittar jag någon?">
+                                    Har personen redan ett konto? Personer i dina grupper dyker upp medan du skriver. Andra
+                                    hittar du genom att skriva hela användarnamnet och trycka på Sök.
+                                </InfoTip>
+                            </h3>
                             <UserSearch
                                 excludeGroupId={group.id}
                                 onSelect={(member) => {
@@ -339,8 +420,12 @@ export default function GroupPage() {
                                 busy={busy}
                             />
 
-                            <h3 className="subhead">Eller skapa en ny användare</h3>
+                            <h3 className="subhead subhead-divided">
+                                Eller skapa en ny användare{" "}
+                                <InfoTip label="Vad händer när jag skapar en användare?">{CREATE_USER_INTRO}</InfoTip>
+                            </h3>
                             <CreateUserForm
+                                hideIntro
                                 groupId={group.id}
                                 onCreated={(result) => {
                                     setCreatedLink(result);

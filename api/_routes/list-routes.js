@@ -224,6 +224,13 @@ router.post("/:id/publish", async (req, res) => {
     const access = await getListAccess(pool, listId, req.user.id);
     requireEditor(access);
 
+    // A list whose only group was deleted has no groups left - it needs new ones before anyone can see it
+    const { rows: [{ count }] } = await pool.query(
+        "SELECT count(*)::int AS count FROM list_groups WHERE list_id = $1",
+        [listId]
+    );
+    if (count === 0) throw new HttpError(400, "Välj minst en grupp för listan innan du publicerar den");
+
     await pool.query(
         "UPDATE lists SET is_public = true, published_at = COALESCE(published_at, now()) WHERE id = $1",
         [listId]

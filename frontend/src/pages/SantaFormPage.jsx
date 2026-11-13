@@ -7,6 +7,7 @@ import { useFetch } from "../hooks/useFetch.js";
 import { Empty, ErrorMessage, Loading } from "../components/Feedback.jsx";
 import Avatar from "../components/Avatar.jsx";
 import Select from "../components/Select.jsx";
+import InfoTip from "../components/InfoTip.jsx";
 import { todayIso } from "../format.js";
 
 const MIN_PARTICIPANTS = 3;
@@ -85,15 +86,17 @@ export default function SantaFormPage() {
                     </label>
 
                     <div className="field-row">
-                        <label className="field">
-                            <span>Datum</span>
-                            <input type="date" value={date} min={todayIso()} onChange={(e) => setDate(e.target.value)} required disabled={busy} />
-                            <small>När gåvorna ska delas ut.</small>
+                        <label className="field" htmlFor="santa-date">
+                            <span>
+                                Datum <InfoTip label="Om datumet">När gåvorna ska delas ut.</InfoTip>
+                            </span>
+                            <input id="santa-date" type="date" value={date} min={todayIso()} onChange={(e) => setDate(e.target.value)} required disabled={busy} />
                         </label>
-                        <label className="field">
-                            <span>Budget (kr)</span>
-                            <input value={budget} onChange={(e) => setBudget(e.target.value)} inputMode="decimal" placeholder="Valfritt, t.ex. 300" disabled={busy} />
-                            <small>Ungefär vad varje gåva får kosta.</small>
+                        <label className="field" htmlFor="santa-budget">
+                            <span>
+                                Budget (kr) <InfoTip label="Om budgeten">Ungefär vad varje gåva får kosta.</InfoTip>
+                            </span>
+                            <input id="santa-budget" value={budget} onChange={(e) => setBudget(e.target.value)} inputMode="decimal" placeholder="Valfritt, t.ex. 300" disabled={busy} />
                         </label>
                     </div>
 
