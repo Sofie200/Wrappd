@@ -17,12 +17,12 @@ export default function ListPanelCard({ list }) {
     const stats = (
         <p className="event-stats">
             <span>
-                <Sparkles size={14} aria-hidden="true" /> {list.wishCount} {list.wishCount === 1 ? "önskning" : "önskningar"}
+                <Sparkles size={16} aria-hidden="true" /> {list.wishCount} {list.wishCount === 1 ? "önskning" : "önskningar"}
             </span>
             {/* Never on lists to me (the server sends null there), nor on private lists - nobody can reserve yet */}
             {list.reservedCount != null && !isPrivate && (
                 <span>
-                    <Gift size={14} aria-hidden="true" /> {list.reservedCount} reserverade
+                    <Gift size={16} aria-hidden="true" /> {list.reservedCount} reserverade
                 </span>
             )}
         </p>
@@ -30,7 +30,7 @@ export default function ListPanelCard({ list }) {
 
     return (
         <div className={`event-group${variant}`}>
-            {/* The kind of list as a tab on the card's top-left corner, who it's for beside it */}
+            {/* The kind of list as a tab on the card's top-left corner */}
             <div className="event-tab-row">
                 <p className="event-kicker">
                     {isPrivate ? (
@@ -43,11 +43,6 @@ export default function ListPanelCard({ list }) {
                         </>
                     )}
                 </p>
-                {list.recipients && (
-                    <p className="event-to">
-                        Till: <span className="event-for">{list.recipients}</span>
-                    </p>
-                )}
             </div>
             <article className={`event event-solo${variant}`}>
                 <div className="event-info">
@@ -68,11 +63,18 @@ export default function ListPanelCard({ list }) {
                                     list.title
                                 )}
                             </h3>
+                            {/* Who it's for, under the title */}
+                            {list.recipients && (
+                                <p className="event-to">
+                                    Till: <span className="event-for">{list.recipients}</span>
+                                </p>
+                            )}
                             {list.endDate && <EventDate iso={list.endDate} />}
-                            {/* The counts right under the title */}
-                            {stats}
                         </div>
                     </div>
+                    {/* The counts under the title block - outside it, so the title and "Till:" line up
+                        with the date badge like on the other cards */}
+                    {stats}
                     {!isPrivate && canOpen && (
                         <div className="event-foot">
                             <Link to={`/lists/${list.id}`} className="btn btn-small event-link">

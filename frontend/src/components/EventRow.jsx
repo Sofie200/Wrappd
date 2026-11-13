@@ -40,6 +40,7 @@ export function buildEvents(lists, gifts, { newestFirst = false } = {}) {
             isAdmin: list.isAdmin,
             wishCount: list.wishCount,
             reservedCount: list.reservedCount, // null on lists to me
+            reservers: list.reservers ?? [], // who has reserved something - never on lists to me
             // Lists TO me can only be opened by their admins
             canOpen: !list.isRecipient || list.isAdmin,
             gifts: [],
@@ -275,17 +276,11 @@ export function EventRow({ event, archived = false, onChanged }) {
 
     return (
         <div className={`event-group${variant}`}>
-            {/* Above the card: the kind of event as a tab on its top-left corner, and who it's for beside it -
-                a list's recipients, or the person linked to an own event */}
+            {/* Above the card: the kind of event as a tab on its top-left corner */}
             <div className="event-tab-row">
                 <p className="event-kicker">
                     {KickerIcon && <KickerIcon size={14} aria-hidden="true" />} {kicker}
                 </p>
-                {(listId || (!santaId && !personId)) && recipients && (
-                    <p className="event-to">
-                        Till: <span className="event-for">{recipients}</span>
-                    </p>
-                )}
             </div>
             <article className={`event${variant}`}>
                 <div className="event-info">
@@ -302,17 +297,23 @@ export function EventRow({ event, archived = false, onChanged }) {
                                     (title ?? `Till ${recipients}`)
                                 )}
                             </h3>
+                            {/* Who it's for, under the title - a list's recipients, or the person linked to an own event */}
+                            {(listId || (!santaId && !personId)) && recipients && (
+                                <p className="event-to">
+                                    Till: <span className="event-for">{recipients}</span>
+                                </p>
+                            )}
                             {endDate && <EventDate iso={endDate} />}
                         </div>
                     </div>
                     {wishCount !== undefined && (
                         <p className="event-stats">
                             <span>
-                                <Sparkles size={14} aria-hidden="true" /> {wishCount} {wishCount === 1 ? "önskning" : "önskningar"}
+                                <Sparkles size={16} aria-hidden="true" /> {wishCount} {wishCount === 1 ? "önskning" : "önskningar"}
                             </span>
                             {reservedCount !== null && (
                                 <span>
-                                    <Gift size={14} aria-hidden="true" /> {reservedCount} reserverade
+                                    <Gift size={16} aria-hidden="true" /> {reservedCount} reserverade
                                 </span>
                             )}
                         </p>

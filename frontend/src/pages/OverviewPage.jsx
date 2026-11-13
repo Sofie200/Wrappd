@@ -66,13 +66,10 @@ function SantaRow({ santa, gifts = [], onChanged }) {
 
     return (
         <div className="event-group event-santa">
-            {/* The tab and "Till:" like the lists - but who it's for stays hidden until revealed */}
+            {/* The tab like the lists */}
             <div className="event-tab-row">
                 <p className="event-kicker">
                     <HatGlasses size={14} aria-hidden="true" /> Secret Santa
-                </p>
-                <p className="event-to">
-                    Till: <span className="event-for">{shown && receiver ? receiver.name : "Hemlig"}</span>
                 </p>
             </div>
             <article className="event event-santa">
@@ -91,11 +88,15 @@ function SantaRow({ santa, gifts = [], onChanged }) {
                                     </SettingsMenu>
                                 )}
                             </div>
+                            {/* "Till:" under the title like the lists - but who it's for stays hidden until revealed */}
+                            <p className="event-to">
+                                Till: <span className="event-for">{shown && receiver ? receiver.name : "Hemlig"}</span>
+                            </p>
                             {santa.date && <EventDate iso={santa.date} />}
                             <p className="santa-meta">
                                 {santa.budget !== null && (
                                     <span className="santa-budget" title="Budget">
-                                        <Coins size={14} aria-label="Budget" /> <strong>{formatPrice(santa.budget)}</strong>
+                                        <Coins size={14} aria-label="Budget" /> {formatPrice(santa.budget)}
                                     </span>
                                 )}
                                 <span className="santa-budget">

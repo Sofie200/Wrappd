@@ -1,0 +1,5522 @@
+/* ---------- Tokens ---------- */
+/* Colours from the moodboard: cream base, rose as the main colour, coral, orange, yellow and lavender
+   as companions, and a warm dark brown for text. */
+:root {
+    --cream: #fdf3eb;
+    --rose: #ec5b78;
+    --rose-deep: #cf3a5e;
+    --coral: #f47e6c;
+    --orange: #f6a623;
+    --yellow: #fcc95b;
+    --lavender: #c49be2;
+    --sky: #74aee0; /* the blue avatar colour */
+
+    --bg: var(--cream);
+    --surface: #ffffff;
+    --sheet: #fff8f3; /* the faintly warm-tinted sheet behind the page content */
+    --surface-soft: #fdeee4;
+    --ink: #3f1911;
+    --muted: #5f4b45;
+    --line: #f3e2d7;
+
+    /* Rose: --accent for icons, borders and focus; --accent-strong behind white text (4.75:1);
+       --accent-text for pink text and links on light backgrounds */
+    --accent: var(--rose);
+    --accent-strong: var(--rose-deep);
+    --accent-text: #c0325a;
+    --accent-ink: #ffffff;
+    --accent-soft: #fde4ea;
+
+    --green: #2f7a3d;
+    --green-soft: #e4f4e5;
+    --yellow-ink: #8a5300;
+    --yellow-soft: #fff0cc;
+    --blue: #55287c; /* lavender text - 9.4:1 on --blue-soft */
+    --blue-soft: #f6effc;
+    --wine: #b52f51; /* the dark rose of the primary button's hover */
+    --mint-soft: #e1f1e6; /* the pale green of the "Loggade gåvor" cards */
+    --danger: #b3261e;
+    --danger-soft: #fbe5e3;
+
+    --radius: 18px;
+    --radius-small: 12px;
+    --shadow: 0 1px 2px rgba(91, 36, 24, 0.05), 0 8px 24px rgba(236, 91, 120, 0.08);
+    --shadow-lift: 0 2px 4px rgba(91, 36, 24, 0.06), 0 14px 32px rgba(236, 91, 120, 0.16);
+    --shadow-button: 0 6px 16px rgba(207, 58, 94, 0.28);
+    /* The ribbon: a band of the moodboard's colours */
+    --ribbon: linear-gradient(90deg, var(--rose), var(--coral) 35%, var(--orange) 65%, var(--lavender));
+    /* Pink candy stripes, like the wrapping paper */
+    --stripes: repeating-linear-gradient(-45deg, var(--rose) 0 10px, #f28aa0 10px 20px);
+    /* Page backdrop: warm gradient with diagonal white see-through stripes (login and inside the app) */
+    --backdrop:
+        repeating-linear-gradient(-45deg, rgba(255, 255, 255, 0.14) 0 12px, transparent 12px 30px),
+        linear-gradient(
+            135deg,
+            var(--yellow) 0%,
+            var(--orange) 22%,
+            var(--coral) 42%,
+            var(--rose) 62%,
+            var(--lavender) 100%
+        );
+    --sheet-gap: clamp(8px, 1.5vw, 20px);
+    /* Header + sheet are at most 1500px wide; on wider screens the backdrop takes the rest */
+    --panel-inset: max(var(--sheet-gap), calc((100% - 1500px) / 2));
+    /* Header measurements. On wide screens the page content is inset by exactly the space in front
+       of the menu (header padding + logo + gaps + link padding), so the menu and the content line up. */
+    --logo-width: 150px;
+    --header-pad: max(var(--sheet-gap), 1rem);
+    --header-gap: 1.5rem;
+    --nav-offset: 0.5rem;
+    --nav-link-pad: 0.85rem;
+    --content-inset: calc(
+        var(--header-pad) + var(--logo-width) + var(--header-gap) + var(--nav-offset) + var(--nav-link-pad)
+    );
+
+    --font: "Urbanist", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --font-display: var(--font);
+}
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font);
+    font-size: 16px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+}
+
+b,
+strong {
+    font-weight: 600;
+}
+
+h1,
+h2,
+h3 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    line-height: 1.2;
+    margin: 0 0 0.5rem;
+}
+
+h1 {
+    font-size: clamp(1.75rem, 4vw, 2.25rem);
+}
+
+h2 {
+    font-size: 1.5rem;
+}
+
+h3 {
+    font-size: 1.4rem;
+}
+
+a {
+    color: var(--accent-text);
+    text-underline-offset: 0.15em;
+}
+
+/* Plain text links (no class - buttons, the logo and cards keep their own styles) */
+/* Same as .text-link: the text's own colour, a thin underline that gets a little thicker on hover */
+a:not([class]),
+a.wish-link {
+    color: inherit;
+    text-decoration: underline;
+    text-decoration-color: currentColor;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.15em;
+    transition: text-decoration-thickness 0.15s ease, text-underline-offset 0.15s ease;
+}
+
+a:not([class]):hover,
+a.wish-link:hover {
+    text-decoration-thickness: 1.5px;
+    text-underline-offset: 0.25em;
+}
+
+img {
+    max-width: 100%;
+}
+
+.muted {
+    color: var(--muted);
+}
+
+.small {
+    font-size: 0.875rem;
+}
+
+/* ---------- Layout ---------- */
+
+#logo {
+    max-width: var(--logo-width);
+}
+/* Items that only show in the hamburger menu on mobile */
+.menu-item.menu-mobile-only,
+.menu-divider.menu-mobile-only {
+    display: none;
+}
+
+/* ---------- App frame: full-width header, backdrop below with a white sheet on top ---------- */
+.app {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: var(--backdrop);
+    background-attachment: fixed;
+}
+
+.app-sheet {
+    flex: 1;
+    /* Sits flush under the header; the backdrop shows on the left, right and bottom */
+    margin: 0 var(--panel-inset) 5px; /* a thin strip of gradient between the sheet and the footer */
+    background: var(--sheet);
+    border-radius: 0; /* square bottom: cut off straight against the footer */
+    /* Nothing inside (e.g. the full-width intro band) can spill out sideways onto the backdrop.
+       Only sideways: popups like the people search's suggestions may still hang out below the sheet's end. */
+    overflow-x: clip;
+    overflow-y: visible;
+    /* The page grows, so the footer sits at the bottom also on short pages */
+    display: flex;
+    flex-direction: column;
+}
+
+.app-sheet > .main {
+    flex: 1;
+}
+
+.header {
+    /* Same side gap as the sheet, so header and sheet read as one panel on the backdrop */
+    margin: 0 var(--panel-inset);
+    background: var(--surface);
+    /* Negative spread keeps the shadow below the header, not out to the sides over the backdrop.
+       (Not clip-path - that would also cut off the dropdown menus.) */
+    box-shadow: 0 12px 16px -12px rgba(236, 91, 120, 0.25);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.header-inner {
+    padding: 0.75rem var(--header-pad);
+    display: flex;
+    align-items: center;
+    gap: var(--header-gap);
+    flex-wrap: wrap;
+}
+
+/* Block image (no baseline gap under it), nudged down a little to sit level with the menu */
+.header .logo img {
+    display: block;
+    width: var(--logo-width);
+    transform: translateY(3px);
+}
+
+.logo {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 1.25rem;
+    color: var(--ink);
+    text-decoration: none;
+}
+
+/* Main menu: plain links next to the logo; the active one gets a short rounded bar underneath */
+.nav {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    margin-left: var(--nav-offset);
+}
+
+.nav a {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    color: var(--muted);
+    text-decoration: none;
+    padding: 0.5rem var(--nav-link-pad);
+    font-weight: 600;
+    white-space: nowrap;
+    transition: color 0.15s;
+}
+
+.nav a svg {
+    color: var(--accent);
+}
+
+.nav a::after {
+    content: "";
+    position: absolute;
+    left: var(--nav-link-pad);
+    right: calc(var(--nav-link-pad) - 0.3rem); /* a little longer on the right to balance the icon's air on the left */
+    bottom: 0.1rem;
+    height: 3px;
+    border-radius: 3px;
+    background: var(--accent);
+    transform: scaleX(0);
+    transition: transform 0.2s ease;
+}
+
+.nav a:hover {
+    color: var(--ink);
+}
+
+.nav a:hover svg {
+    animation: icon-shake 0.5s ease-in-out;
+}
+
+/* A quick little shake, like rattling a present */
+@keyframes icon-shake {
+    0%,
+    100% {
+        transform: rotate(0) scale(1);
+    }
+    15% {
+        transform: rotate(-14deg) scale(1.12);
+    }
+    30% {
+        transform: rotate(12deg) scale(1.12);
+    }
+    45% {
+        transform: rotate(-9deg) scale(1.08);
+    }
+    60% {
+        transform: rotate(6deg) scale(1.04);
+    }
+    75% {
+        transform: rotate(-3deg) scale(1);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .nav a:hover svg,
+    .menu-item:hover svg {
+        animation: none;
+    }
+}
+
+.nav a.active {
+    color: var(--accent-text);
+}
+
+.nav a.active::after {
+    transform: scaleX(1);
+}
+
+.user-menu {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-left: auto;
+}
+
+.user-name {
+    font-weight: 400;
+}
+
+/* Narrower screens: ordinary side padding. The paddings are variables so full-width bands
+   (like .page-intro) can reach out to the sheet's edges. */
+.main {
+    --main-pad-top: 3rem;
+    --main-pad-x: clamp(1rem, 3vw, 2.5rem);
+    padding: var(--main-pad-top) var(--main-pad-x) 4rem;
+}
+
+/* Wide screens - once the sheet has reached its max width (1500px, see --panel-inset): inset on both
+   sides by the space in front of the menu, so the content's left edge lines up with the menu (and stays
+   centred, since the right side gets the same). Narrower than that, the inset ate too much of the width,
+   so up to 1500px the ordinary padding above is kept. */
+@media (min-width: 1501px) {
+    .main {
+        --main-pad-x: var(--content-inset);
+    }
+}
+
+/* A tinted band across the whole sheet at the top of a page, with a zigzag bottom edge
+   like the cut edge of wrapping paper. The content inside stays lined up with the rest of the page. */
+.page-intro {
+    --intro-bg: #fbd6df; /* light rose, a step darker than --accent-soft */
+    --zigzag: 22px; /* width of one tooth; the teeth are half as tall */
+    margin: calc(-1 * var(--main-pad-top)) calc(-1 * var(--main-pad-x)) 0;
+    padding: var(--main-pad-top) var(--main-pad-x) calc(4.5rem + var(--zigzag) / 2);
+    background: var(--intro-bg);
+    -webkit-mask: conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) 50% / var(--zigzag) 100%;
+    mask: conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) 50% / var(--zigzag) 100%;
+}
+
+.page-intro h1 {
+    margin-bottom: 0;
+}
+
+.page-narrow {
+    max-width: 640px;
+}
+
+.page-center {
+    min-height: 60vh;
+    display: grid;
+    place-items: center;
+    padding: 1rem;
+}
+
+.page-head,
+.section-head,
+.list-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.section {
+    margin-top: 2.5rem;
+}
+
+.section-head h2 {
+    margin: 0;
+}
+
+.section-head {
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+/* A small button right next to the heading instead of out on the right */
+.section-head.section-head-start {
+    justify-content: flex-start;
+    gap: 0.75rem;
+}
+
+.section > h2 {
+    margin-bottom: 1rem;
+}
+
+.panel {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+/* Edit / delete under a list's description */
+.list-admin-actions {
+    margin-top: 1rem;
+}
+
+/* White on the rose band, so they stand out - no border, and the same hover on both */
+.list-admin-actions .btn,
+.list-admin-actions .btn:hover {
+    border-color: transparent;
+}
+
+.list-admin-actions .btn {
+    background: var(--surface);
+}
+
+.list-admin-actions .btn:hover {
+    background: var(--cream);
+}
+
+/* ---------- Buttons ---------- */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    padding: 0.5rem 1.1rem;
+    border-radius: 999px;
+    border: 1.5px solid var(--line);
+    background: var(--surface);
+    color: var(--ink);
+    font: inherit;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color 0.15s, border-color 0.15s, box-shadow 0.15s, transform 0.1s;
+}
+
+.btn:hover {
+    background: var(--surface-soft);
+    border-color: #ecd3c6;
+}
+
+.btn:active:not(:disabled) {
+    transform: translateY(1px);
+}
+
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn:focus-visible,
+a:focus-visible {
+    outline: 3px solid var(--accent);
+    outline-offset: 2px;
+}
+
+.btn-primary {
+    background: var(--accent-strong);
+    border-color: var(--accent-strong);
+    color: var(--accent-ink);
+    box-shadow: var(--shadow-button);
+}
+
+.btn-primary:hover {
+    background: var(--wine);
+    border-color: var(--wine);
+}
+
+.btn-ghost {
+    background: transparent;
+}
+
+.btn-ghost:hover {
+    background: var(--surface);
+}
+
+/* Text ghost buttons (e.g. "Avbryt") get a clearer border; icon buttons stay borderless-looking */
+.btn-ghost:not(.btn-icon) {
+    border-color: #dcbcad;
+}
+
+.btn-ghost:not(.btn-icon):hover {
+    border-color: #c39784;
+}
+
+/* Like "Avbryt" (thin border, see-through), but with red text - e.g. "Radera mitt konto" */
+.btn-ghost.btn-ghost-danger {
+    color: var(--danger);
+}
+
+.btn-ghost.btn-ghost-danger:hover {
+    background: var(--danger-soft);
+}
+
+.btn-danger-ghost {
+    background: transparent;
+    color: var(--danger);
+    border-color: transparent;
+}
+
+.btn-danger-ghost:hover {
+    background: var(--danger-soft);
+}
+
+/* A "+" in front of a button's text: its own empty space makes the left side look wider than the
+   right, so it's pulled in a little */
+.btn > .icon-lead {
+    margin-left: -0.3rem;
+}
+
+.btn-small {
+    padding: 0.4rem 0.95rem;
+    font-size: 0.875rem;
+}
+
+.btn-block {
+    width: 100%;
+}
+
+/* ---------- Forms ---------- */
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+/* A short description between a page's title and its form */
+.form-intro {
+    margin: 0 0 2rem;
+}
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    flex: 1;
+}
+
+.field > span,
+.fieldset legend {
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.field small {
+    color: var(--muted);
+}
+
+.field-row {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+input,
+textarea,
+select {
+    font: inherit;
+    color: inherit;
+    padding: 0.65rem 0.9rem;
+    border: 1.5px solid #efd9cc;
+    border-radius: var(--radius-small);
+    background: var(--surface);
+    width: 100%;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 4px rgba(236, 91, 120, 0.18);
+}
+
+input::placeholder,
+textarea::placeholder {
+    color: #a88f86;
+}
+
+input[type="checkbox"],
+input[type="radio"] {
+    width: auto;
+    accent-color: var(--accent);
+}
+
+input[type="file"] {
+    padding: 0.4rem;
+}
+
+/* Image picker: a themed button instead of the browser's file input */
+.file-pick {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.file-btn {
+    width: fit-content;
+    cursor: pointer;
+}
+
+.file-btn svg {
+    color: var(--accent);
+}
+
+/* The hidden input still takes keyboard focus - show it on the button */
+.file-btn:focus-within {
+    outline: 3px solid var(--accent);
+    outline-offset: 2px;
+}
+
+.file-name {
+    min-width: 0;
+    font-size: 0.85rem;
+    color: var(--muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+select {
+    width: auto;
+    padding: 0.45rem 0.75rem;
+    border-radius: 999px;
+}
+
+/* Fieldsets sit straight on the page - no box - with extra space around them to set them apart */
+.fieldset {
+    border: none;
+    padding: 0;
+    margin: 1rem 0;
+    background: none;
+}
+
+.fieldset legend {
+    padding: 0;
+    margin-bottom: 0.15rem;
+}
+
+/* The hint right under the legend, then a little space before the choices */
+.fieldset > p,
+.fieldset > small {
+    display: block;
+    margin: 0 0 0.6rem;
+}
+
+/* A fieldset without the box - just the legend as a label, like an ordinary field */
+.fieldset.fieldset-plain {
+    border: none;
+    padding: 0;
+    background: none;
+}
+
+.fieldset.fieldset-plain legend {
+    padding: 0;
+}
+
+.checks {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+/* A few short choices side by side ("Bara mig / Vi ska dela", "Lika / Egna belopp"): each only as wide
+   as its text, instead of the 200px columns of .checks */
+.checks.checks-inline {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 0.5rem 2rem;
+}
+
+.check {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+}
+
+/* The gift page: the name tags and search field under "Bara mig / Vi ska dela" */
+.sharers {
+    margin-top: 0.75rem;
+}
+
+.sharers-hint {
+    margin: 0 0 0.5rem;
+}
+
+/* A checkbox with a hint under it: the box in the first column, its text and the hint in the second,
+   so the hint starts exactly where the text does - whatever size the browser draws the box */
+.check-with-hint {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    column-gap: 0.5rem; /* the same gap as .check */
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+/* The label's own box steps aside, so its checkbox and text become cells of the grid */
+.check-with-hint > .check {
+    display: contents;
+}
+
+.check-with-hint > .check-hint {
+    grid-column: 2;
+    margin: 0;
+}
+
+/* Among other choices (.checks) the grid's own gap does the spacing */
+.checks > .check-with-hint {
+    margin-bottom: 0;
+    align-self: start;
+}
+
+.check-disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.parent-list {
+    list-style: none;
+    margin: 0.5rem 0 0.75rem;
+    padding: 0;
+}
+
+.parent-list li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.35rem 0;
+    border-bottom: 1px solid var(--line);
+}
+
+.card-wide {
+    grid-column: 1 / -1;
+}
+
+.card-actions {
+    display: flex;
+    gap: 0.35rem;
+    flex-wrap: wrap;
+    margin-top: 0.75rem;
+}
+
+.form-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.inline-form {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.inline-form input {
+    flex: 1;
+    min-width: 200px;
+}
+
+.inline-form .alert {
+    flex-basis: 100%;
+}
+
+.field-error {
+    color: var(--danger);
+    font-size: 0.875rem;
+    margin: 0.25rem 0 0;
+}
+
+/* ---------- Feedback ---------- */
+.alert {
+    border-radius: var(--radius-small);
+    padding: 0.85rem 1.1rem;
+    font-weight: 500;
+    margin: 0 0 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.alert-error {
+    background: var(--danger-soft);
+    color: var(--danger);
+}
+
+.alert-info {
+    background: var(--blue-soft);
+    color: var(--blue);
+}
+
+.loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 3rem 1rem;
+}
+
+/* Gift in the middle with a spinning rainbow ring around it */
+.spinner {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 72px;
+    height: 72px;
+}
+
+.spinner-ring {
+    position: absolute;
+    border-radius: 50%;
+    inset: 0;
+    background: conic-gradient(
+        from 0deg,
+        transparent 0deg,
+        var(--yellow) 60deg,
+        var(--orange) 130deg,
+        var(--coral) 190deg,
+        var(--rose) 260deg,
+        var(--lavender) 330deg,
+        transparent 360deg
+    );
+    /* Cut out the middle so only a ring is left */
+    -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 6px), #000 calc(100% - 5px));
+    mask: radial-gradient(farthest-side, transparent calc(100% - 6px), #000 calc(100% - 5px));
+    animation: spin 1s linear infinite;
+}
+
+.spinner-gift {
+    color: var(--accent-strong);
+    animation: gift-wiggle 1.2s ease-in-out infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes gift-wiggle {
+    0%,
+    100% {
+        transform: rotate(0) scale(1);
+    }
+    20% {
+        transform: rotate(-12deg) scale(1.08);
+    }
+    40% {
+        transform: rotate(10deg) scale(1.08);
+    }
+    60% {
+        transform: rotate(-6deg) scale(1.02);
+    }
+    80% {
+        transform: rotate(0) scale(1);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .spinner-ring {
+        animation-duration: 3s;
+    }
+
+    .spinner-gift {
+        animation: none;
+    }
+}
+
+.empty {
+    color: var(--muted);
+    background: var(--surface);
+    border: 2px dashed #f5c9d3;
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    margin: 0;
+}
+
+/* ---------- Badges ---------- */
+.badges {
+    display: flex;
+    gap: 0.35rem;
+    flex-wrap: wrap;
+}
+
+.badge {
+    display: inline-block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.2rem 0.65rem;
+    border-radius: 999px;
+    background: var(--surface-soft);
+    color: var(--muted);
+    margin-left: 0.35rem;
+    white-space: nowrap;
+}
+
+.badges .badge {
+    margin-left: 0;
+}
+
+.badge-gift {
+    background: var(--accent-soft);
+    color: var(--accent-text);
+}
+
+.badge-public {
+    background: var(--green-soft);
+    color: var(--green);
+}
+
+.badge-private {
+    background: var(--blue-soft);
+    color: var(--blue);
+}
+
+/* A status badge raised next to a title, like an exponent */
+.title-badge {
+    margin-left: 0.5rem;
+    vertical-align: super;
+    padding: 0.2rem 0.45rem;
+    font-size: 0.7rem;
+    line-height: 1;
+    letter-spacing: 0;
+}
+
+/* ---------- Cards ---------- */
+.cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 1rem;
+}
+
+.card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 1.25rem 1.35rem;
+    color: inherit;
+    text-decoration: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.card p {
+    font-size: 1rem;
+    margin: 0;
+}
+
+.card-link {
+    transition: box-shadow 0.15s, transform 0.15s;
+}
+
+.card-link:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-lift);
+}
+
+.card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 0.5rem;
+}
+
+.card-top h3 {
+    margin: 0;
+}
+
+.card-date {
+    font-weight: 200;
+
+}
+.card-recipient{
+    font-weight: 400;
+    font-size: 0.8rem !important;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* ---------- Auth ---------- */
+.auth {
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    padding: 1rem;
+    background: var(--backdrop);
+    background-attachment: fixed;
+}
+
+.auth-card {
+    position: relative;
+    overflow: hidden;
+    width: 100%;
+    max-width: 500px;
+    background: var(--surface);
+    border-radius: 24px;
+    box-shadow: 0 2px 6px rgba(91, 36, 24, 0.08), 0 24px 56px rgba(85, 40, 124, 0.28);
+    padding: 2.25rem 2rem 2rem;
+}
+
+.auth-logo {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 1.25rem;
+    margin: 0 0 1.5rem;
+    text-align: center;
+}
+
+.auth-card h1 {
+    margin-bottom: 1.5rem;
+}
+
+.auth-switch {
+    margin: 1.5rem 0 0;
+    text-align: center;
+    color: var(--muted);
+}
+
+/* "eller" between the form and the Google button */
+.auth-divider {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin: 1.5rem 0 1rem;
+    color: var(--muted);
+    font-size: 0.9rem;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+    content: "";
+    flex: 1;
+    border-top: 1px solid var(--line);
+}
+
+/* Google draws its own button inside; this only centres it */
+.google-button {
+    display: flex;
+    justify-content: center;
+    min-height: 44px;
+}
+
+/* Profile page: connect / disconnect Google */
+.google-connect {
+    margin-top: 2.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--line);
+    max-width: 500px;
+}
+
+.google-connect h2 {
+    margin-bottom: 0.75rem;
+}
+
+.google-connect .google-button {
+    justify-content: flex-start;
+}
+
+.google-connect-status {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0 0 1rem;
+}
+
+/* Profile page: the email field */
+.email-verified {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.email-add {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.email-add input {
+    flex: 1;
+    min-width: 0;
+}
+
+/* Link to the privacy policy at the bottom of the login/register card */
+.auth-legal {
+    margin: 1.5rem 0 0;
+    text-align: center;
+    font-size: 0.8rem;
+}
+
+/* /integritet: the same card as login, wider, for reading */
+.auth-card.legal {
+    max-width: 760px;
+    line-height: 1.6;
+}
+
+.legal h2 {
+    font-size: 1.15rem;
+    margin: 2rem 0 0.5rem;
+}
+
+.legal ul {
+    padding-left: 1.25rem;
+}
+
+.legal li + li {
+    margin-top: 0.5rem;
+}
+
+.table-scroll {
+    overflow-x: auto;
+}
+
+.legal-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+.legal-table th,
+.legal-table td {
+    text-align: left;
+    vertical-align: top;
+    padding: 0.5rem 0.75rem 0.5rem 0;
+    border-bottom: 1px solid var(--line);
+}
+
+/* The cookie information: a card at the bottom of the screen until it's been seen */
+.cookie-notice {
+    position: fixed;
+    z-index: 50;
+    left: 1rem;
+    right: 1rem;
+    bottom: 1rem;
+    max-width: 560px;
+    margin-inline: auto;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.85rem 1rem;
+    background: var(--surface);
+    color: var(--ink);
+    border-radius: var(--radius-small);
+    box-shadow: var(--shadow-lift);
+    font-size: 0.9rem;
+}
+
+.cookie-notice p {
+    margin: 0;
+    flex: 1;
+}
+
+.cookie-notice-icon {
+    flex-shrink: 0;
+    color: var(--accent);
+}
+
+/* Profile page: "Radera mitt konto" at the very bottom */
+.danger-zone {
+    margin-top: 2.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--line);
+    max-width: 500px;
+}
+
+.danger-zone h2 {
+    margin-bottom: 0.5rem;
+}
+
+.delete-plan {
+    padding-left: 1.25rem;
+    margin: 0 0 1rem;
+}
+
+.delete-plan li + li {
+    margin-top: 0.35rem;
+}
+
+/* A solid red button - only for what can't be undone */
+.btn-danger {
+    background: var(--danger);
+    color: #ffffff;
+    border-color: var(--danger);
+}
+
+.btn-danger:hover:not(:disabled) {
+    background: #8f1e18;
+    border-color: #8f1e18;
+}
+
+/* "…eller skriv ett namn" right under the person search ("Till vem?") - it belongs to it, so it sits close:
+   the search's fieldset ends with a margin of its own, taken back here */
+.field.recipient-text-field {
+    margin-top: -1.5rem;
+}
+
+.auth-hint {
+    text-align: center;
+    margin: 0.75rem 0 0;
+}
+
+.link-username {
+    font-weight: 600;
+    font-size: 1.1rem;
+    margin: 0 0 1.25rem;
+}
+
+/* ---------- User links ---------- */
+.link-box {
+    background: var(--green-soft);
+    border: 1px solid #bfe3c3;
+    border-radius: var(--radius);
+    padding: 1rem 1.25rem;
+    margin-bottom: 1rem;
+}
+
+/* Inside a member's row: on a line of its own under the name */
+.member-list .link-box {
+    flex-basis: 100%;
+    margin: 0.25rem 0 0.25rem;
+}
+
+.link-box p {
+    margin: 0.5rem 0;
+}
+
+.link-box-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+}
+
+.link-box-row {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.link-box-row input {
+    flex: 1;
+    min-width: 0;
+    font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+    font-size: 0.85rem;
+}
+
+.subhead {
+    margin-top: 1.75rem;
+    font-size: 1rem;
+}
+
+/* ---------- Group ---------- */
+.member-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+}
+
+.member-list li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem 1.25rem;
+    border-bottom: 1px solid var(--line);
+    flex-wrap: wrap;
+}
+
+.member-list li:last-child {
+    border-bottom: 0;
+}
+
+/* Profile icon, name and badges on one line */
+.member-name {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+}
+
+.member-name .avatar {
+    margin-right: 0.35rem;
+}
+
+.member-actions {
+    display: flex;
+    gap: 0.25rem;
+}
+
+.user-search {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.search-results {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-small);
+}
+
+.search-results li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid var(--line);
+}
+
+.search-results li:last-child {
+    border-bottom: 0;
+}
+
+/* ---------- List ---------- */
+.list-head {
+    position: relative;
+    overflow: hidden;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 2rem 1.75rem 1.75rem;
+    margin-bottom: 1.5rem;
+}
+
+/* The list's head as the same rose band with a zigzag edge as the overview's intro */
+.list-head.page-intro {
+    margin: calc(-1 * var(--main-pad-top)) calc(-1 * var(--main-pad-x)) 1.5rem;
+    padding: var(--main-pad-top) var(--main-pad-x) calc(2.5rem + var(--zigzag) / 2);
+    background: var(--intro-bg);
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+}
+
+.list-head.page-intro::before {
+    display: none;
+}
+
+/* Candy stripes along the top of the list, like wrapping paper */
+.list-head::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto;
+    height: 10px;
+    background: var(--stripes);
+}
+
+.list-head h1 {
+    margin-top: 0.5rem;
+}
+
+/* The date in the rose of the band, so it stands apart from the description */
+.list-date {
+    font-weight: 600;
+    margin: 0;
+    color: var(--accent-text);
+}
+
+.list-date .muted {
+    color: var(--accent-text);
+    font-weight: 400;
+    opacity: 0.8;
+}
+
+.list-description {
+    white-space: pre-line;
+    max-width: 60ch;
+}
+
+/* "Till: Sofie" - at the top of the list's head, on one line */
+.list-meta {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    margin: 0 0 0.75rem;
+}
+
+.list-meta > div {
+    display: flex;
+    align-items: baseline;
+    gap: 0.3rem;
+}
+
+.list-meta dt {
+    color: var(--muted);
+}
+
+.list-meta dt::after {
+    content: ":";
+}
+
+.list-meta dd {
+    margin: 0;
+    font-weight: 600;
+}
+
+/* ---------- Cog menu (SettingsMenu) ---------- */
+.btn-icon {
+    padding: 0.5rem;
+    line-height: 0;
+}
+
+/* Icon buttons ("…", the cog, the hamburger): no border, not even on hover - just the background */
+.btn.btn-icon,
+.btn.btn-icon:hover {
+    border-color: transparent;
+}
+
+.menu {
+    position: relative;
+}
+
+/* The menu buttons (hamburger, cog, "…"): turn rose on hover and while the menu is open */
+.menu > .btn-icon {
+    transition: background-color 0.15s, color 0.15s;
+}
+
+.menu > .btn-icon:hover,
+.menu > .btn-icon[aria-expanded="true"] {
+    background: var(--accent-soft);
+    color: var(--accent-strong);
+}
+
+/* position: fixed - top/left are set by SettingsMenu, so the menu stays inside the window */
+.menu-list {
+    position: fixed;
+    z-index: 50;
+    min-width: 180px;
+    max-width: calc(100vw - 16px);
+    display: flex;
+    flex-direction: column;
+    padding: 0.4rem;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    box-shadow: var(--shadow-lift);
+    /* Always the ordinary text, also when the menu sits in a heading (e.g. after an event's title) */
+    font-family: var(--font);
+    font-size: 1rem;
+    font-weight: 400;
+    line-height: 1.5;
+    letter-spacing: normal;
+    text-transform: none;
+}
+
+.menu-item {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    width: 100%;
+    padding: 0.6rem 0.8rem;
+    border: none;
+    border-radius: 10px;
+    background: none;
+    font: inherit;
+    font-weight: 500;
+    color: var(--ink);
+    text-align: left;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+/* Same feel as the main menu: rose icons that shake on hover, and a short rounded bar
+   (here on the left) that slides in for hover, keyboard focus and the page you're on */
+.menu-item svg {
+    flex-shrink: 0;
+    color: var(--accent);
+}
+
+.menu-item::before {
+    content: "";
+    position: absolute;
+    left: 0.15rem;
+    top: 0.55rem;
+    bottom: 0.55rem;
+    width: 3px;
+    border-radius: 3px;
+    background: var(--accent);
+    transform: scaleY(0);
+    transition: transform 0.2s ease;
+}
+
+.menu-item:hover,
+.menu-item:focus-visible {
+    outline: none;
+}
+
+.menu-item:hover::before,
+.menu-item:focus-visible::before,
+.menu-item.active::before {
+    transform: scaleY(1);
+}
+
+.menu-item:hover svg {
+    animation: icon-shake 0.5s ease-in-out;
+}
+
+.menu-item:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.menu-divider {
+    border: none;
+    border-top: 1px solid var(--line);
+    margin: 0.3rem 0;
+}
+
+/* The page you're on (NavLink sets .active) */
+.menu-item.active {
+    font-weight: 600;
+    color: var(--accent-text);
+}
+
+.menu-item-danger,
+.menu-item-danger svg {
+    color: var(--danger);
+}
+
+.menu-item-danger::before {
+    background: var(--danger);
+}
+
+/* ---------- Wishes ---------- */
+/* One wish per row: image on the left, title, price and badge on the right.
+   The whole row is a button that opens the full wish in a modal. */
+.wishes {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.wish {
+    /* Reset the <button> look */
+    font: inherit;
+    color: inherit;
+    text-align: left;
+    width: 100%;
+    padding: 0;
+    cursor: pointer;
+
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    box-shadow: var(--shadow);
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+/* Hover: a rose border and a deeper shadow - the row doesn't move. Also while hovering the
+   buttons laid over it ("Reservera", "…"), so the row still looks hovered */
+.wish:hover,
+.wish-row:hover .wish {
+    border-color: #f5b3c1;
+    box-shadow: var(--shadow-lift);
+}
+
+.wish:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+.wish-full {
+    opacity: 0.75;
+}
+
+.wish-image {
+    flex: none;
+    width: 88px;
+    height: 88px;
+    object-fit: cover;
+    background: var(--surface-soft);
+    display: block;
+}
+
+/* No picture: the presents illustration, whole and with some air around it */
+.wish-image.wish-image-empty {
+    object-fit: contain;
+    padding: 0.6rem;
+}
+
+.wish-summary {
+    flex: 1;
+    min-width: 0;
+    padding: 0.75rem 1rem 0.75rem 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.wish-reserved {
+    flex: none;
+    padding-right: 1rem;
+}
+
+/* The row, with "Reservera" laid over its right end (a button can't sit inside the row's own button) */
+.wish-row {
+    position: relative;
+}
+
+.wish-row.has-quick .wish {
+    padding-right: 7.5rem; /* room for the button */
+}
+
+.wish-row.has-menu .wish {
+    padding-right: 3rem; /* room for the "…" */
+}
+
+/* The "…" sits right after the badge */
+.wish-row.has-menu .wish-reserved {
+    padding-right: 0;
+}
+
+/* The "…" menus on a wish and in the gift tables: the same text size as the small buttons ("Lägg till egen gåva") */
+.wish-row-menu .menu-item,
+.row-actions .menu-item {
+    font-size: 0.875rem;
+}
+
+/* Centred without transform: a transform would become the containing block for the menu's
+   position: fixed list, and throw it off-screen */
+.wish-row-menu {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: 0.6rem;
+    display: flex;
+    align-items: center;
+}
+
+/* Centred without transform: .btn:active's translateY(1px) would replace it and make the button jump */
+.wish-quick-reserve {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: 1rem;
+    height: fit-content;
+    margin-block: auto;
+}
+
+.wish-title {
+    font-weight: 600;
+    font-size: 1.05rem;
+    /* One line, then an ellipsis - the full title is in the modal */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.wish-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.wish-meta .badge,
+.wish-detail-top .badge {
+    margin-left: 0;
+}
+
+.badge-partial {
+    background: var(--yellow-soft);
+    color: var(--yellow-ink);
+}
+
+/* ---------- Modal (native <dialog>) ---------- */
+.modal {
+    border: none;
+    padding: 0;
+    border-radius: 24px;
+    background: var(--surface);
+    color: var(--ink);
+    width: min(560px, calc(100% - 2rem));
+    max-height: calc(100dvh - 2rem);
+    overflow-y: auto;
+    box-shadow: var(--shadow-lift);
+}
+
+.modal::backdrop {
+    background: rgba(91, 36, 24, 0.35);
+    backdrop-filter: blur(3px);
+}
+
+.modal-inner {
+    position: relative;
+    padding: 1.5rem 1.75rem 1.75rem;
+}
+
+/* No visible title: the close button sits on top of the content (e.g. over a wish's image) */
+.modal-head.modal-head-floating {
+    position: absolute;
+    z-index: 1;
+    top: 2rem;
+    right: 2.25rem;
+    margin: 0;
+}
+
+.modal-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.modal-head h2 {
+    margin: 0;
+    font-size: 1.35rem;
+    overflow-wrap: anywhere;
+}
+
+.modal-close {
+    flex: none;
+    margin-left: auto; /* stays on the right, also when the title is hidden */
+    display: grid;
+    place-items: center; /* the X icon dead centre */
+    padding: 0;
+    width: 2.25rem;
+    height: 2.25rem;
+    border: none;
+    border-radius: 50%;
+    background: var(--surface-soft);
+    color: var(--ink);
+    cursor: pointer;
+}
+
+.modal-close:hover {
+    background: var(--accent-soft);
+    color: var(--accent-text);
+}
+
+.modal-close:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+.wish-detail {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+/* Title, price, description and link: tight together, with extra air above and below the block */
+.wish-detail-info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.6rem;
+    margin: 0.75rem 0;
+}
+
+/* Fully reserved: the wish itself toned down (the reservation bar stays clear) */
+.wish-detail.is-reserved .wish-detail-image {
+    opacity: 0.55;
+    filter: grayscale(0.4);
+}
+
+.wish-detail.is-reserved .wish-detail-title,
+.wish-detail.is-reserved .price,
+.wish-detail.is-reserved .wish-description,
+.wish-detail.is-reserved .wish-link {
+    color: var(--muted);
+}
+
+.wish-detail p {
+    margin: 0;
+}
+
+.wish-detail-image {
+    width: 100%;
+    max-height: 320px;
+    aspect-ratio: 4 / 3;
+    object-fit: contain;
+    /* When the picture doesn't fill the area, it gets some air on every side instead of touching the edges */
+    padding: 1rem;
+    background: var(--surface-soft);
+    border-radius: var(--radius-small);
+    display: block;
+}
+
+.wish-detail-image.wish-image-empty {
+    aspect-ratio: 16 / 9;
+    padding: 1.5rem;
+}
+
+/* Under the image: who has reserved it, and "Släpp reservation" - side by side in the middle, a line underneath */
+.wish-status-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center; /* together in the middle */
+    gap: 0.5rem 1rem;
+    flex-wrap: wrap;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--line);
+}
+
+/* "Släpp reservation" in the same small size as the badge, and quiet: muted, red only on hover */
+.wish-status-bar .btn {
+    font-size: 0.75rem;
+    padding: 0.3rem 0.7rem;
+    color: var(--muted);
+}
+
+.wish-status-bar .btn,
+.wish-status-bar .btn:hover {
+    border-color: transparent;
+}
+
+.wish-status-bar .btn-danger-ghost:hover {
+    color: var(--danger);
+}
+
+.wish-status-bar .btn-ghost:hover {
+    background: var(--surface-soft);
+    color: var(--ink);
+}
+
+.wish-status-bar .btn svg {
+    width: 14px;
+    height: 14px;
+}
+
+.wish-detail-title {
+    margin: 0;
+    font-size: 1.35rem;
+    overflow-wrap: anywhere;
+}
+
+.wish-detail-top {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    font-size: 1.1rem;
+}
+
+/* /gifts/:id: the wish the gift was reserved from - some air before the form under it */
+.gift-wish {
+    margin-bottom: 2rem;
+}
+
+.card.gift-wish-card {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 1.1rem;
+}
+
+.gift-wish-image {
+    flex: none;
+    width: 120px;
+    height: 120px;
+    object-fit: cover;
+    border-radius: var(--radius-small);
+    background: var(--surface-soft);
+}
+
+/* No picture: the presents illustration, whole and with some air around it */
+.gift-wish-image.is-empty {
+    object-fit: contain;
+    padding: 0.75rem;
+}
+
+.gift-wish-text {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+/* Phones: the picture on top, full width */
+@media (max-width: 520px) {
+    .card.gift-wish-card {
+        flex-direction: column;
+    }
+
+    .gift-wish-image {
+        width: 100%;
+        height: auto;
+        aspect-ratio: 4 / 3;
+    }
+}
+
+.wish-description {
+    white-space: pre-line;
+}
+
+.price {
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.wish-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-weight: 400;
+    width: fit-content;
+}
+
+/* "← Översikten" at the top of a page */
+.back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.wish-actions,
+.wish-admin {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+/* "När ska gåvan ges?" on a wish profile: the label on a row of its own, then the date field,
+   the quantity and "Reservera" on one row, centred on each other (.wish-actions: align-items center) */
+.wish-actions .wish-gift-date-label {
+    flex-basis: 100%;
+    margin-bottom: -0.15rem;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.wish-actions .wish-gift-date {
+    width: auto;
+}
+
+.wish-actions {
+    margin-top: auto;
+    padding-top: 0.5rem;
+    padding-bottom: 1rem; /* air under "Reservera" before the admin buttons */
+}
+
+/* Can't be changed: the label greyed out like the disabled buttons */
+.wish-admin.is-locked .wish-admin-label {
+    opacity: 0.5;
+}
+
+.wish-admin-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--muted);
+}
+
+.wish-admin {
+    justify-content: center;
+    border-top: 1px solid var(--line);
+    padding-top: 0.75rem;
+    margin-top: 0.25rem;
+}
+
+/* The same small, quiet buttons as in the reservation bar */
+.wish-admin .btn {
+    font-size: 0.75rem;
+    padding: 0.3rem 0.7rem;
+    color: var(--muted);
+}
+
+.wish-admin .btn,
+.wish-admin .btn:hover {
+    border-color: transparent;
+}
+
+.wish-admin .btn svg {
+    width: 14px;
+    height: 14px;
+}
+
+.wish-admin .btn-ghost:hover {
+    background: var(--surface-soft);
+    color: var(--ink);
+}
+
+.wish-admin .btn-danger-ghost:hover {
+    color: var(--danger);
+}
+
+.reserved-by-me {
+    color: var(--green);
+    font-weight: 400;
+}
+
+.image-preview {
+    position: relative;
+    width: fit-content;
+}
+
+.image-preview img {
+    display: block;
+    max-width: 200px;
+    max-height: 200px;
+    border-radius: var(--radius-small);
+    object-fit: contain;
+}
+
+.image-preview-remove {
+    position: absolute;
+    top: 0.4rem;
+    right: 0.4rem;
+    width: 2rem;
+    height: 2rem;
+    border: 0;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.6);
+    color: #fff;
+    font-size: 1.25rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.image-preview-remove:hover {
+    background: var(--danger);
+}
+
+/* ---------- Tables ---------- */
+.table-wrap {
+    overflow-x: auto;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.table th,
+.table td {
+    padding: 0.7rem 1rem;
+    text-align: left;
+    border-bottom: 1px solid var(--line);
+}
+
+.table th {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+    font-weight: 600;
+    background: #fef8f3;
+}
+
+.table tfoot td {
+    font-weight: 600;
+    border-bottom: 0;
+}
+
+.table .num {
+    text-align: right;
+    white-space: nowrap;
+}
+
+.history {
+    margin-top: 1rem;
+}
+
+.history summary {
+    cursor: pointer;
+    font-weight: 400;
+    margin-bottom: 0.75rem;
+}
+
+/* ---------- Small screens ---------- */
+@media (max-width: 640px) {
+    .header-inner {
+        gap: 0.75rem;
+    }
+
+    .nav {
+        order: 3;
+        flex-basis: 100%;
+    }
+
+    .nav {
+        margin-left: 0;
+    }
+
+    .nav a {
+        flex: 1;
+        padding-inline: 0.5rem;
+    }
+
+    .user-menu {
+        margin-left: auto;
+    }
+
+    .main {
+        --main-pad-top: 2rem;
+    }
+
+    .list-head {
+        padding: 1.25rem;
+    }
+
+    .wish-image {
+        width: 72px;
+        height: 72px;
+    }
+
+    .wish {
+        gap: 0.75rem;
+    }
+
+    .modal-inner {
+        padding: 1rem 1.1rem 1.25rem;
+    }
+}
+
+/* ---------- Gift: split per person ---------- */
+/* "Egna belopp": a two-column grid - the names as wide as the longest one, the amounts right after
+   them, all lined up (instead of the amounts pushed to the far right edge) */
+.split-rows {
+    display: grid;
+    grid-template-columns: max-content auto;
+    justify-content: start;
+    align-items: center;
+    gap: 0.5rem 1rem;
+    margin: 1.25rem 0 0.5rem;
+}
+
+/* Each row's name and field become cells of the grid above */
+.split-row {
+    display: contents;
+}
+
+.split-row input {
+    width: 8rem;
+    text-align: right;
+}
+
+.table .share {
+    font-weight: 500;
+}
+
+.table tfoot .share {
+    font-weight: 600; /* as bold as the rest of the total row */
+}
+
+/* ---------- Wish form: link + "Hämta uppgifter" ---------- */
+.field > label {
+    font-weight: 500;
+    font-size: 0.9rem;
+}
+
+.input-with-button {
+    display: flex;
+    gap: 0.5rem;
+    align-items: stretch;
+}
+
+.input-with-button input {
+    flex: 1;
+    min-width: 0;
+}
+
+.input-with-button .btn {
+    white-space: nowrap;
+}
+
+/* ---------- List page: wishes in price groups ---------- */
+.price-group + .price-group {
+    margin-top: 0.5rem;
+}
+
+.price-group .subhead {
+    margin: 1.25rem 0 0.75rem;
+}
+
+/* ---------- List card: days left, the number in a round badge ---------- */
+.days-left {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0.5rem 0;
+    font-weight: 500;
+}
+
+.days-badge {
+    /* Same width and height + 50 % radius = a perfect circle. Room for three digits. */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    width: 2.6em;
+    height: 2.6em;
+    border-radius: 50%;
+    background: var(--accent);
+    color: var(--accent-ink);
+    font-size: 0.95rem;
+    font-weight: 600;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+}
+
+.days-left-today {
+    color: var(--accent-text);
+}
+
+/* ---------- Overview: one row per event - the list on the left, my gifts on the right ---------- */
+.events {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+:root {
+    /* The coloured panel: a third of the card, as if the card were three columns with 20px gaps.
+       The list cards use the same three columns, so everything lines up. (% resolves in each grid.) */
+    --event-panel-width: calc((100% - 40px) / 3);
+}
+
+.event {
+    display: grid;
+    grid-template-columns: var(--event-panel-width) 1fr;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    /* The panel rounds its own corners */
+}
+
+/* Above each card: the kind of event as a tab sitting on the card's top-left corner, "Till: Anders"
+   beside it. The two texts share a baseline. */
+.event-tab-row {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+}
+
+/* The tab's colours (the panel inside sets the same ones for its button) */
+.event-group {
+    --tab-bg: var(--accent-strong);
+    --tab-ink: var(--accent-ink);
+}
+
+.event-group.event-to-me {
+    --tab-bg: var(--lavender);
+    --tab-ink: var(--ink);
+}
+
+.event-group.event-santa {
+    --tab-bg: var(--orange);
+    --tab-ink: var(--ink);
+}
+
+.event-group.event-no-list {
+    --tab-bg: var(--sky);
+    --tab-ink: var(--ink);
+}
+
+.event-group.event-light {
+    --tab-bg: #f9cbd5;
+    --tab-ink: var(--accent-text);
+}
+
+.event-group.event-archived .event-kicker {
+    filter: saturate(0.45) brightness(1.05);
+    opacity: 0.85;
+}
+
+/* The tab's corner of the card is square, so the tab sits flush on it */
+.event-group > .event-tab-row + .event {
+    border-top-left-radius: 0;
+}
+
+/* Specific enough to win over the corner rules for the list cards (.event-solo, .event-light) */
+.event-group > .event-tab-row + .event > .event-info {
+    border-top-left-radius: 0;
+}
+
+/* The event: dark text on a pale gradient, lighter top-left (wish lists: peach into pink).
+   --tab-bg is the label's shade, a step deeper. */
+.event-info {
+    --event-bg: linear-gradient(135deg, #fbd9c4 0%, #f3b9c8 100%);
+    --tab-bg: var(--accent-strong); /* the label and the button: the app's own colours */
+    --tab-ink: var(--accent-ink);
+    border-radius: calc(var(--radius) - 1px) 0 0 calc(var(--radius) - 1px);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+    padding: 1.1rem 0.9rem 0.9rem 1.25rem; /* right/bottom: same as the edit icon's inset */
+    color: var(--ink);
+    background: var(--event-bg);
+}
+
+.event-info {
+    position: relative;
+}
+
+/* Edit my list: a round white-on-colour icon in the corner of the panel */
+.event-edit {
+    position: absolute;
+    top: 0.9rem;
+    right: 0.9rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.1rem;
+    height: 2.1rem;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.5);
+    color: var(--ink);
+    transition: background-color 0.15s, color 0.15s;
+}
+
+.event-edit:hover {
+    background: #fff;
+    color: var(--accent-strong);
+}
+
+.event-edit:focus-visible {
+    outline-color: var(--ink);
+}
+
+/* Room for the icon next to a long title */
+.event-info:has(.event-edit) .event-head {
+    padding-right: 2.25rem;
+}
+
+/* Date badge + kicker and title side by side */
+.event-head {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+}
+
+.event-title {
+    min-width: 0;
+}
+
+/* A list's title is a link to the list, but looks just like the plain title */
+.event-title-link {
+    color: inherit;
+    text-decoration: none;
+}
+
+.event-title-link:focus-visible {
+    outline-color: var(--ink);
+}
+
+/* Plain-text date under the title - only on mobile, where it replaces the badge */
+.event-date {
+    display: none;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+/* ---------- Date badge: a tear-off calendar sheet ("rivblock") ----------
+   The month on a band in the event's colour (--tab-bg / --tab-ink, set per kind of event),
+   the day big in the middle and the weekday small under it. */
+.date-badge {
+    flex: none;
+    width: 3.4rem;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    overflow: hidden;
+    border-radius: 12px;
+    background: var(--surface);
+    box-shadow: 0 1px 2px rgba(91, 36, 24, 0.08), 0 4px 10px rgba(91, 36, 24, 0.08);
+    color: var(--ink);
+    text-align: center;
+    line-height: 1;
+}
+
+.date-badge-month {
+    padding: 0.22rem 0 0.2rem;
+    background: var(--tab-bg, var(--accent-strong));
+    color: var(--tab-ink, var(--accent-ink));
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+}
+
+.date-badge-day {
+    padding-top: 0.35rem;
+    font-size: 1.45rem;
+    font-weight: 700;
+}
+
+.date-badge-weekday {
+    padding: 0.15rem 0 0.35rem;
+    font-size: 0.62rem;
+    font-weight: 500;
+    color: var(--muted);
+}
+
+/* Room between the sheet and the title beside it */
+.event-head:has(> .date-badge) {
+    gap: 0.85rem;
+}
+
+/* Who has reserved something on the list: their profile icons under the numbers */
+/* Who has reserved: the avatars right after "X reserverade", on the same line */
+.event-stats .event-reservers {
+    display: inline-flex;
+    align-items: center;
+    margin-left: -0.4rem; /* closer to the count than the gap between the counts */
+}
+
+.event-reservers .avatar-stack-more {
+    height: 22px;
+    min-width: 22px;
+    font-size: 0.65rem;
+}
+
+/* Lists to me (my own): a lavender gradient. */
+.event-to-me .event-info {
+    --event-bg: linear-gradient(135deg, #e6d9f5 0%, #cdb6ea 100%);
+    --tab-bg: var(--lavender);
+    --tab-ink: var(--ink);
+    --badge-ink: #6c3d95;
+}
+
+/* Secret Santa: pale yellow into soft orange */
+.event-santa .event-info {
+    --event-bg: linear-gradient(135deg, #fdecbf 0%, #f8cd98 100%);
+    --tab-bg: var(--orange);
+    --tab-ink: var(--ink);
+    --badge-ink: var(--yellow-ink);
+}
+
+/* Gifts without a list (and from wish profiles): pale green into soft blue */
+.event-no-list .event-info {
+    --event-bg: linear-gradient(135deg, #cfe9d9 0%, #bdd6eb 100%);
+    --tab-bg: var(--sky);
+    --tab-ink: var(--ink);
+    --badge-ink: #2b5d8f;
+}
+
+/* A private list on the overview: the same panel, inverted - white with rose details, and no gifts column */
+/* Only the panel, no gifts column (list cards on Mina listor and the overview's private lists) */
+.event.event-solo,
+.event.event-light {
+    grid-template-columns: 1fr;
+}
+
+.event.event-solo .event-info {
+    border-radius: calc(var(--radius) - 1px);
+}
+
+.event-light .event-info {
+    --event-bg: var(--surface);
+    --tab-bg: #f9cbd5; /* light rose details - softer than the coloured cards */
+    --tab-ink: var(--accent-text);
+    --badge-ink: var(--accent-text);
+    color: var(--ink);
+    border-radius: calc(var(--radius) - 1px);
+}
+
+/* The counts right under the title on the list cards - with a little air */
+.event-title .event-stats {
+    margin-top: 0.15rem;
+}
+
+.event-light .event-stats svg {
+    color: inherit; /* same as the text, not rose */
+}
+
+.event-light .event-edit {
+    background: var(--accent-soft);
+    color: var(--accent-strong);
+}
+
+.event-light .event-edit:hover {
+    background: var(--accent-strong);
+    color: #fff;
+}
+
+.event-light .event-link {
+    background: var(--accent-soft);
+    border-color: var(--accent-soft);
+    color: var(--accent-text);
+}
+
+.event-light .event-link:hover {
+    background: #fbd0da;
+    border-color: #fbd0da;
+}
+
+.list-cards {
+    /* Same width as the panels above, and the same gap as between the events */
+    grid-template-columns: repeat(3, var(--event-panel-width));
+    gap: 20px;
+}
+
+/* Past events keep their kind's colour, toned down: less saturated and a little faded */
+.event-archived .event-info {
+    filter: saturate(0.45) brightness(1.05);
+    opacity: 0.85;
+}
+
+.event-info h3 {
+    margin: 0;
+    font-size: 1.45rem;
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+}
+
+.event-info p {
+    margin: 0;
+}
+
+/* The label ("Önskelista", "Secret Santa" …) runs vertically in the panel's top-left corner, as a tab
+   in a darker shade that sticks out past the card's edge */
+.event-kicker {
+    display: inline-flex;
+    align-items: baseline; /* so the tab's baseline is its text's - the icon is centred on its own below */
+    gap: 0.35rem;
+    margin: 0;
+    padding: 0.35rem 0.75rem 0.3rem;
+    border-radius: 8px 8px 0 0; /* a folder tab: rounded on top, flat where it meets the card */
+    background: var(--tab-bg);
+    color: var(--tab-ink);
+    white-space: nowrap;
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.event-recipients {
+    font-size: 0.9rem;
+    opacity: 0.9;
+}
+
+/* Lines of details right under each other (e.g. group and budget) sit closer than the panel's gap */
+.event-recipients + .event-recipients {
+    margin-top: -0.35rem;
+}
+
+/* "5 önskningar · 2 reserverade" */
+.event-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 1rem;
+    font-size: 0.95rem;
+    font-weight: 500;
+}
+
+.event-stats > span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+/* "Se önskelistan": a white pill on the coloured panel */
+.event-link {
+    margin-top: auto;
+    border-color: #fff;
+    color: var(--ink);
+}
+
+/* On a panel the button takes the kind's colour, like the label */
+.event-info .event-link {
+    background: var(--tab-bg);
+    border-color: var(--tab-bg);
+    color: var(--tab-ink);
+    transition: filter 0.15s;
+}
+
+.event-info .event-link:hover {
+    background: var(--tab-bg);
+    border-color: var(--tab-bg);
+    filter: brightness(0.9);
+}
+
+.event-info .event-link {
+    margin: 0 0 0 auto; /* right-aligned in the bottom row */
+}
+
+/* Bottom row of the panel: "Se lista", on the right */
+.event-foot {
+    display: flex;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    width: 100%;
+    margin-top: auto; /* always at the bottom of the panel */
+    padding-top: 0.35rem;
+}
+
+/* "Till: Sigrid", as a small label above the card */
+.event-to {
+    display: flex;
+    align-items: baseline;
+    gap: 0.2rem;
+    margin: 0;
+    color: var(--muted);
+    font-weight: 500;
+    font-size: 0.78rem;
+    opacity: 0.95;
+}
+
+/* Who the list is for: the name, a little stronger than "Till:" */
+.event-for {
+    color: var(--ink);
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+
+.event-link:hover {
+    background: var(--cream);
+    border-color: var(--cream);
+}
+
+.event-link:focus-visible {
+    outline-color: var(--ink);
+}
+
+/* My gifts */
+.event-gifts {
+    display: flex;
+    flex-direction: column;
+    padding: 1.25rem 1.5rem;
+    min-width: 0; /* lets the table scroll instead of widening the row */
+}
+
+/* An empty state under a heading fills the rest of the column, not its whole height */
+.event-gifts-head ~ .event-empty {
+    flex: 1;
+    height: auto;
+}
+
+.event-gifts-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.75rem;
+}
+
+.event-gifts-head h4 {
+    margin: 0;
+    font-size: 1.05rem;
+}
+
+/* The table sits inside the card, so no card of its own */
+.event-gifts .table-wrap {
+    box-shadow: none;
+    border-radius: var(--radius-small);
+}
+
+.event-empty,
+.event-note {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 0.75rem;
+    margin: 0;
+    padding: 1.25rem;
+    border: 2px dashed #f5c9d3;
+    border-radius: var(--radius-small);
+    color: var(--muted);
+}
+
+.event-empty p {
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+.event-note {
+    border-color: var(--blue-soft);
+    color: var(--blue);
+    font-weight: 500;
+}
+
+/* "Totalt för mig" next to the section heading */
+.event-total {
+    padding: 0.35rem 0.9rem;
+    border-radius: 999px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    font-size: 0.9rem;
+    color: var(--muted);
+}
+
+.event-total strong {
+    color: var(--ink);
+    margin-left: 0.25rem;
+}
+
+/* The trash icon on a Secret Santa is a <button>, the edit icon on a list is a link */
+button.event-edit {
+    border: none;
+    cursor: pointer;
+}
+
+/* The Secret Santa's title with its "…" menu right after it: no background until hovered/open */
+.santa-title-row {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+}
+
+.santa-menu-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.9rem;
+    height: 1.9rem;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: none;
+    color: inherit;
+    cursor: pointer;
+    transition: background-color 0.15s;
+}
+
+.santa-menu-btn:hover,
+.santa-menu-btn[aria-expanded="true"] {
+    background: rgba(255, 255, 255, 0.5);
+}
+
+.santa-menu-btn:focus-visible {
+    outline-color: var(--ink);
+}
+
+/* The icon is centred and left out of the baseline, which comes from the text */
+.event-kicker svg {
+    align-self: center;
+}
+
+/* "Budget: 500 kr · 9 deltagare" under the Secret Santa's title - the count opens the participant list */
+.santa-budget {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.santa-budget svg {
+    flex: none;
+}
+
+.event-info .santa-meta {
+    /* A flex row, so the coin icon doesn't pull the budget off the line of the text after it */
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.25rem 0.9rem; /* same as between the counts on the list cards */
+    margin-top: 0.15rem;
+    font-size: 0.95rem; /* same as the wish/reserved counts on the other cards */
+    font-weight: 500;
+}
+
+/* ---------- Secret Santa: who I got, hidden behind an eye ---------- */
+/* On the coloured panel, under the event's details */
+.santa-secret {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.15rem;
+    width: 100%;
+    margin-top: 0.75rem;
+}
+
+.santa-secret p {
+    margin: 0;
+}
+
+
+/* "Du ska ge en gåva till" with the eye right after it */
+.santa-label-row {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.santa-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.santa-name {
+    max-width: 100%;
+    font-size: 1.35rem;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+
+/* Click the name to show or hide it. Pulled up a little - the round eye makes the row above taller. */
+.santa-name {
+    margin-top: 0.1rem;
+    cursor: pointer;
+}
+
+/* Masked: a blurred bar instead of the name */
+.santa-name-hidden {
+    color: transparent;
+    text-shadow: 0 0 12px rgba(91, 36, 24, 0.55);
+    user-select: none;
+}
+
+/* Confetti when the Secret Santa name is revealed (components/Confetti.jsx) */
+.confetti {
+    position: fixed;
+    width: 0;
+    height: 0;
+    z-index: 100;
+    pointer-events: none;
+}
+
+.confetti-piece {
+    position: absolute;
+    left: 0;
+    top: 0;
+    opacity: 0;
+    animation: confetti-fly 1.3s cubic-bezier(0.2, 0.7, 0.4, 1) forwards;
+}
+
+/* Out in a burst, then drifting down and fading */
+@keyframes confetti-fly {
+    0% {
+        opacity: 1;
+        transform: translate(-50%, -50%) rotate(0);
+    }
+    45% {
+        opacity: 1;
+        transform: translate(calc(var(--dx) - 50%), calc(var(--dy) - 50%)) rotate(calc(var(--spin) / 2));
+    }
+    100% {
+        opacity: 0;
+        transform: translate(calc(var(--dx) * 1.15 - 50%), calc(var(--dy) + 90px - 50%)) rotate(var(--spin));
+    }
+}
+
+/* Who I got: the label, and the name centred under it - in a lighter box of its own */
+.santa-who {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0.6rem 1rem 0.7rem;
+    border-radius: var(--radius-small);
+    background: rgba(255, 255, 255, 0.45);
+    gap: 0.15rem;
+    min-width: 0;
+}
+
+.santa-name-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    gap: 0.25rem 0.85rem;
+    max-width: 100%;
+}
+
+/* The eye on top of the blurred name, on a light round background */
+.santa-name-wrap {
+    position: relative;
+    display: inline-flex;
+}
+
+/* Once shown, the name opens the wish profile - underlined like the other links on the panel
+   (.text-link sets font: inherit, so the size needs the double class) */
+.text-link.santa-name-link {
+    font-size: 1.35rem;
+    text-align: left;
+}
+
+.santa-name-link:focus-visible {
+    outline-color: var(--ink);
+}
+
+.icon-btn.santa-eye.santa-eye-over {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(255, 255, 255, 0.5);
+}
+
+.icon-btn.santa-eye.santa-eye-over:hover {
+    background: rgba(255, 255, 255, 0.8);
+}
+
+/* The eye after "Du ska ge en gåva till": a small round button, with a light background on hover.
+   .icon-btn comes later in the file, so the double class is needed to win over its size, corners and hover. */
+.icon-btn.santa-eye {
+    flex: none;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: none; /* only on hover, like the "…" by the title */
+    color: var(--ink);
+    transform: translateY(0); /* level with the text */
+    transition: background-color 0.15s;
+}
+
+.icon-btn.santa-eye:hover {
+    background: rgba(255, 255, 255, 0.5);
+    color: var(--ink);
+}
+
+.history .events {
+    margin-top: 0.5rem;
+}
+
+/* ---------- Event cards: the coloured panel on top, "Mina gåvor" folded away under it ---------- */
+/* (Trying it on all screen sizes - it used to be panel left, gifts right on wide screens) */
+.events .event {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.events .event-info {
+    border-radius: calc(var(--radius) - 1px) calc(var(--radius) - 1px) 0 0;
+}
+
+/* Wide screens: the panel's details spread out in a row - title and date, the counts, then the button */
+@media (min-width: 721px) {
+    .events .event-info {
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.75rem 2.5rem;
+        min-height: 0;
+        padding: 1.1rem 1.25rem;
+    }
+
+    .events .event-info .event-head {
+        width: auto;
+        flex: 0 1 auto;
+    }
+
+    /* The counts (lists) and budget · participants (Secret Santa) in the middle of the panel */
+    .events .event-info > .event-stats,
+    .events .event-santa .event-info .santa-meta {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        margin: 0;
+        white-space: nowrap;
+    }
+
+    .events .event-info > .event-foot,
+    .events .event-info > .event-link-wrap {
+        width: auto;
+        margin: 0 0 0 auto;
+        padding: 0;
+    }
+
+    /* Secret Santa: the details take the free space and "Du ska ge en gåva till:" sits on the right -
+       if either would have to wrap to fit, it moves down under the details instead */
+    .events .event-santa .event-info > .event-head {
+        flex: 1 0 auto;
+        max-width: 100%;
+    }
+
+    .events .event-santa .santa-secret {
+        flex: 0 0 auto;
+        width: auto;
+        margin: 0;
+    }
+
+    .events .event-santa .santa-label {
+        white-space: nowrap;
+    }
+
+    /* Titles break between words - there's room now */
+    .events .event-info h3 {
+        overflow-wrap: normal;
+    }
+}
+
+/* "Mina gåvor (2) ⌄" - a bar under the panel; tap to roll the section out.
+   The add buttons sit on the right of the same bar. */
+.event-gifts-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 0.3rem 0.75rem 0.3rem 1.25rem; /* left: in line with the panel's text */
+}
+
+/* "🎁 Överraskning" straight on the background - no border, a soft rose behind it on hover.
+   A bit more compact, so it fits beside "Mina gåvor". */
+.event-gifts-bar > .btn {
+    padding-inline: 0.7rem;
+    font-size: 0.85rem;
+    border-color: transparent;
+    background: none;
+}
+
+.event-gifts-bar > .btn:hover {
+    border-color: transparent;
+    background: none;
+}
+
+/* Hover: the gift gives a little shake, like the icons in the menus */
+.event-gifts-bar > .btn:hover .icon-gift-plus {
+    animation: icon-shake 0.5s ease-in-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .event-gifts-bar > .btn:hover .icon-gift-plus {
+        animation: none;
+    }
+}
+
+.event-gifts-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.25rem 0;
+    border: none;
+    background: none;
+    font: inherit;
+    font-weight: 600;
+    color: var(--ink);
+    cursor: pointer;
+}
+
+.event-gifts-toggle .muted {
+    font-weight: 500;
+}
+
+.event-gifts-toggle svg {
+    flex: none;
+    color: var(--accent);
+    transition: transform 0.25s ease;
+}
+
+.event-gifts-toggle.is-open svg {
+    transform: rotate(180deg);
+}
+
+/* Rolls open by animating the row from 0fr to 1fr */
+.event-gifts-collapse {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 0.3s ease;
+}
+
+.event-gifts-collapse.is-open {
+    grid-template-rows: 1fr;
+}
+
+.event-gifts-collapse-inner {
+    display: block;
+    min-height: 0;
+    overflow: hidden;
+    visibility: hidden; /* out of the tab order while folded */
+    transition: visibility 0s 0.3s;
+}
+
+.event-gifts-collapse.is-open .event-gifts-collapse-inner {
+    visibility: visible;
+    transition: visibility 0s;
+}
+
+/* The bar already has the heading and the buttons */
+.event-gifts-head {
+    display: none;
+}
+
+.event-gifts-collapse .event-gifts {
+    padding: 0.25rem 1.25rem 1.25rem;
+}
+
+/* Stacked on small screens: the event on top, my gifts below */
+@media (max-width: 720px) {
+    .event {
+        grid-template-columns: minmax(0, 1fr); /* never wider than the screen, whatever is inside */
+    }
+
+    .list-cards {
+        grid-template-columns: 1fr;
+    }
+
+    .event-info {
+        padding: 1.2rem 0.9rem 1.4rem 1.25rem;
+        border-radius: calc(var(--radius) - 1px) calc(var(--radius) - 1px) 0 0;
+    }
+
+    /* No date badge on phones - the date sits under the title instead */
+    .event-head .date-badge {
+        display: none;
+    }
+
+    .event-date {
+        display: block;
+        margin-top: 0.15rem;
+    }
+
+    /* A grid: title and date on the left, "Se lista" up on the right, the counts under them.
+       Not on Secret Santa - it has its own layout below. */
+    .event:not(.event-santa) .event-info {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: start;
+        column-gap: 0.75rem;
+        row-gap: 0;
+        min-height: 0;
+    }
+
+    .event:not(.event-santa) .event-info :is(.event-head, .event-title) {
+        display: contents;
+    }
+
+    .event:not(.event-santa) .event-info h3 {
+        grid-column: 1;
+        grid-row: 1;
+    }
+
+    .event:not(.event-santa) .event-info .event-date {
+        grid-column: 1;
+        grid-row: 2;
+    }
+
+    .event:not(.event-santa) .event-info > .event-stats {
+        grid-column: 1 / -1;
+        grid-row: 3;
+        margin-top: 1.1rem;
+    }
+
+    /* A private list's count sits inside the title block: put it under the date */
+    .event:not(.event-santa) .event-info .event-title .event-stats {
+        grid-column: 1;
+        grid-row: 3;
+    }
+
+    .event:not(.event-santa) .event-info > .event-link-wrap {
+        grid-column: 1 / -1;
+        grid-row: 4;
+    }
+
+    /* Room for the edit icon in the corner (private lists) */
+    .event:not(.event-santa) .event-info:has(.event-edit) h3 {
+        padding-right: 2.5rem;
+    }
+
+    .event:not(.event-santa) .event-info > .event-foot {
+        grid-column: 2;
+        grid-row: 1 / span 2;
+        align-self: start;
+        width: auto;
+        margin: 0;
+        padding: 0;
+    }
+
+    /* Secret Santa: no fixed height on phones, and "Du ska ge en gåva till:" on the right of the
+       title - or, if either side would have to wrap to fit, stacked under it instead */
+    .event-santa .event-info {
+        min-height: 0;
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: stretch;
+        gap: 1rem;
+    }
+
+    .event-santa .event-info > .event-head {
+        width: auto;
+        flex: 1 0 auto; /* takes the free space, so the other side ends up on the right */
+        max-width: 100%;
+    }
+
+    /* Same air between the date and the budget line as above the counts on the list cards */
+    .event-santa .event-info .santa-meta {
+        margin-top: 1.1rem;
+    }
+
+    /* Break the title between words, not inside them */
+    .event-santa .event-info h3 {
+        overflow-wrap: normal;
+    }
+
+    /* Who I got: to the right of the event's details (text left-aligned in it), vertically
+       centred, with some air before the panel's right edge */
+    .event-santa .santa-secret {
+        flex: 0 0 auto; /* never squeezed - it moves down instead */
+        width: auto;
+        margin: 0;
+        justify-content: center; /* vertically centred */
+    }
+
+    .event-santa .santa-label {
+        white-space: nowrap;
+    }
+
+
+
+
+    /* Only what matters on a phone: the gift, my share and the icons */
+    .event-gifts .col-optional {
+        display: none;
+    }
+
+    .event-gifts .table th,
+    .event-gifts .table td {
+        padding: 0.65rem 0.75rem;
+    }
+}
+
+/* Edit/delete icons at the end of a table row */
+.row-actions {
+    text-align: right;
+    white-space: nowrap;
+    width: 1%;
+}
+
+/* .table td sets text-align: left, so the menu needs a more specific rule to sit on the right.
+   As narrow as possible: almost no padding, and a smaller "…" button. */
+.table .row-actions {
+    text-align: right;
+    padding-left: 1rem;
+    padding-right: 0.35rem;
+}
+
+.row-actions .btn-icon {
+    padding: 0.3rem;
+}
+
+.row-actions .menu {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    border: none;
+    border-radius: var(--radius-small);
+    background: none;
+    color: var(--muted);
+    cursor: pointer;
+}
+
+.icon-btn + .icon-btn {
+    margin-left: 0.15rem;
+}
+
+/* In table rows (edit / delete): narrower buttons, right next to each other */
+.row-actions .icon-btn {
+    width: 1.6rem;
+}
+
+.row-actions .icon-btn + .icon-btn {
+    margin-left: 0;
+}
+
+.icon-btn:hover {
+    background: var(--surface-soft);
+    color: var(--ink);
+}
+
+.icon-btn-danger:hover {
+    background: var(--danger-soft);
+    color: var(--danger);
+}
+
+/* A small edit pencil right after a heading, raised like a superscript */
+.title-with-icon .title-edit {
+    align-self: flex-start;
+    width: 1.6rem;
+    height: 1.6rem;
+    margin-left: -0.3rem;
+}
+
+.title-with-icon .title-edit svg {
+    color: var(--muted);
+}
+
+.title-with-icon .title-edit:hover svg {
+    color: var(--ink);
+}
+
+/* Red even before hover, e.g. "Lämna gruppen" */
+.icon-btn-danger-always {
+    color: var(--danger);
+}
+
+.icon-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.icon-btn:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+/* Hidden visually, still read by screen readers */
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* The gift editor inside a modal: tighter spacing than on its own page */
+.gift-editor > .muted:first-child {
+    margin-top: 0;
+}
+
+/* "Gåva till Anders · söndag 8 november" right under the title */
+.gift-subtitle {
+    margin-top: 0;
+}
+
+.gift-editor > .gift-subtitle:first-child,
+.gift-editor > .gift-for-event:first-child {
+    margin-top: -0.75rem; /* pulled up towards the modal's title */
+}
+
+.gift-editor .section {
+    margin-top: 1rem;
+}
+
+/* The wish, inside the modal: a soft box rather than a card with a shadow, with air around it */
+.gift-editor .section > .card {
+    background: var(--surface-soft);
+    border: none;
+    box-shadow: none;
+    padding: 1.1rem 1.35rem 1.2rem;
+    gap: 0.45rem;
+    margin-bottom: 1.75rem;
+}
+
+.gift-editor .section > .card .card-top {
+    align-items: baseline;
+    gap: 1rem;
+}
+
+.gift-editor .section > .card h3 {
+    font-size: 1.1rem;
+    line-height: 1.3;
+}
+
+/* ---------- Profile icon ---------- */
+.avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    border-radius: 50%;
+    color: #fff;
+}
+
+.profile-button {
+    display: inline-flex;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: none;
+    cursor: pointer;
+    transition: transform 0.15s;
+}
+
+.profile-button:hover {
+    transform: scale(1.06);
+}
+
+.profile-button:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+.profile-preview {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+/* The 14 profile icons in two even rows of 7 (wraps freely on very small screens) */
+.avatar-choices.avatar-choices-icons {
+    display: grid;
+    grid-template-columns: repeat(7, auto);
+    justify-content: start;
+}
+
+@media (max-width: 420px) {
+    .avatar-choices.avatar-choices-icons {
+        display: flex;
+    }
+}
+
+/* More air between the profile form's groups, and a little extra before the buttons */
+.profile-form {
+    gap: 1.75rem;
+}
+
+.profile-form .form-actions {
+    margin-top: 0.5rem;
+}
+
+/* Profile page: the form takes 2/3 on the left, the profile card 1/3 on the right */
+.profile-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+    gap: 3rem;
+    align-items: start;
+}
+
+.profile-aside-label {
+    margin: 0 0 0.5rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+
+/* Shaped like a (slightly low) business card: square corners, avatar beside the name,
+   vertically centred, lifted off the page with a layered shadow */
+.profile-card {
+    width: 100%;
+    max-width: 340px;
+    aspect-ratio: 2 / 1;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.25rem 1.5rem;
+    background: var(--surface);
+    border-radius: 2px;
+    box-shadow:
+        0 1px 1px rgba(91, 36, 24, 0.06),
+        0 4px 8px rgba(91, 36, 24, 0.06),
+        0 16px 32px rgba(85, 40, 124, 0.14);
+}
+
+.profile-card-text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    max-width: 100%;
+}
+
+/* Small screens: the card on top, centred */
+@media (max-width: 720px) {
+    .profile-layout {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 1.5rem;
+    }
+
+    .profile-aside {
+        order: -1;
+        justify-self: center;
+        width: min(100%, 270px);
+        padding: 1.5rem 0; /* air around the card, so its shadow has room */
+        box-sizing: content-box;
+    }
+
+    .profile-aside-label {
+        display: none; /* the card speaks for itself on phones */
+    }
+
+    .profile-card {
+        gap: 0.85rem;
+        padding: 1rem 1.25rem;
+    }
+
+    .profile-card .avatar {
+        width: 44px !important;
+        height: 44px !important;
+    }
+
+    .profile-card .profile-card-name {
+        font-size: 1.05rem; /* more specific: the base rule comes after this one */
+    }
+}
+
+.profile-card-name {
+    font-size: 1.2rem;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+
+.avatar-choices {
+    display: flex;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    margin-top: 0.5rem;
+}
+
+.avatar-choice {
+    display: inline-flex;
+    padding: 3px;
+    border: 2px solid transparent;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+/* The chosen one gets a ring; keyboard focus too */
+.avatar-choice:has(input:checked) {
+    border-color: var(--ink);
+}
+
+.avatar-choice:has(input:focus-visible) {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+.color-swatch {
+    display: block;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+}
+
+/* A page heading with a lucide icon in front, e.g. "Mina grupper" */
+/* A notice right under a page's heading - a little air above it */
+.page-notice {
+    margin-top: 1.25rem;
+}
+
+/* "‹ 1 2 3 ›" under a list shown a page at a time (Pagination) */
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.25rem;
+    margin-top: 1rem;
+}
+
+.pagination-btn {
+    display: inline-grid;
+    place-items: center;
+    min-width: 2rem;
+    height: 2rem;
+    padding: 0 0.4rem;
+    border: none;
+    border-radius: 999px;
+    background: none;
+    font: inherit;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--ink);
+    cursor: pointer;
+    transition: background-color 0.15s, color 0.15s;
+}
+
+.pagination-btn:hover:not(:disabled) {
+    background: var(--accent-soft);
+    color: var(--accent-text);
+}
+
+.pagination-btn.is-current {
+    background: var(--accent-strong);
+    color: var(--accent-ink);
+}
+
+.pagination-btn:disabled {
+    opacity: 0.35;
+    cursor: default;
+}
+
+/* A page title with a "…" menu right after it */
+.title-row {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-bottom: 0.5rem;
+}
+
+.title-row h1 {
+    margin: 0;
+}
+
+.title-with-icon {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.title-with-icon svg {
+    flex: none;
+    color: var(--accent);
+}
+
+/* "Reserverad" followed by the reservers' profile icons, slightly overlapping */
+.reserved-by {
+    display: inline-flex;
+    align-items: center;
+}
+
+/* The avatars overlap the end of the "Reserverad" badge a little */
+.reserved-by .avatar-stack {
+    position: relative;
+    margin-left: -8px;
+}
+
+.avatar-stack {
+    display: inline-flex;
+    align-items: center;
+}
+
+.avatar-stack .avatar {
+    box-shadow: 0 0 0 2px var(--surface);
+}
+
+.avatar-stack .avatar + .avatar {
+    margin-left: -6px;
+}
+
+/* Who shares a gift, right after its name in the gift table */
+.gift-people {
+    margin-left: 0.4rem;
+    vertical-align: middle;
+}
+
+/* ---------- Breadcrumbs ---------- */
+.breadcrumbs ol {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    list-style: none;
+    margin: 0 0 1.5rem;
+    padding: 0;
+    font-size: 0.9rem;
+}
+
+.breadcrumbs a {
+    color: var(--muted);
+    text-decoration: none;
+    font-weight: 400;
+}
+
+.breadcrumbs a:hover {
+    color: var(--accent-text);
+    text-decoration: underline;
+}
+
+.breadcrumbs [aria-current="page"] {
+    color: var(--ink);
+    font-weight: 500;
+}
+
+.breadcrumbs-sep {
+    display: inline-flex;
+    color: var(--muted);
+}
+
+/* "Skapa en grupp": name + button on one row, "Inkludera barn" below */
+.create-group-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+/* "Inkludera barn" on the left, "Skapa" on the right */
+.create-group-row {
+    margin-top: 0.5rem; /* a little more air below the name field */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.75rem 1.5rem;
+    flex-wrap: wrap;
+}
+
+/* ---------- Mina barn ---------- */
+.child-title {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+/* The child's name and its "…" menu side by side; the name may wrap, the menu stays next to it */
+.child-title-row {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    min-width: 0;
+}
+
+.child-groups {
+    list-style: none;
+    margin: 0 0 0.75rem;
+    padding: 0;
+}
+
+.child-groups li {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--line);
+}
+
+.child-groups li:last-child {
+    border-bottom: 0;
+}
+
+.child-groups li svg {
+    flex: none;
+    color: var(--accent);
+}
+
+/* A parent's group that doesn't include children */
+.child-group-off {
+    color: var(--muted);
+    opacity: 0.6;
+}
+
+.child-group-off svg {
+    color: var(--muted) !important;
+}
+
+/* Group and list names in the children's modals: ordinary text links, at the text's own weight */
+.child-groups .text-link {
+    font-weight: inherit;
+}
+
+/* A list in "Listor till …": title and date stacked */
+.child-list-main {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+}
+
+.child-list-archived {
+    opacity: 0.7;
+}
+
+/* "Ny lista" + ⋯ at the top of a child's card - keep them together on one row */
+.card-top .actions {
+    flex: none;
+    flex-wrap: nowrap;
+    gap: 0.25rem;
+}
+
+/* ---------- Mina gåvor: gift cards grouped by event ---------- */
+.gift-events {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+/* Each event on a softly tinted surface - no border or shadow, so the white gift cards on it
+   stand out and it doesn't become a box in a box */
+.gift-event {
+    /* The frames inside (the cards, "Logga gåva", the Totalt button) follow the surface's colour:
+       --event-line at rest, --event-line-strong on hover */
+    --event-line: var(--line);
+    --event-line-strong: #dcbcad; /* the beige of "Avbryt" and the dashed card - as before */
+    --event-surface: var(--surface-soft); /* also behind the presents picture on cards without an image */
+    padding: 1.1rem 1.25rem 1.25rem;
+    border-radius: var(--radius);
+    background: var(--event-surface);
+}
+
+/* The event's head: calendar and title straight on the page background, my total on the right */
+.gift-event-head {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.75rem 1rem;
+}
+
+/* The calendar sheet close to the title (the head's gap is for the total on the right) */
+.gift-event-head .date-badge {
+    margin-right: -0.25rem;
+}
+
+/* Without a bar to sit on, the kind of event (Secret Santa, …) is a small label instead of a tab */
+.gift-event .event-kicker {
+    border-radius: 999px;
+}
+
+.gift-event .event-tab-row {
+    margin-bottom: 0.5rem;
+}
+
+.gift-event-title {
+    flex: 1;
+    min-width: 12rem;
+}
+
+.gift-event-title h3 {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.35rem 0.6rem;
+}
+
+/* Who it's for ("Sam") - a lavender tag right after the event's title */
+.gift-event-to {
+    display: inline-block;
+    padding: 0.2rem 0.65rem;
+    border-radius: 999px;
+    background: var(--blue-soft);
+    border: 1px solid #e3d2f3;
+    color: var(--blue);
+    font-size: 0.78rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.gift-event-title h3 a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.gift-event-title h3 a:hover {
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+}
+
+/* "Totalt 358 kr" - an ordinary small ghost button (like "Avbryt") that opens the split */
+.gift-event-total {
+    gap: 0.5rem;
+}
+
+.gift-event-total-amount {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2rem;
+}
+
+.gift-event-total-label {
+    color: var(--muted);
+    font-size: 0.85rem;
+}
+
+/* The cards under the head */
+.gift-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.gift-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    transition: box-shadow 0.15s ease;
+}
+
+/* Only the shadow lifts - a transform here would break the "…" menu, which is position: fixed */
+.gift-card:hover {
+    box-shadow: var(--shadow-lift);
+}
+
+.gift-card-image {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+    background: var(--surface-soft);
+    display: block;
+}
+
+/* No picture: the presents illustration, whole and with some air around it */
+.gift-card-image.is-empty {
+    object-fit: contain;
+    padding: 1.25rem;
+}
+
+.gift-card-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    padding: 0.8rem 0.9rem 0.9rem;
+}
+
+.gift-card-title {
+    margin: 0;
+    padding-right: 1.75rem; /* room for the "…" button */
+    font-size: 1rem;
+    line-height: 1.3;
+    overflow-wrap: anywhere;
+}
+
+.gift-card-title a {
+    color: inherit;
+    text-decoration: none;
+}
+
+/* The whole card opens the gift - the menu sits above that layer */
+.gift-card-title a::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+}
+
+.gift-card-title a:focus-visible {
+    outline: none;
+}
+
+.gift-card:has(.gift-card-title a:focus-visible) {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+/* "Överraskning" on the picture's top-left corner, on a white pill so it shows on any picture */
+.gift-card-badge {
+    position: absolute;
+    z-index: 1;
+    top: 0.6rem;
+    left: 0.6rem;
+    margin: 0;
+    background: rgba(255, 255, 255, 0.92);
+    color: var(--ink);
+    box-shadow: 0 1px 4px rgba(63, 25, 17, 0.15);
+    pointer-events: none; /* the card's link stays clickable underneath */
+}
+
+.gift-card-meta {
+    display: flex;
+    gap: 0.6rem;
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.85rem;
+}
+
+.gift-card-foot {
+    margin-top: auto;
+    padding-top: 0.4rem;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+
+.gift-card-share {
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    line-height: 1.25;
+}
+
+/* "…" in the picture's top-right corner, on a white circle so it shows on any picture */
+.gift-card-menu {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    z-index: 1;
+}
+
+.gift-card-menu-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.92);
+    color: var(--ink);
+    box-shadow: 0 1px 4px rgba(63, 25, 17, 0.15);
+    cursor: pointer;
+}
+
+.gift-card-menu-btn:hover,
+.gift-card-menu-btn[aria-expanded="true"] {
+    background: #ffffff;
+}
+
+/* "Logga gåva": an empty card with a dashed border, last in the row */
+.gift-add-wrap,
+.gift-add-wrap > .menu {
+    display: flex;
+}
+
+.gift-add-wrap > .menu {
+    flex: 1;
+}
+
+.gift-add-card {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    width: 100%;
+    min-height: 180px;
+    padding: 1rem;
+    border: 2px dashed #dcbcad;
+    border-radius: var(--radius);
+    background: rgba(255, 255, 255, 0.45);
+    color: var(--accent-text);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.gift-add-card:hover,
+.gift-add-card[aria-expanded="true"] {
+    background: var(--surface);
+    border-color: var(--accent);
+}
+
+/* Centred in its circle: no room for text after it here */
+.gift-add-icon .icon-gift-plus {
+    margin-right: 0;
+}
+
+.gift-add-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 3rem;
+    height: 3rem;
+    border-radius: 50%;
+    background: var(--accent-soft);
+}
+
+/* Past events: toned down, like the overview's archived rows */
+.gift-event.is-archived .gift-card {
+    opacity: 0.85;
+}
+
+.gift-event.is-archived .gift-card-image {
+    filter: saturate(0.6);
+}
+
+/* Logged gifts on pale blue, Secret Santa on pale yellow - wish lists keep the warm beige-pink */
+.gift-event.event-logged {
+    --event-line: #cfe0f2;
+    --event-line-strong: #a9c6e6;
+    --event-surface: #e6f0fa;
+}
+
+.gift-event.event-santa {
+    --event-line: #f6e2a8;
+    --event-line-strong: #e6c56f;
+    --event-surface: var(--yellow-soft);
+}
+
+/* No picture: the presents illustration on the event's colour */
+.gift-event .gift-card-image.is-empty {
+    background: var(--event-surface);
+}
+
+/* The frames, in the surface's colour */
+.gift-event .gift-card {
+    border-color: var(--event-line);
+}
+
+.gift-event .gift-add-card {
+    border-color: var(--event-line-strong);
+}
+
+.gift-event .gift-add-card:hover,
+.gift-event .gift-add-card[aria-expanded="true"] {
+    border-color: var(--event-line-strong);
+    border-style: solid;
+}
+
+.gift-event .btn-ghost.gift-event-total {
+    border-color: var(--event-line-strong);
+}
+
+@media (max-width: 640px) {
+    .gift-event {
+        padding: 0.9rem 0.85rem 1rem;
+    }
+
+    /* Two cards side by side on phones */
+    .gift-cards {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.75rem;
+    }
+
+    .gift-event-head .date-badge {
+        display: none;
+    }
+
+    .gift-event-head .event-date {
+        display: block;
+        margin-top: 0.15rem;
+    }
+
+}
+
+/* ---------- Mina gåvor: "Vem har jag köpt till?" - a horizontal bar chart ---------- */
+.spending-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 0.75rem 1rem;
+    margin-bottom: 1.25rem;
+}
+
+.spending-sub {
+    margin: 0.2rem 0 0;
+}
+
+.spending-controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.spending-range {
+    max-width: 26rem;
+    margin: -0.5rem 0 1.25rem;
+}
+
+/* A row of choices where one is on (the period) */
+.segmented {
+    display: inline-flex;
+    flex-wrap: wrap; /* six choices may not fit on a phone */
+    padding: 3px;
+    border-radius: 18px;
+    background: var(--surface-soft);
+}
+
+.segmented-option {
+    padding: 0.3rem 0.8rem;
+    border: none;
+    border-radius: 999px;
+    background: none;
+    color: var(--muted);
+    font: inherit;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.segmented-option:hover {
+    color: var(--ink);
+}
+
+.segmented-option.is-active {
+    background: var(--surface);
+    color: var(--ink);
+    box-shadow: 0 1px 3px rgba(63, 25, 17, 0.12);
+}
+
+/* The chart. --label: the names' column; --value-room: space kept right of the longest bar
+   for its value, so the value never overflows. Bars and gridlines use the same scale. */
+.bar-chart {
+    --label: 9rem;
+    --gap: 0.75rem;
+    --value-room: 5.5rem;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 1.25rem 1.25rem 2.25rem;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+}
+
+.bar-chart-grid {
+    position: absolute;
+    top: 1rem;
+    bottom: 2rem;
+    left: calc(1.25rem + var(--label) + var(--gap));
+    right: 1.25rem;
+    pointer-events: none;
+}
+
+.bar-chart-tick {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: calc((100% - var(--value-room)) * var(--v));
+    border-left: 1px solid var(--line);
+}
+
+.bar-chart-tick-label {
+    position: absolute;
+    top: 100%;
+    margin-top: 0.3rem;
+    transform: translateX(-50%);
+    color: var(--muted);
+    font-size: 0.72rem;
+    white-space: nowrap;
+}
+
+.bar-row {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: var(--gap);
+    min-height: 2rem;
+    border-radius: 6px;
+    outline-offset: 2px;
+}
+
+.bar-label {
+    flex: none;
+    width: var(--label);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: right;
+    font-size: 0.9rem;
+}
+
+.bar-track {
+    position: relative;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+/* <= 24px thick, square at the baseline, a 4px rounded data end */
+.bar {
+    display: block;
+    width: calc((100% - var(--value-room)) * var(--v));
+    min-width: 2px;
+    height: 20px;
+    border-radius: 0 4px 4px 0;
+    background: var(--accent-strong);
+    transition: width 0.25s ease;
+}
+
+/* "Övriga": the same hue, toned down - it's a sum of many */
+.bar.bar-rest {
+    background: #e7a2b3;
+}
+
+.bar-value {
+    font-size: 0.85rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+/* Tooltip: on hover, and on keyboard focus of the row */
+.bar-tooltip {
+    position: absolute;
+    z-index: 2;
+    bottom: calc(100% + 6px);
+    left: 0;
+    padding: 0.45rem 0.65rem;
+    border-radius: 8px;
+    background: var(--ink);
+    color: #fff;
+    font-size: 0.8rem;
+    line-height: 1.35;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.12s ease;
+    pointer-events: none;
+}
+
+.bar-row:hover .bar-tooltip,
+.bar-row:focus-visible .bar-tooltip {
+    opacity: 1;
+    visibility: visible;
+}
+
+.bar-row:hover .bar {
+    filter: brightness(0.92);
+}
+
+.spending-empty {
+    padding: 1.5rem;
+    text-align: center;
+    background: var(--surface);
+    border: 1px dashed var(--line);
+    border-radius: var(--radius);
+}
+
+@media (max-width: 640px) {
+    .bar-chart {
+        --label: 6rem;
+        --value-room: 4.75rem;
+        padding-inline: 0.85rem;
+    }
+
+    .bar-chart-grid {
+        left: calc(0.85rem + var(--label) + var(--gap));
+        right: 0.85rem;
+    }
+}
+
+/* ---------- Wish profiles ---------- */
+/* A name that opens someone's wish profile: looks like a link, is a button */
+.person-link {
+    display: inline;
+    padding: 0;
+    border: none;
+    background: none;
+    font: inherit;
+    font-weight: 600;
+    color: inherit;
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.15em;
+    cursor: pointer;
+    transition: text-decoration-thickness 0.15s ease, text-underline-offset 0.15s ease;
+}
+
+.person-link:hover {
+    text-decoration-thickness: 1.5px;
+    text-underline-offset: 0.25em;
+}
+
+.person-link:focus-visible {
+    outline: 3px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
+/* "Se önskeprofilen" on a coloured event panel: a white pill, like "Se önskelistan" */
+.event-link-wrap {
+    margin-top: 0.9rem;
+}
+
+.event-link-wrap .person-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.4rem 0.95rem;
+    border-radius: 999px;
+    background: #fff;
+    color: var(--ink);
+    font-size: 0.875rem;
+    text-decoration: none;
+}
+
+.event-link-wrap .person-link:hover {
+    background: var(--cream);
+}
+
+/* The modal */
+.person {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.person p {
+    margin: 0;
+}
+
+.person-head {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.person-name {
+    font-size: 1.35rem;
+    font-weight: 600;
+}
+
+.person-edit {
+    margin-left: auto;
+}
+
+.person-about {
+    white-space: pre-line;
+    padding: 1rem 1.15rem;
+    border-radius: var(--radius-small);
+    background: var(--surface-soft);
+    border-left: 4px solid var(--accent);
+}
+
+.person-prefs {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.person-subhead {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin: 0 0 0.5rem;
+    font-size: 1rem;
+}
+
+.chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.3rem 0.75rem;
+    border-radius: 999px;
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.chip-like {
+    background: var(--mint-soft);
+    color: var(--green);
+}
+
+.chip-dislike {
+    background: var(--danger-soft);
+    color: var(--danger); /* the red of the trash-can buttons */
+}
+
+/* The categories on the edit page: a label and thumbs up / down */
+.pref-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    gap: 0.5rem;
+    list-style: none;
+    margin: 0.75rem 0 0;
+    padding: 0;
+}
+
+.pref {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.4rem 0.4rem 0.4rem 0.8rem;
+    border: 1.5px solid var(--line);
+    border-radius: 999px;
+    background: var(--surface);
+    transition: background-color 0.15s, border-color 0.15s;
+}
+
+.pref-like {
+    background: var(--mint-soft);
+    border-color: #bcdcc6;
+}
+
+.pref-dislike {
+    background: var(--danger-soft);
+    border-color: #f2c4bf;
+}
+
+.pref-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-weight: 500;
+    min-width: 0;
+}
+
+.pref-buttons {
+    display: inline-flex;
+    gap: 0.2rem;
+    flex: none;
+}
+
+.pref-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.1rem;
+    height: 2.1rem;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    transition: background-color 0.15s, color 0.15s;
+}
+
+.pref-btn:hover {
+    background: var(--surface-soft);
+    color: var(--ink);
+}
+
+.pref-btn-like[aria-pressed="true"] {
+    background: var(--green);
+    color: #fff;
+}
+
+.pref-btn-dislike[aria-pressed="true"] {
+    background: var(--danger);
+    color: #fff;
+}
+
+.pref-btn:focus-visible {
+    outline: 3px solid var(--accent);
+    outline-offset: 1px;
+}
+
+/* "You're in a Secret Santa - fill in your wish profile", above the events */
+/* "Nästa steg" on the overview (and a new group): centred, the text with the button under it */
+.santa-nudge {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 1.25rem;
+    max-width: 32rem;
+    margin: 2.25rem auto 0;
+}
+
+.santa-nudge-title svg {
+    display: inline-block;
+    vertical-align: -0.2em;
+    margin-left: 0.2rem;
+    color: var(--ink);
+}
+
+.santa-nudge > div {
+    min-width: 200px;
+}
+
+.santa-nudge p {
+    margin: 0;
+}
+
+.santa-nudge-title {
+    font-weight: 600;
+    font-size: 1.05rem;
+}
+
+/* Two classes, so it beats ".santa-nudge p { margin: 0 }" */
+.santa-nudge .santa-nudge-title {
+    margin-bottom: 0.35rem;
+}
+
+/* "Sigrids önskeprofil →" at the bottom of a child's card */
+.child-profile-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    width: fit-content;
+    margin-top: 0.75rem;
+    padding: 0.45rem 0.95rem;
+    border-radius: 999px;
+    background: var(--accent-soft);
+    color: var(--accent-text);
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-decoration: none;
+    transition: background-color 0.15s;
+}
+
+.child-profile-link:hover {
+    background: #fbd0da;
+}
+
+/* A username next to a name: bold, in the quieter text colour (no "@") */
+.username {
+    font-weight: 600;
+    color: var(--muted);
+}
+
+/* A button that reads like a link inside text, e.g. "Publicera" in a notice */
+.text-link {
+    display: inline;
+    padding: 0;
+    border: none;
+    background: none;
+    font: inherit;
+    font-weight: 600;
+    color: inherit;
+    text-decoration: underline;
+    /* Same as ordinary text links: thin at rest, a little thicker on hover */
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.15em;
+    cursor: pointer;
+    transition: text-decoration-thickness 0.15s ease, text-underline-offset 0.15s ease;
+}
+
+.text-link:hover {
+    text-decoration-thickness: 1.5px;
+    text-underline-offset: 0.25em;
+}
+
+.text-link:disabled {
+    opacity: 0.6;
+    cursor: wait;
+}
+
+.text-link:focus-visible {
+    outline: 3px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
+/* A checkbox with its help text right under it, lined up with the label's text */
+/* A checkbox with a hint under it: a grid, so the hint starts exactly where the label's text does
+   (like .check-with-hint) - whatever size the browser draws the box */
+.check-field {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    column-gap: 0.5rem; /* the same gap as .check */
+    row-gap: 0.15rem;
+    align-items: center;
+}
+
+/* The label's own box steps aside, so its checkbox and text become cells of the grid */
+.check-field > .check {
+    display: contents;
+}
+
+.check-field > small {
+    grid-column: 2;
+    font-size: 0.875rem;
+}
+
+/* ---------- People picker: chosen people as chips, and a search field with suggestions ---------- */
+.people-picker {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+.people-chosen {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.person-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.2rem 0.35rem 0.2rem 0.25rem;
+    border-radius: 999px;
+    background: var(--accent-soft);
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+/* No remove button (locked): a little more room on the right instead */
+.person-chip:not(:has(.person-chip-remove)) {
+    padding-right: 0.7rem;
+}
+
+.person-chip-remove {
+    display: inline-grid;
+    place-items: center;
+    width: 1.3rem;
+    height: 1.3rem;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: none;
+    color: var(--accent-text);
+    cursor: pointer;
+}
+
+.person-chip-remove:hover {
+    background: #fbd0da;
+}
+
+.people-search {
+    position: relative;
+}
+
+.people-search input {
+    width: 100%;
+}
+
+.people-suggestions {
+    position: absolute;
+    z-index: 20;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    max-height: 18rem;
+    overflow-y: auto;
+    list-style: none;
+    margin: 0;
+    padding: 0.3rem;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-small);
+    box-shadow: var(--shadow-lift);
+}
+
+.people-suggestion {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 0.45rem 0.6rem;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.people-suggestion.is-active,
+.people-suggestion:hover {
+    background: var(--accent-soft);
+}
+
+.people-suggestion.is-disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: none;
+}
+
+.people-suggestion-empty {
+    padding: 0.45rem 0.6rem;
+    color: var(--muted);
+    font-size: 0.9rem;
+}
+
+/* "Hittar du inte den du söker?" - last in the list, set apart by a thin line, in link style */
+.people-suggestion-help {
+    margin-top: 0.25rem;
+    border-top: 1px solid var(--line);
+    border-radius: 0 0 8px 8px;
+    font-size: 0.9rem;
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+}
+
+/* Gift icon with a small plus badge (GiftPlusIcon) */
+.icon-gift-plus {
+    position: relative;
+    display: inline-flex;
+    flex: none;
+    margin-right: 3px; /* room for the badge before the text */
+}
+
+.icon-gift-plus-badge {
+    position: absolute;
+    right: -4px;
+    bottom: -3px;
+    display: grid;
+    place-items: center;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #fff;
+    box-shadow: 0 0 0 1.5px var(--surface);
+}
+
+/* On a rose button: a white badge with a rose plus */
+.btn-primary .icon-gift-plus-badge {
+    background: #fff;
+    color: var(--accent-strong);
+    box-shadow: none;
+}
+
+/* Mobile: no gradient backdrop around the sheet - header and sheet go edge to edge */
+@media (max-width: 640px) {
+    :root {
+        --sheet-gap: 0px;
+        --logo-width: 115px;
+    }
+
+    .app {
+        background: var(--sheet);
+    }
+
+    .app-sheet {
+        border-radius: 0;
+        margin-bottom: 0; /* no gradient strip on mobile */
+    }
+    /* Low header: the main menu moves into the hamburger menu */
+    .nav {
+        display: none;
+    }
+
+    .menu-item.menu-mobile-only {
+        display: flex;
+    }
+
+    .menu-divider.menu-mobile-only {
+        display: block;
+    }
+
+    /* Cards closer to the screen edges than the text (but room left for the tab sticking out) */
+    .events,
+    .list-cards {
+        margin-inline: -0.75rem;
+    }
+
+    /* Slightly smaller table text on phones */
+    .table td {
+        font-size: 0.9rem;
+    }
+
+    /* Santa nudge: icon stays beside the text; the button goes underneath, lined up with the text */
+    .santa-nudge > div {
+        flex: 1 1 100%; /* the whole row, so the button wraps below */
+        min-width: 0;
+    }
+
+    .santa-nudge {
+        margin-top: 1.25rem;
+    }
+
+    /* Less air at the bottom of the overview's intro band */
+    .page-intro {
+        padding-bottom: calc(3rem + var(--zigzag) / 2);
+    }
+
+    /* Tight around the "…" button */
+    .table td.row-actions {
+        padding-left: 0.3rem;
+        padding-right: 0.3rem;
+    }
+
+    .row-actions .btn-icon {
+        padding: 0.2rem;
+    }
+
+    /* Less side margin around the gift table inside the card */
+    .event-gifts-collapse .event-gifts {
+        padding-inline: 0.75rem;
+    }
+
+    /* A bit more side air for text that sits straight on the sheet */
+    .main {
+        --main-pad-x: 1.5rem;
+    }
+}
+
+/* Mobile: the group's member list in a slightly smaller font */
+@media (max-width: 640px) {
+    .member-list,
+    .alert-info {
+        margin-inline: -0.75rem; /* closer to the screen edges, like the cards */
+    }
+
+    .modal .alert-info {
+        margin-inline: 0; /* inside a modal it stays within the padding */
+    }
+
+    .alert-info {
+        font-size: 0.9rem;
+    }
+
+    .member-list li {
+        font-size: 0.9rem;
+        padding: 0.65rem 0.75rem;
+    }
+
+    .member-list .badge {
+        font-size: 0.7rem;
+    }
+}
+
+/* ---------- Footer: out on the gradient backdrop, below the sheet, with air between ---------- */
+.footer {
+    /* Same width as the sheet, and the same gap above it as the gradient frame on the sides */
+    margin: 0 var(--panel-inset) var(--sheet-gap);
+    /* Same side padding as .main, so the text lines up with the page content */
+    padding: 2.25rem clamp(1rem, 3vw, 2.5rem) 1.25rem;
+    border-radius: 0 0 28px 28px; /* square top against the sheet, rounded at the bottom */
+    background: var(--surface-soft);
+    font-size: 0.875rem;
+    color: var(--ink);
+}
+
+.footer-inner {
+    display: flex;
+    justify-content: center;
+    text-align: center;
+}
+
+.footer-brand {
+    max-width: 22rem;
+}
+
+.footer-logo {
+    width: 100px;
+    height: auto;
+    display: block;
+    margin: 0 auto 0.6rem;
+}
+
+.footer-brand p {
+    margin: 0;
+}
+
+.footer a {
+    color: var(--ink);
+    text-decoration: none;
+}
+
+.footer a:hover {
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.2em;
+}
+
+/* The links in the bottom line look like ordinary text links: thin underline, a little thicker on hover */
+.footer .footer-bottom a {
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.15em;
+    transition: text-decoration-thickness 0.15s ease, text-underline-offset 0.15s ease;
+}
+
+.footer .footer-bottom a:hover {
+    text-decoration-thickness: 1.5px;
+    text-underline-offset: 0.25em;
+}
+
+.footer-bottom {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.35rem 1.5rem;
+    margin: 2rem 0 0;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(74, 32, 24, 0.12);
+    font-size: 0.8rem;
+}
+
+/* As .main: lined up with the menu only once the sheet is at its max width */
+@media (min-width: 1501px) {
+    .footer {
+        padding-inline: var(--content-inset);
+    }
+}
+
+/* Mobile: no backdrop around the sheet, so the footer gets its own gap from the edges */
+@media (max-width: 640px) {
+    /* No gradient frame on mobile: the footer is a soft band at the bottom */
+    .footer {
+        margin: 0;
+        padding: 2rem 1.5rem 1.25rem;
+        border-radius: 0;
+        border-top: 1px solid var(--line);
+        background: var(--surface-soft);
+    }
+}
+
+/* ---------- InfoTip: a small (i) with a bubble on hover / focus ---------- */
+.info-tip {
+    position: relative;
+    top: -0.08em; /* nudged up a little - middle sits a bit low beside the heading's text */
+    display: inline-flex;
+    vertical-align: middle;
+}
+
+.info-tip-btn {
+    display: inline-grid;
+    place-items: center;
+    padding: 0.15rem;
+    border: 0;
+    border-radius: 50%;
+    background: none;
+    color: var(--muted);
+    cursor: help;
+}
+
+.info-tip-btn:hover,
+.info-tip-btn:focus-visible {
+    color: var(--ink);
+}
+
+.info-tip-text {
+    /* Fixed, placed in JS from the (i) (see InfoTip.jsx) - so a modal's scrolling can't clip it */
+    position: fixed;
+    z-index: 40;
+    top: auto;
+    bottom: auto;
+    left: 0;
+    transform: translateX(-50%);
+    width: max-content;
+    max-width: min(260px, 80vw);
+    padding: 0.5rem 0.7rem;
+    border-radius: 8px;
+    background: var(--ink);
+    color: #fff;
+    font-size: 0.8rem;
+    font-weight: 400;
+    line-height: 1.4;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.12s ease;
+    pointer-events: none;
+}
+
+.info-tip:hover .info-tip-text,
+.info-tip-btn:focus-visible + .info-tip-text,
+.info-tip-btn:focus + .info-tip-text {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* --- New list: one step at a time (VEM, VAD, NÄR) - a thin progress bar split in three, labels underneath --- */
+.steps {
+    display: flex;
+    gap: 0.4rem;
+    list-style: none;
+    margin: 0 0 1.25rem; /* plus the form's own gap: some air before the step's heading */
+    padding: 0;
+}
+
+.steps-item {
+    flex: 1;
+}
+
+.steps-item button {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+    width: 100%;
+    padding: 0 0 0.25rem;
+    border: none;
+    background: none;
+    color: var(--muted);
+    font: inherit;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    text-align: left;
+    cursor: pointer;
+}
+
+.steps-item button:disabled {
+    cursor: default;
+}
+
+.steps-item button:focus-visible {
+    outline: 3px solid var(--accent);
+    outline-offset: 3px;
+    border-radius: 4px;
+}
+
+.steps-bar {
+    display: block;
+    height: 5px;
+    border-radius: 999px;
+    background: var(--line);
+    transition: background 0.25s;
+}
+
+.steps-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.steps-done .steps-bar {
+    background: var(--accent);
+}
+
+.steps-done button:not(:disabled):hover .steps-label {
+    color: var(--accent-text);
+}
+
+.steps-current .steps-bar {
+    background: var(--accent-strong);
+}
+
+.steps-current .steps-label {
+    color: var(--accent-text);
+}
+
+.step-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    animation: step-in 0.25s ease-out;
+}
+
+.step-title {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    margin: 0;
+    font-size: 1.35rem;
+}
+
+.step-title:focus {
+    outline: none;
+}
+
+@keyframes step-in {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .step-panel {
+        animation: none;
+    }
+}
+
+/* compact picker: the little + next to the chosen people that opens the search for one more */
+.person-chip-add {
+    display: inline-grid;
+    place-items: center;
+    width: 1.9rem;
+    height: 1.9rem;
+    padding: 0;
+    border: 1.5px dashed var(--accent);
+    border-radius: 50%;
+    background: var(--surface);
+    color: var(--accent-text);
+    cursor: pointer;
+}
+
+.person-chip-add:hover {
+    background: var(--accent-soft);
+}
+
+.person-chip-add:focus-visible {
+    outline: 3px solid var(--accent);
+    outline-offset: 2px;
+}
+
+
+/* A hint right under a step's heading */
+.step-hint {
+    margin: -0.75rem 0 -0.6rem; /* close to the heading above and the field below */
+}
+
+/* New list and Secret Santa: more air above the buttons */
+.form-wizard .form-actions {
+    margin-top: 1.25rem;
+}
+
+/* A legend that leads a part of a step - between the step's heading and an ordinary label in size */
+.fieldset legend.legend-large {
+    font-size: 1.15rem;
+    margin-bottom: 0.3rem;
+}
+
+/* Editing a list: the same parts as the steps of a new list, one after the other */
+.edit-section {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    margin-bottom: 1.5rem;
+}
+
+/* In the list form's steps and sections the gap already spaces things - no extra margin around fieldsets */
+.step-panel .fieldset,
+.edit-section .fieldset {
+    margin: 0;
+}
+
+/* Editing a list: no intro under the page title, so the title gets the air itself */
+.title-with-icon.title-spaced {
+    margin-bottom: 2rem;
+}
+
+.alert-warning {
+    background: var(--yellow-soft);
+    color: var(--yellow-ink);
+}
+
+.alert-warning > span {
+    display: inline-flex;
+    align-items: flex-start;
+    gap: 0.4rem;
+}
+
+.alert-warning svg {
+    flex: none;
+    margin-top: 0.2rem;
+}
+
+
+/* ---------- Select: a drop-down in the people search's look (the list is .people-suggestions) ---------- */
+.select {
+    position: relative;
+}
+
+.select-button {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    width: 100%;
+    font: inherit;
+    color: inherit;
+    text-align: left;
+    padding: 0.65rem 0.9rem;
+    border: 1.5px solid #efd9cc; /* the same as the text fields */
+    border-radius: var(--radius-small);
+    background: var(--surface);
+    cursor: pointer;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.select-button:focus-visible,
+.select-button[aria-expanded="true"] {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 4px rgba(236, 91, 120, 0.18);
+}
+
+.select-button.is-placeholder {
+    color: #a88f86; /* the placeholder colour of the text fields */
+}
+
+.select-button svg {
+    flex: none;
+    color: var(--muted);
+}
+
+.select-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* A fieldset inside a .form, whose gap already does the spacing - no extra margin around it */
+.fieldset.fieldset-tight {
+    margin: 0;
+}
+
+/* "(9 valda)" next to a legend - normal weight, so it reads as a note to the heading */
+.legend-count {
+    font-weight: 400;
+}
+
+/* The close button up in the modal's top-right corner, closer to the edge than the content's padding.
+   (Not the floating one - that sits over the content, e.g. a wish's image.) */
+.modal-head:not(.modal-head-floating) .modal-close {
+    margin: -0.75rem -1rem 0 0;
+}
+
+/* "Hittar du inte den du söker?": the person found, and the group to add them to */
+.picked-person {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.picked-person > p {
+    margin: 0;
+}
+
+/* A sub heading with a discreet line above it - sets the parts of a modal apart */
+.subhead.subhead-divided {
+    border-top: 1px solid var(--line);
+    padding-top: 1.25rem;
+    margin-top: 1.5rem;
+}
+
+/* Select's list: fixed on screen, placed from the button in JS (so a modal's scrolling can't clip it) */
+.people-suggestions.select-list {
+    position: fixed;
+    right: auto;
+    z-index: 30;
+}
+
+/* A checkbox with an (i) instead of a hint underneath: checkbox, text and (i) on one line */
+.check-field:has(> .info-tip) {
+    display: flex;
+    align-items: center;
+    gap: 0.15rem; /* the (i) close to the text */
+}
+
+.check-field:has(> .info-tip) > .check {
+    display: flex;
+}
+
+/* ...with the (i) one pixel lower, level with the text */
+.check-field > .info-tip {
+    position: relative;
+    top: 1px;
+}
+
+/* Create a group: only "Inkludera barn" moves up, closer to the name field - the button stays */
+.create-group-row > .check-field {
+    position: relative;
+    top: -0.7rem;
+}
+
+/* ---------- Mina grupper: group cards ---------- */
+.group-card {
+    gap: 1rem;
+}
+
+.group-card-head {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.85rem;
+}
+
+.group-card-title {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+}
+
+.group-card-title h3 {
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+
+.group-card-title .badge {
+    margin-left: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+/* The arrow slides in on hover */
+.group-card-arrow {
+    flex: none;
+    margin-top: 0.3rem;
+    color: var(--muted);
+    opacity: 0;
+    transform: translateX(-4px);
+    transition: opacity 0.15s, transform 0.15s;
+}
+
+.group-card:hover .group-card-arrow,
+.group-card:focus-visible .group-card-arrow {
+    opacity: 1;
+    transform: none;
+}
+
+.group-card-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-top: auto;
+    padding-top: 0.85rem;
+    border-top: 1px solid var(--line);
+}
+
+/* Overlapping avatars, each with a white ring */
+.avatar-stack {
+    display: flex;
+    align-items: center;
+}
+
+.avatar-stack > .avatar,
+.avatar-stack > .avatar-stack-more {
+    box-shadow: 0 0 0 2px var(--surface);
+}
+
+.avatar-stack > .avatar + .avatar,
+.avatar-stack > .avatar + .avatar-stack-more {
+    margin-left: -8px;
+}
+
+.avatar-stack-more {
+    display: inline-grid;
+    place-items: center;
+    height: 30px;
+    min-width: 30px;
+    padding: 0 0.4rem;
+    border-radius: 999px;
+    background: var(--surface-soft);
+    color: var(--muted);
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.group-card-stat {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    color: var(--muted);
+    font-size: 0.85rem;
+    white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .group-card-arrow {
+        transition: none;
+    }
+}
+
+/* A group's lists: the public ones, then the private ones in a grid of their own */
+.list-card-groups {
+    display: flex;
+    flex-direction: column;
+    gap: 1.75rem;
+}
+
+/* A new group with nobody else and no lists: "Vad är nästa steg?" at the top, in the overview's nudge look */
+.santa-nudge.group-next-step {
+    margin: 3.5rem auto 2rem;
+    /* Centred on the page: text, and the buttons under it */
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 1.75rem; /* between the text and the buttons */
+    max-width: 32rem;
+}
+
+.group-next-step .group-next-step-actions {
+    justify-content: center;
+}
+
+.group-next-step-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 0.75rem;
+}
+
+.group-next-step-or {
+    font-size: 0.9rem;
+}
+
+.group-next-step .santa-nudge-title {
+    font-size: 1.35rem;
+    margin-bottom: 0.6rem;
+}
+
+/* The overview's greeting ("Hej Sofie!") centred, like the "nästa steg" under it */
+.overview-intro h1 {
+    text-align: center;
+}
+
+.overview-intro .santa-nudge {
+    margin-top: 1.25rem; /* closer under "Hej Sofie!" */
+}
+
+/* A field's label with an (i) right after it (the (i) can't sit inside the <label>) */
+.field > .field-label-row {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+/* An error box inside a field (e.g. a failed "Hämta"): close under the input, no margin of its own below */
+.field > .alert {
+    margin: 0.25rem 0 0;
+}
+
+/* Mina barn: the cards use the group cards' look (.group-card) */
+.group-card-title p {
+    margin: 0;
+}
+
+.child-card .child-profile-link {
+    margin-top: 0; /* the card's gap spaces it */
+}
+
+.child-card .group-card-head > .avatar {
+    margin-top: 0.1rem;
+}
+
+.child-card .group-card-title p {
+    font-size: 0.8rem;
+}
+
+.child-card .group-card-title {
+    gap: 0; /* "Föräldrar: …" close under the name */
+}
+
+.child-card .group-card-title p {
+    margin-top: -0.05rem;
+}
+
+/* "Nytt barn": more air between the panel's heading and the form */
+.panel-title-spaced {
+    margin-bottom: 1.5rem;
+}
+
+/* The child form: the hint under "Föräldrar", with some air down to the people picker */
+.fieldset > p.parent-hint {
+    margin-bottom: 1rem;
+}

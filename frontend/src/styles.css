@@ -111,8 +111,10 @@ h1 {
     font-size: clamp(1.75rem, 4vw, 2.25rem);
 }
 
+/* Section headings ("Kommande händelser" …): clearly bigger than the cards' titles (1.45rem),
+   but always a step under the page's h1 - on phones too */
 h2 {
-    font-size: 1.5rem;
+    font-size: clamp(1.6rem, 3vw, 1.85rem);
 }
 
 h3 {
@@ -2390,63 +2392,49 @@ select {
     font-weight: 500;
 }
 
-/* ---------- Date badge: "8 / NOV" on a filled wavy-edged circle ---------- */
+/* ---------- Date badge: a tear-off calendar sheet ("rivblock") ----------
+   The month on a band in the event's colour (--tab-bg / --tab-ink, set per kind of event),
+   the day big in the middle and the weekday small under it. */
 .date-badge {
-    --badge-size: 40px;
     flex: none;
+    width: 3.4rem;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    gap: 0.1rem;
-    /* Pull it left by the empty space around lucide's calendar, so its edge lines up with the text below */
-    margin-left: calc(var(--badge-size) * -0.125);
+    align-items: stretch;
+    overflow: hidden;
+    border-radius: 12px;
+    background: var(--surface);
+    box-shadow: 0 1px 2px rgba(91, 36, 24, 0.08), 0 4px 10px rgba(91, 36, 24, 0.08);
     color: var(--ink);
+    text-align: center;
     line-height: 1;
 }
 
-.date-badge-cal {
-    position: relative;
-    width: var(--badge-size);
-    height: var(--badge-size);
-}
-
-.date-badge-shape {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-}
-
-/* The day centred in the calendar's body (y 10-22 of 24) */
-.date-badge-day {
-    position: absolute;
-    left: 0;
-    right: 0;
-    top: 59%; /* nudged up from the body's centre (66.7%) - looks more centred */
-    transform: translateY(calc(-50% - 2px));
-    text-align: center;
-    font-size: 0.58rem;
-    font-weight: 600;
-}
-
 .date-badge-month {
-    margin-top: -2px;
-    font-size: 0.56rem;
-    font-weight: 900;
-    letter-spacing: 0.08em;
+    padding: 0.22rem 0 0.2rem;
+    background: var(--tab-bg, var(--accent-strong));
+    color: var(--tab-ink, var(--accent-ink));
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
 }
 
 .date-badge-day {
-    top: 66.7%;
-    font-size: 1.1rem;
-    font-weight: 600;
+    padding-top: 0.35rem;
+    font-size: 1.45rem;
+    font-weight: 700;
 }
 
-.date-badge-month {
-    top: 30%;
-    font-size: 0.5rem;
-    font-weight: 600;
-    letter-spacing: 0.08em;
+.date-badge-weekday {
+    padding: 0.15rem 0 0.35rem;
+    font-size: 0.62rem;
+    font-weight: 500;
+    color: var(--muted);
+}
+
+/* Room between the sheet and the title beside it */
+.event-head:has(> .date-badge) {
+    gap: 1.15rem;
 }
 
 /* Lists to me (my own): a lavender gradient. */
@@ -2498,6 +2486,13 @@ select {
     margin-top: 0.15rem;
 }
 
+/* Private lists on wide screens: as much air under the date badge as above it - like the event cards */
+@media (min-width: 721px) {
+    .event-light .event-info {
+        padding-bottom: 1.1rem;
+    }
+}
+
 .event-light .event-stats svg {
     color: inherit; /* same as the text, not rose */
 }
@@ -2523,6 +2518,12 @@ select {
     border-color: #fbd0da;
 }
 
+/* The counts on the list cards: under the title block with some air - the panel's gap (0.5rem)
+   plus this makes 1.1rem, the same as on the event cards on phones */
+.list-cards .event-info > .event-stats {
+    margin-top: 0.6rem;
+}
+
 .list-cards {
     /* Same width as the panels above, and the same gap as between the events */
     grid-template-columns: repeat(3, var(--event-panel-width));
@@ -2537,7 +2538,7 @@ select {
 
 .event-info h3 {
     margin: 0;
-    font-size: 1.2rem;
+    font-size: 1.45rem;
     line-height: 1.2;
     overflow-wrap: anywhere;
 }
@@ -2578,12 +2579,12 @@ select {
 .event-stats {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.25rem 0.9rem;
-    font-size: 0.85rem;
+    gap: 0.25rem 1rem;
+    font-size: 0.95rem;
     font-weight: 500;
 }
 
-.event-stats span {
+.event-stats > span {
     display: inline-flex;
     align-items: center;
     gap: 0.3rem;
@@ -2638,6 +2639,14 @@ select {
 }
 
 /* Who the list is for: the name, a little stronger than "Till:" */
+/* "Till: Sigrid" under the title on the coloured panel - in the panel's own text colour */
+.event-title .event-to {
+    margin-top: 0.2rem;
+    color: inherit;
+    font-size: 0.9rem;
+    opacity: 0.85;
+}
+
 .event-for {
     color: var(--ink);
     font-weight: 600;
@@ -2788,7 +2797,7 @@ button.event-edit {
     flex-wrap: wrap;
     gap: 0.25rem 0.9rem; /* same as between the counts on the list cards */
     margin-top: 0.15rem;
-    font-size: 0.85rem; /* same as the wish/reserved counts on the other cards */
+    font-size: 0.95rem; /* same as the wish/reserved counts on the other cards */
     font-weight: 500;
 }
 
@@ -2822,14 +2831,14 @@ button.event-edit {
 
 .santa-name {
     max-width: 100%;
-    font-size: 1.35rem;
+    font-size: 1rem;
     font-weight: 600;
+    line-height: 1.15;
     overflow-wrap: anywhere;
 }
 
 /* Click the name to show or hide it. Pulled up a little - the round eye makes the row above taller. */
 .santa-name {
-    margin-top: 0.1rem;
     cursor: pointer;
 }
 
@@ -2878,14 +2887,15 @@ button.event-edit {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 0.6rem 1rem 0.7rem;
+    padding: 0.4rem 1rem 0.45rem;
     border-radius: var(--radius-small);
     background: rgba(255, 255, 255, 0.45);
-    gap: 0.15rem;
+    gap: 0;
     min-width: 0;
 }
 
 .santa-name-row {
+    margin-top: 0.3rem; /* a little air under "Du ska ge en gåva till:" */
     display: flex;
     align-items: baseline;
     justify-content: flex-start;
@@ -2903,7 +2913,8 @@ button.event-edit {
 /* Once shown, the name opens the wish profile - underlined like the other links on the panel
    (.text-link sets font: inherit, so the size needs the double class) */
 .text-link.santa-name-link {
-    font-size: 1.35rem;
+    font-size: 1rem;
+    line-height: 1.15;
     text-align: left;
 }
 
@@ -3153,26 +3164,32 @@ button.event-edit {
         grid-row: 1;
     }
 
-    .event:not(.event-santa) .event-info .event-date {
+    /* "Till: Sigrid" right under the title, then the date */
+    .event:not(.event-santa) .event-info .event-to {
         grid-column: 1;
         grid-row: 2;
     }
 
+    .event:not(.event-santa) .event-info .event-date {
+        grid-column: 1;
+        grid-row: 3;
+    }
+
     .event:not(.event-santa) .event-info > .event-stats {
         grid-column: 1 / -1;
-        grid-row: 3;
+        grid-row: 4;
         margin-top: 1.1rem;
     }
 
     /* A private list's count sits inside the title block: put it under the date */
     .event:not(.event-santa) .event-info .event-title .event-stats {
         grid-column: 1;
-        grid-row: 3;
+        grid-row: 4;
     }
 
     .event:not(.event-santa) .event-info > .event-link-wrap {
         grid-column: 1 / -1;
-        grid-row: 4;
+        grid-row: 5;
     }
 
     /* Room for the edit icon in the corner (private lists) */
@@ -3808,9 +3825,9 @@ button.event-edit {
     gap: 0.75rem 1rem;
 }
 
-/* The calendar close to the title (the head's gap is for the total on the right) */
+/* The calendar sheet close to the title (the head's gap is for the total on the right) */
 .gift-event-head .date-badge {
-    margin-right: -0.5rem;
+    margin-right: -0.25rem;
 }
 
 /* Without a bar to sit on, the kind of event (Secret Santa, …) is a small label instead of a tab */
@@ -4777,6 +4794,13 @@ button.event-edit {
     margin-right: 3px; /* room for the badge before the text */
 }
 
+/* In a button ("Överraskning", "Ny gåva" …): nudged up a little - the badge hanging off its
+   bottom corner makes the icon look like it sits low next to the text */
+.btn .icon-gift-plus {
+    top: -2px;
+    margin-right: -1px; /* a little closer to the text (with the button's gap: about 6px past the badge) */
+}
+
 .icon-gift-plus-badge {
     position: absolute;
     right: -4px;
@@ -5519,4 +5543,180 @@ button.event-edit {
 /* The child form: the hint under "Föräldrar", with some air down to the people picker */
 .fieldset > p.parent-hint {
     margin-bottom: 1rem;
+}
+
+/* Phones: "Till: Sigrid" as a small light label right beside the title (white over the panel's colour),
+   instead of a line of its own under it. The title block becomes a wrapping row: the title, the label
+   beside it (or under it, if the title is long), and the date on a line of its own.
+   Secret Santa too: the label comes after the title and its "…" menu. */
+@media (max-width: 720px) {
+    .event:not(.event-santa) .event-info .event-title {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.3rem 0.5rem;
+        grid-column: 1;
+        grid-row: 1 / span 3;
+        align-self: start;
+    }
+
+    .event:not(.event-santa) .event-info .event-title .event-date {
+        flex-basis: 100%;
+        margin-top: 0;
+    }
+
+    .event .event-info .event-title .event-to {
+        margin: 0;
+        padding: 0.15rem 0.55rem;
+        border-radius: 999px;
+        /* Lighter than the panel - white over its colour, like the reveal box and the edit icon */
+        background: rgba(255, 255, 255, 0.6);
+        color: var(--ink);
+        font-size: 0.75rem;
+        font-weight: 600;
+        opacity: 1;
+        white-space: nowrap;
+    }
+
+    .event .event-info .event-title .event-for {
+        color: inherit;
+    }
+
+    /* Private lists have a white panel - nothing is lighter, so the label takes their light rose instead */
+    .event-light .event-info .event-title .event-to {
+        background: var(--tab-bg);
+    }
+
+    /* Room for the edit icon in the corner (private lists): on the whole row, not just the title */
+    .event:not(.event-santa) .event-info:has(.event-edit) h3 {
+        padding-right: 0;
+    }
+
+    .event:not(.event-santa) .event-info:has(.event-edit) .event-title {
+        padding-right: 2.5rem;
+    }
+
+    /* Secret Santa: the same wrapping row - title (with its menu) and the label, then the date
+       and the budget line on lines of their own */
+    .event-santa .event-info .event-title {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.3rem 0.5rem;
+    }
+
+    .event-santa .event-info .event-title > .event-date,
+    .event-santa .event-info .event-title > .santa-meta {
+        flex-basis: 100%;
+    }
+
+    /* Less air down to the counts (lists) and the budget line (Secret Santa) - was 1.1rem */
+    .event:not(.event-santa) .event-info > .event-stats {
+        margin-top: 0.6rem;
+    }
+
+    .event-santa .event-info .santa-meta {
+        margin-top: 0.3rem; /* plus the row's gap: about 0.6rem, like the lists */
+    }
+}
+
+/* Phones: keep the date badge (the calendar sheet) like on wide screens, instead of the date as text.
+   On the list and event cards it gets a column of its own on the left of the panel's grid:
+   badge | title + "Till:" label | "Se lista" */
+@media (max-width: 720px) {
+    .event-head .date-badge {
+        display: flex;
+    }
+
+    /* The badge shows the date - no plain-text date under the title as well */
+    .event-info .event-title .event-date {
+        display: none;
+    }
+
+    .event:not(.event-santa) .event-info {
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        column-gap: 0.9rem;
+    }
+
+    .event:not(.event-santa) .event-info .date-badge {
+        grid-column: 1;
+        grid-row: 1 / span 2;
+        align-self: center;
+    }
+
+    /* The title (+ "Till:" label) and, right under it, the counts - together centred against the badge */
+    .event:not(.event-santa) .event-info .event-title {
+        grid-column: 2;
+        grid-row: 1;
+        align-self: end;
+    }
+
+    .event:not(.event-santa) .event-info > .event-stats {
+        grid-column: 2;
+        grid-row: 2;
+        align-self: start;
+        margin-top: 0.35rem;
+    }
+
+    .event:not(.event-santa) .event-info > .event-foot {
+        grid-column: 3;
+    }
+}
+
+/* Phones: smaller type on the cards, and Secret Santa's reveal box stays on the right of the
+   details (the details shrink and wrap instead of pushing it down under them) */
+@media (max-width: 720px) {
+    .event-info h3 {
+        font-size: 1.15rem;
+    }
+
+    .event-stats,
+    .event-info .santa-meta {
+        font-size: 0.82rem;
+    }
+
+    .event-santa .event-info {
+        flex-wrap: nowrap;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .event-santa .event-info > .event-head {
+        flex: 1 1 0;
+        min-width: 0;
+    }
+
+    .event-santa .santa-who {
+        padding: 0.35rem 0.7rem 0.4rem;
+    }
+
+    .event-santa .santa-label {
+        font-size: 0.72rem;
+    }
+
+    .event-santa .santa-name,
+    .event-santa .text-link.santa-name-link {
+        font-size: 0.9rem;
+    }
+
+    /* Long words in the title may break rather than push the reveal box off the card */
+    .event-santa .event-info h3 {
+        overflow-wrap: anywhere;
+    }
+}
+
+/* Phones: the same space under the title on every kind of card - 0.35rem down to whatever comes
+   next (the "Till:" label if it wraps, the counts, or Secret Santa's budget line) */
+@media (max-width: 720px) {
+    .event .event-info .event-title {
+        row-gap: 0.35rem;
+    }
+
+    .event:not(.event-santa) .event-info > .event-stats {
+        margin-top: 0.35rem;
+    }
+
+    .event-santa .event-info .santa-meta {
+        margin-top: 0; /* the title row's gap gives the 0.35rem */
+    }
 }

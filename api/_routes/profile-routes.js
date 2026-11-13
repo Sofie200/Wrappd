@@ -25,6 +25,17 @@ router.get("/", async (req, res) => {
                                WHERE w.list_id = l.id
                                  AND (SELECT COALESCE(sum(gi.quantity), 0) FROM gifts gi WHERE gi.wish_id = w.id) >= w.quantity)
                     END AS "reservedCount",
+                    -- Who has reserved something on the list (everyone in those gifts), with profile icons.
+                    -- Never on lists to me - that's a surprise.
+                    CASE WHEN EXISTS (SELECT 1 FROM list_recipients WHERE list_id = l.id AND user_id = $1) THEN NULL
+                         ELSE (SELECT json_agg(r ORDER BY r.name) FROM (
+                                   SELECT DISTINCT u.id, u.name, u.avatar_icon AS "avatarIcon", u.avatar_color AS "avatarColor"
+                                   FROM gifts gi
+                                   JOIN wishes w ON w.id = gi.wish_id
+                                   JOIN gift_members gm2 ON gm2.gift_id = gi.id
+                                   JOIN users u ON u.id = gm2.user_id
+                                   WHERE w.list_id = l.id) r)
+                    END AS reservers,
                     (SELECT string_agg(g.name, ', ' ORDER BY g.name)
                      FROM list_groups lg
                      JOIN groups g ON g.id = lg.group_id
