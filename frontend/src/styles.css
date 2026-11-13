@@ -5010,10 +5010,12 @@ button.event-edit {
 }
 
 .info-tip-text {
-    position: absolute;
-    z-index: 5;
-    top: calc(100% + 6px);
-    left: 50%;
+    /* Fixed, placed in JS from the (i) (see InfoTip.jsx) - so a modal's scrolling can't clip it */
+    position: fixed;
+    z-index: 40;
+    top: auto;
+    bottom: auto;
+    left: 0;
     transform: translateX(-50%);
     width: max-content;
     max-width: min(260px, 80vw);
@@ -5482,4 +5484,39 @@ button.event-edit {
 /* An error box inside a field (e.g. a failed "Hämta"): close under the input, no margin of its own below */
 .field > .alert {
     margin: 0.25rem 0 0;
+}
+
+/* Mina barn: the cards use the group cards' look (.group-card) */
+.group-card-title p {
+    margin: 0;
+}
+
+.child-card .child-profile-link {
+    margin-top: 0; /* the card's gap spaces it */
+}
+
+.child-card .group-card-head > .avatar {
+    margin-top: 0.1rem;
+}
+
+.child-card .group-card-title p {
+    font-size: 0.8rem;
+}
+
+.child-card .group-card-title {
+    gap: 0; /* "Föräldrar: …" close under the name */
+}
+
+.child-card .group-card-title p {
+    margin-top: -0.05rem;
+}
+
+/* "Nytt barn": more air between the panel's heading and the form */
+.panel-title-spaced {
+    margin-bottom: 1.5rem;
+}
+
+/* The child form: the hint under "Föräldrar", with some air down to the people picker */
+.fieldset > p.parent-hint {
+    margin-bottom: 1rem;
 }

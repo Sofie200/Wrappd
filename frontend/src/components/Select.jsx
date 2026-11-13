@@ -117,7 +117,14 @@ export default function Select({ value, onChange, options, placeholder = "Välj"
             </button>
 
             {open && pos && (
-                <ul className="people-suggestions select-list" id={listId} role="listbox" style={pos}>
+                <ul
+                    className="people-suggestions select-list"
+                    id={listId}
+                    role="listbox"
+                    style={pos}
+                    // Keep the focus on the button when the list's scrollbar is used
+                    onMouseDown={(e) => e.preventDefault()}
+                >
                     {options.map((option, i) => (
                         <li
                             key={option.value}

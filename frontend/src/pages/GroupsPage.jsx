@@ -117,7 +117,7 @@ export default function GroupsPage() {
                                         </div>
                                         <span className="group-card-stat">
                                             <ScrollText size={14} aria-hidden="true" />
-                                            {group.activeListCount} {group.activeListCount === 1 ? "aktiv lista" : "aktiva listor"}
+                                            {group.activeListCount} {group.activeListCount === 1 ? "aktuell lista" : "aktuella listor"}
                                         </span>
                                     </div>
                                 </Link>

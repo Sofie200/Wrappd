@@ -1,4 +1,4 @@
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { Plus, X } from "lucide-react";
 import Avatar from "./Avatar.jsx";
 
@@ -11,6 +11,7 @@ import Avatar from "./Avatar.jsx";
 // used to label the search field for screen readers).
 // onNotFound: adds a last choice "Hittar du inte den du söker?" to the suggestions, which calls it.
 // compact: once someone is chosen the search hides, and a small + next to the chips opens it again for one more.
+// max: at most this many - once reached, neither the search nor the + shows.
 // Everyone is suggested, in alphabetical order - the list scrolls when it's long
 const byName = (a, b) => a.name.localeCompare(b.name, "sv") || (a.username ?? "").localeCompare(b.username ?? "", "sv");
 
@@ -28,6 +29,7 @@ export default function PeoplePicker({
     bare = false,
     onNotFound,
     compact = false,
+    max = null,
 }) {
     const [query, setQuery] = useState("");
     const [open, setOpen] = useState(false);
@@ -85,9 +87,39 @@ export default function PeoplePicker({
         }
     }
 
-    const showSearch = single ? chosen.length === 0 : !compact || chosen.length === 0 || adding;
+    const full = max !== null && chosen.length >= max;
+    const showSearch = !full && (single ? chosen.length === 0 : !compact || chosen.length === 0 || adding);
 
     const activeId = pickable[active] ? `${listId}-${pickable[active].id}` : undefined;
+
+    // The suggestions are position: fixed, placed from the search field - so a modal's scrolling can't clip them.
+    // They open upwards when there's more room above, and follow the field when something scrolls.
+    const searchRef = useRef(null);
+    const [pos, setPos] = useState(null);
+    useLayoutEffect(() => {
+        if (!open) return;
+        function place() {
+            const r = searchRef.current?.getBoundingClientRect();
+            if (!r) return;
+            const below = window.innerHeight - r.bottom - 8;
+            const above = r.top - 8;
+            const up = below < 180 && above > below;
+            setPos({
+                left: r.left,
+                width: r.width,
+                top: up ? "auto" : r.bottom + 4,
+                bottom: up ? window.innerHeight - r.top + 4 : "auto",
+                maxHeight: Math.min(288, Math.max(up ? above : below, 120)),
+            });
+        }
+        place();
+        window.addEventListener("scroll", place, true);
+        window.addEventListener("resize", place);
+        return () => {
+            window.removeEventListener("scroll", place, true);
+            window.removeEventListener("resize", place);
+        };
+    }, [open]);
 
     // The list can be long now: keep the highlighted one in view when moving with the arrow keys
     useEffect(() => {
@@ -118,7 +150,7 @@ export default function PeoplePicker({
                                     )}
                                 </li>
                             ))}
-                            {!showSearch && !single && (
+                            {!showSearch && !single && !full && (
                                 <li>
                                     <button
                                         type="button"
@@ -135,7 +167,7 @@ export default function PeoplePicker({
                     )}
 
                     {showSearch && (
-                    <div className="people-search">
+                    <div className="people-search" ref={searchRef}>
                         <input
                             type="search"
                             value={query}
@@ -162,8 +194,16 @@ export default function PeoplePicker({
                             aria-activedescendant={open ? activeId : undefined}
                         />
 
-                        {open && (
-                            <ul className="people-suggestions" id={listId} role="listbox">
+                        {open && pos && (
+                            <ul
+                                className="people-suggestions select-list"
+                                id={listId}
+                                role="listbox"
+                                style={pos ?? undefined}
+                                // A mousedown on the list itself (its scrollbar) mustn't take the focus from the
+                                // search field - that blur would close the list
+                                onMouseDown={(e) => e.preventDefault()}
+                            >
                                 {suggestions.length === 0 ? (
                                     <li className="people-suggestion-empty">
                                         {term ? `Hittar ingen som heter "${query.trim()}" i dina grupper.` : "Alla är redan med!"}

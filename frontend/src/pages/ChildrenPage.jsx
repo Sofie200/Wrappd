@@ -81,7 +81,7 @@ export default function ChildrenPage() {
 
             {mode === "new" && (
                 <section className="panel">
-                    <h2>Nytt barn</h2>
+                    <h2 className="panel-title-spaced">Nytt barn</h2>
                     <ChildForm onSaved={saved} onCancel={() => setMode(null)} />
                 </section>
             )}
@@ -92,59 +92,64 @@ export default function ChildrenPage() {
                 ) : (
                     <div className="cards">
                         {children.data.data.map((child) => (
-                            <div key={child.id} className="card">
-                                <div className="card-top">
-                                    {/* The name with its "…" menu right after it - like the group page's title */}
-                                    <div className="child-title-row">
-                                        <h3 className="child-title">
-                                            <Avatar isChild id={child.id} size={32} />
-                                            {child.name}
-                                        </h3>
-                                        <SettingsMenu label={`Alternativ för ${child.name}`} icon={Ellipsis}>
-                                            <button
-                                                type="button"
-                                                className="menu-item"
-                                                role="menuitem"
-                                                onClick={() => setShowing({ child, what: "lists" })}
-                                            >
-                                                <Gift size={16} aria-hidden="true" /> Listor
-                                            </button>
-                                            <button
-                                                type="button"
-                                                className="menu-item"
-                                                role="menuitem"
-                                                onClick={() => setShowing({ child, what: "groups" })}
-                                            >
-                                                <Users size={16} aria-hidden="true" /> Grupper
-                                            </button>
-                                            <button type="button" className="menu-item" role="menuitem" onClick={() => setEditing(child)} disabled={busy}>
-                                                <Pencil size={16} aria-hidden="true" /> Redigera
-                                            </button>
-                                            <button
-                                                type="button"
-                                                className="menu-item menu-item-danger"
-                                                role="menuitem"
-                                                onClick={() => remove(child)}
-                                                disabled={busy}
-                                            >
-                                                <Trash2 size={16} aria-hidden="true" /> Ta bort
-                                            </button>
-                                        </SettingsMenu>
+                            // The same look as the cards on Mina grupper: head with name and menu, a foot under a line
+                            <div key={child.id} className="card group-card child-card">
+                                <div className="group-card-head">
+                                    <Avatar isChild id={child.id} size={40} />
+                                    <div className="group-card-title">
+                                        <h3>{child.name}</h3>
+                                        <p className="muted small">Föräldrar: {child.parents.map((p) => p.name).join(", ")}</p>
                                     </div>
-                                    <div className="actions">
-                                        <Link to={`/lists/new?for=${child.id}`} className="btn btn-small">
-                                            <ScrollText size={16} aria-hidden="true" /> Ny lista
-                                        </Link>
-                                    </div>
+                                    <SettingsMenu label={`Alternativ för ${child.name}`} icon={Ellipsis}>
+                                        <button
+                                            type="button"
+                                            className="menu-item"
+                                            role="menuitem"
+                                            onClick={() => setShowing({ child, what: "lists" })}
+                                        >
+                                            <Gift size={16} aria-hidden="true" /> Listor
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className="menu-item"
+                                            role="menuitem"
+                                            onClick={() => setShowing({ child, what: "groups" })}
+                                        >
+                                            <Users size={16} aria-hidden="true" /> Grupper
+                                        </button>
+                                        <button type="button" className="menu-item" role="menuitem" onClick={() => setEditing(child)} disabled={busy}>
+                                            <Pencil size={16} aria-hidden="true" /> Redigera
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className="menu-item menu-item-danger"
+                                            role="menuitem"
+                                            onClick={() => remove(child)}
+                                            disabled={busy}
+                                        >
+                                            <Trash2 size={16} aria-hidden="true" /> Ta bort
+                                        </button>
+                                    </SettingsMenu>
                                 </div>
-                                <p className="muted small">Föräldrar: {child.parents.map((p) => p.name).join(", ")}</p>
-                                <p className="muted small">
-                                    {child.listCount} {child.listCount === 1 ? "lista" : "listor"}
-                                </p>
+
                                 <Link to={`/people/${child.id}/edit`} className="child-profile-link">
                                     <Heart size={16} aria-hidden="true" /> {child.name}s önskeprofil
                                     <ArrowRight size={16} aria-hidden="true" />
                                 </Link>
+
+                                <div className="group-card-foot">
+                                    <span className="group-card-stat">
+                                        <ScrollText size={14} aria-hidden="true" />
+                                        {(() => {
+                                            // Active: the date hasn't passed (also lists not published yet)
+                                            const active = child.lists.filter((l) => !l.archived).length;
+                                            return `${active} ${active === 1 ? "aktuell lista" : "aktuella listor"}`;
+                                        })()}
+                                    </span>
+                                    <Link to={`/lists/new?for=${child.id}`} className="btn btn-small">
+                                        <Plus size={16} className="icon-lead" aria-hidden="true" /> Ny lista
+                                    </Link>
+                                </div>
                             </div>
                         ))}
                     </div>
