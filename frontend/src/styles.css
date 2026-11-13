@@ -5720,3 +5720,37 @@ button.event-edit {
         margin-top: 0; /* the title row's gap gives the 0.35rem */
     }
 }
+
+/* Narrow phones (about 500px and under): "Se lista" and Secret Santa's reveal box drop down to the
+   bottom of the panel, under everything else, instead of sitting on the right */
+@media (max-width: 500px) {
+    /* No third column for the button any more: badge | title + counts */
+    .event:not(.event-santa) .event-info {
+        grid-template-columns: auto minmax(0, 1fr);
+    }
+
+    .event:not(.event-santa) .event-info > .event-foot {
+        grid-column: 1 / -1;
+        grid-row: 3;
+        justify-self: end; /* on the right, like the bottom row on wide screens */
+        margin-top: 0.75rem;
+    }
+
+    /* Secret Santa: the details on top, the reveal box across the whole panel under them */
+    .event-santa .event-info {
+        flex-wrap: wrap;
+    }
+
+    .event-santa .event-info > .event-head {
+        flex: 1 1 100%;
+    }
+
+    .event-santa .santa-secret {
+        flex: 1 1 100%;
+        margin-top: 0.25rem;
+    }
+
+    .event-santa .santa-who {
+        align-self: stretch;
+    }
+}
