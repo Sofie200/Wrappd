@@ -2,7 +2,8 @@ import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { ChevronDown } from "lucide-react";
 
 // A drop-down list in the same look as the people search's suggestions (a native <select> can't be styled
-// when open). options: [{ value, label }]. value "" = nothing chosen yet, shown as the placeholder.
+// when open). options: [{ value, label, help? }]. value "" = nothing chosen yet, shown as the placeholder.
+// help: true - a "do something else" row, styled like "Hittar du inte den du söker?" in the people search
 // Keyboard: Enter/Space/↓ opens, ↑↓ moves, Enter picks, Escape closes, Home/End jump.
 // The list is position: fixed, placed from the button - so a scrolling parent (a modal) can't clip it.
 // It opens upwards when there's more room above, and follows the button when something scrolls.
@@ -131,7 +132,7 @@ export default function Select({ value, onChange, options, placeholder = "Välj"
                             id={`${listId}-${i}`}
                             role="option"
                             aria-selected={String(option.value) === String(value)}
-                            className={`people-suggestion${i === active ? " is-active" : ""}`}
+                            className={`people-suggestion${option.help ? " people-suggestion-help" : ""}${i === active ? " is-active" : ""}`}
                             onMouseEnter={() => setActive(i)}
                             // mousedown, like the people search: picks before the button loses focus
                             onMouseDown={(e) => {

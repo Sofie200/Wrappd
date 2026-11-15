@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { api } from "../api.js";
-import { formatPrice, joinNames } from "../format.js";
+import { formatPrice, formatShortDate, joinNames } from "../format.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import Avatar from "./Avatar.jsx";
 import { ErrorMessage } from "./Feedback.jsx";
@@ -9,6 +9,7 @@ import WishForm from "./WishForm.jsx";
 import { GiftEditor } from "../pages/GiftPage.jsx";
 import { ArrowUpRight, CircleMinus, CirclePlus, Ellipsis, Pencil, Trash2 } from "lucide-react";
 import SettingsMenu from "./SettingsMenu.jsx";
+import Select from "./Select.jsx";
 
 // One wish: a compact row (image, title, price, reserved badge) that opens the full wish in a modal.
 // What the modal shows depends on `me` from the server:
@@ -16,7 +17,8 @@ import SettingsMenu from "./SettingsMenu.jsx";
 //  - canReserve: reserve (creates a gift), or go to my gift
 //  - canEdit: edit and delete (list admins, not archived) - not once someone has reserved it
 // santa: { id } - on a wish profile opened from a Secret Santa: the reservation counts for it (no date to choose)
-export default function WishCard({ wish, me, listId, santa = null, onChanged }) {
+// person: { id, name } - whose wish profile it is (a reservation there goes on an event of mine for them)
+export default function WishCard({ wish, me, listId, santa = null, person = null, onChanged }) {
     const { user } = useAuth();
     // "dig och Ted" - me first, as "dig"
     const whoNames = (people) =>
@@ -29,11 +31,32 @@ export default function WishCard({ wish, me, listId, santa = null, onChanged }) 
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState(null);
     const [qty, setQty] = useState(1);
-    // A wish on a wish profile (no list): the gift needs a date - when it's to be given -
-    // unless it's reserved for a Secret Santa (then it's the draw's date)
+    // A wish on a wish profile (no list): the gift goes on an event of my own for the person ("Loggade
+    // gåvor") - one I already have for them, or a new one with a name and a date - unless it's reserved
+    // for a Secret Santa (then it's the draw's)
     const onProfile = !listId && !santa;
+    const [myEvents, setMyEvents] = useState(null); // my coming events for this person, once the modal opens
+    const [eventChoice, setEventChoice] = useState("new"); // an event's id - or "new" for a new one
+    const [eventName, setEventName] = useState("");
     const [giftDate, setGiftDate] = useState("");
     const [editingGift, setEditingGift] = useState(false); // my reservation, in a modal on top
+
+    // My events for this person - fetched when the wish is opened (only on a wish profile, when I can reserve)
+    useEffect(() => {
+        if (!open || !onProfile || !me.canReserve || wish.myGiftId || myEvents !== null) return;
+        let cancelled = false;
+        api("/gifts/events")
+            .then(({ data }) => {
+                if (cancelled) return;
+                const forPerson = data.filter((e) => !e.archived && person && e.recipientId === person.id);
+                setMyEvents(forPerson);
+                setEventChoice(forPerson.length > 0 ? String(forPerson[0].id) : "new"); // the soonest one
+            })
+            .catch(() => !cancelled && setMyEvents([])); // then only "a new event" - the server checks the rest
+        return () => {
+            cancelled = true;
+        };
+    }, [open, onProfile, me.canReserve, wish.myGiftId, myEvents, person]);
 
     async function run(action) {
         setBusy(true);
@@ -51,10 +74,13 @@ export default function WishCard({ wish, me, listId, santa = null, onChanged }) 
     // Reserving creates a gift - and stays here; the gift can be edited later (Gåvor / the overview)
     // quantity: from the row it's always 1, from the modal what's chosen there
     async function reserve(quantity = qty) {
-        // On a wish profile the date comes from the field in the modal - from the row, open the modal for it
-        if (onProfile && !giftDate) {
+        // On a wish profile the event is chosen in the modal - from the row, open the modal for it
+        if (onProfile && !open) {
             setOpen(true);
-            if (open) setError("Ange när gåvan ska ges");
+            return;
+        }
+        if (onProfile && eventChoice === "new" && (!eventName.trim() || !giftDate)) {
+            setError(!eventName.trim() ? "Ange vad händelsen heter" : "Ange när gåvan ska ges");
             return;
         }
         setBusy(true);
@@ -63,7 +89,12 @@ export default function WishCard({ wish, me, listId, santa = null, onChanged }) 
             // The gift is created as a straight copy of the wish - price, comment and sharing can be changed later
             await api(`/wishes/${wish.id}/gifts`, {
                 method: "POST",
-                body: { quantity: Number(quantity), ...(onProfile && { giftDate }), ...(santa && { santaId: santa.id }) },
+                body: {
+                    quantity: Number(quantity),
+                    ...(onProfile &&
+                        (eventChoice !== "new" ? { eventId: Number(eventChoice) } : { eventName: eventName.trim(), giftDate })),
+                    ...(santa && { santaId: santa.id }),
+                },
             });
             setBusy(false);
             onChanged();
@@ -90,6 +121,7 @@ export default function WishCard({ wish, me, listId, santa = null, onChanged }) 
         setOpen(false);
         setEditing(false);
         setError(null);
+        setMyEvents(null); // fetched again next time - an event may have been added or removed
     }
 
     const reserved = wish.reserved ?? 0;
@@ -268,23 +300,60 @@ export default function WishCard({ wish, me, listId, santa = null, onChanged }) 
                                         reserve();
                                     }}
                                 >
-                                    {/* A wish on a wish profile: when the gift is to be given (there's no list date).
-                                        The label on its own row above, so the date field, the quantity and
-                                        "Reservera" share one row - centred on each other. */}
+                                    {/* A wish on a wish profile: the reservation goes on an event of mine for the
+                                        person ("Loggade gåvor") - one I have, or a new one with a name and a date.
+                                        Labels on rows of their own; the fields, the quantity and "Reservera" below. */}
                                     {onProfile && (
                                         <>
-                                            <label htmlFor={`gift-date-${wish.id}`} className="wish-gift-date-label">
-                                                När ska gåvan ges?
-                                            </label>
-                                            <input
-                                                id={`gift-date-${wish.id}`}
-                                                type="date"
-                                                className="wish-gift-date"
-                                                value={giftDate}
-                                                onChange={(e) => setGiftDate(e.target.value)}
-                                                required
-                                                disabled={busy}
-                                            />
+                                            {myEvents?.length > 0 && (
+                                                <>
+                                                    <span className="wish-gift-date-label" aria-hidden="true">
+                                                        Vilken händelse?
+                                                    </span>
+                                                    {/* The app's own drop-down, like the other ones */}
+                                                    <Select
+                                                        label="Vilken händelse?"
+                                                        value={eventChoice}
+                                                        onChange={(v) => setEventChoice(String(v))}
+                                                        options={[
+                                                            ...myEvents.map((e) => ({
+                                                                value: String(e.id),
+                                                                label: `${e.name} · ${formatShortDate(e.date)}`,
+                                                            })),
+                                                            { value: "new", label: "Ny händelse …" },
+                                                        ]}
+                                                        disabled={busy}
+                                                    />
+                                                </>
+                                            )}
+                                            {eventChoice === "new" && (
+                                                <>
+                                                    <label htmlFor={`gift-event-name-${wish.id}`} className="wish-gift-date-label">
+                                                        {myEvents?.length > 0 ? "Den nya händelsen" : "Vilken händelse?"}
+                                                    </label>
+                                                    <input
+                                                        id={`gift-event-name-${wish.id}`}
+                                                        className="wish-gift-event-name"
+                                                        value={eventName}
+                                                        onChange={(e) => setEventName(e.target.value)}
+                                                        placeholder="T.ex. Julklapp"
+                                                        aria-label="Händelsens namn"
+                                                        maxLength={100}
+                                                        required
+                                                        disabled={busy}
+                                                    />
+                                                    <input
+                                                        id={`gift-date-${wish.id}`}
+                                                        type="date"
+                                                        className="wish-gift-date"
+                                                        value={giftDate}
+                                                        onChange={(e) => setGiftDate(e.target.value)}
+                                                        aria-label="När ska gåvan ges?"
+                                                        required
+                                                        disabled={busy}
+                                                    />
+                                                </>
+                                            )}
                                         </>
                                     )}
                                     {available > 1 && (

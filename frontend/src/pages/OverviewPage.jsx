@@ -10,7 +10,7 @@ import Modal from "../components/Modal.jsx";
 import PersonLink from "../components/PersonLink.jsx";
 import SettingsMenu from "../components/SettingsMenu.jsx";
 import { buildEvents, dateOrder, EventRow, GiftsCollapse, GiftTable } from "../components/EventRow.jsx";
-import { daysUntil, formatPrice } from "../format.js";
+import { daysUntil, formatPrice, titleSizeClass } from "../format.js";
 import DateBadge, { EventDate } from "../components/DateBadge.jsx";
 import AddGiftButton from "../components/AddGiftButton.jsx";
 import ListPanelCard from "../components/ListPanelCard.jsx";
@@ -79,7 +79,7 @@ function SantaRow({ santa, gifts = [], onChanged }) {
                         <div className="event-title">
                             {/* The title with a "…" menu right after it, for whoever drew it */}
                             <div className="santa-title-row">
-                                <h3>{santa.title}</h3>
+                                <h3 className={titleSizeClass(santa.title)}>{santa.title}</h3>
                                 {santa.isCreator && (
                                     <SettingsMenu label={`Alternativ för ${santa.title}`} icon={Ellipsis} buttonClassName="santa-menu-btn">
                                         <button type="button" className="menu-item menu-item-danger" role="menuitem" onClick={remove} disabled={busy}>
@@ -88,10 +88,6 @@ function SantaRow({ santa, gifts = [], onChanged }) {
                                     </SettingsMenu>
                                 )}
                             </div>
-                            {/* "Till:" under the title like the lists - but who it's for stays hidden until revealed */}
-                            <p className="event-to">
-                                Till: <span className="event-for">{shown && receiver ? receiver.name : "Hemlig"}</span>
-                            </p>
                             {santa.date && <EventDate iso={santa.date} />}
                             <p className="santa-meta">
                                 {santa.budget !== null && (
@@ -339,14 +335,15 @@ export default function OverviewPage() {
     const privateLists = adminLists.filter((list) => !list.archived && !list.isPublic);
 
     // My gifts for each Secret Santa I give in: the ones linked to it, and what I've reserved on the
-    // receiver's wish profile. They're shown on the Santa card, not as events of their own.
+    // receiver's wish profile without an event of my own. They're shown on the Santa card, not as events
+    // of their own. (Reservations from a wish profile on an event are under "Loggade gåvor".)
     const santaGifts = new Map();
     for (const santa of santas) {
         if (!santa.receiver) continue;
         santaGifts.set(
             santa.id,
             gifts.current.filter(
-                (g) => g.santaId === santa.id || (!g.listId && !g.santaId && g.personId === santa.receiver.id)
+                (g) => g.santaId === santa.id || (!g.listId && !g.santaId && !g.eventId && g.personId === santa.receiver.id)
             )
         );
     }
@@ -400,7 +397,7 @@ export default function OverviewPage() {
                     {/* Lists whose date has passed are in the archive */}
                     <div className="cards list-cards">
                         {privateLists.map((list) => (
-                            <ListPanelCard key={list.id} list={list} />
+                            <ListPanelCard key={list.id} list={list} onChanged={reload} />
                         ))}
                     </div>
                 </section>

@@ -1,4 +1,4 @@
-import { useId, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { ChartBar, Table2 } from "lucide-react";
 import { formatPrice } from "../format.js";
 import InfoTip from "./InfoTip.jsx";
@@ -53,9 +53,12 @@ function niceScale(max) {
 // "1 200 kr" on the axis without "kr" - the column title says it
 const tickText = (v) => new Intl.NumberFormat("sv-SE").format(v);
 
-export default function SpendingChart({ gifts }) {
-    // "Eget" (the coming events, see below) is chosen from the start
-    const [periodKey, setPeriodKey] = useState("custom");
+// defaultPeriod: the period chosen from the start - and again whenever it changes (the gifts page: "Eget"
+// for the current gifts, "12 mån" in the archive)
+export default function SpendingChart({ gifts, defaultPeriod = "custom" }) {
+    // "Eget" (the coming events, see below) is chosen from the start - unless the page says otherwise
+    const [periodKey, setPeriodKey] = useState(defaultPeriod);
+    useEffect(() => setPeriodKey(defaultPeriod), [defaultPeriod]);
     // "Eget": the coming events to begin with - from today to the last coming event's date
     // (six months ahead if there's none)
     const [custom, setCustom] = useState(() => {

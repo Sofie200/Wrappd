@@ -9,7 +9,7 @@ import Modal from "./Modal.jsx";
 import PersonLink from "./PersonLink.jsx";
 import SettingsMenu from "./SettingsMenu.jsx";
 import { GiftEditor } from "../pages/GiftPage.jsx";
-import { formatPrice, joinNames } from "../format.js";
+import { formatPrice, joinNames, titleSizeClass } from "../format.js";
 import Avatar from "./Avatar.jsx";
 import DateBadge, { EventDate } from "./DateBadge.jsx";
 import AddGiftButton from "./AddGiftButton.jsx";
@@ -51,9 +51,9 @@ export function buildEvents(lists, gifts, { newestFirst = false } = {}) {
             ? `list:${g.listId}`
             : g.santaId
               ? `santa:${g.santaId}`
-              : g.personId
-                ? `person:${g.personId}`
-                : `event:${g.eventId}`; // a logged gift: its event of my own
+              : g.eventId
+                ? `event:${g.eventId}` // a logged gift - or a reservation from a wish profile: its event of my own
+                : `person:${g.personId}`; // (older reservations from a wish profile, without an event)
         if (!events.has(key)) {
             events.set(key, {
                 key,
@@ -61,7 +61,7 @@ export function buildEvents(lists, gifts, { newestFirst = false } = {}) {
                 santaId: g.listId ? null : g.santaId,
                 // A Secret Santa: who I give to - "Från önskeprofilen" opens their wish profile
                 santaReceiverId: g.listId ? null : g.santaReceiverId,
-                personId: g.listId || g.santaId ? null : g.personId,
+                personId: g.listId || g.santaId || g.eventId ? null : g.personId,
                 title: g.listTitle ?? g.santaTitle ?? g.eventName,
                 // An event of my own: its id, name and linked person - so more gifts can be logged on it
                 eventId: g.eventId,
@@ -269,6 +269,10 @@ export function EventRow({ event, archived = false, onChanged }) {
     const kind = isRecipient ? " event-to-me" : santaId ? " event-santa" : !listId ? " event-no-list" : "";
     const variant = kind + (archived ? " event-archived" : "");
     const kicker = listId ? "Önskelista" : santaId ? "Secret Santa" : personId ? "Önskeprofil" : "Loggade gåvor";
+    // EXPERIMENT: who it's for, in the tab - "Önskelista till Sam", "Loggade gåvor till Anna och Bo"
+    // (a list's recipients, or the person linked to an own event - not Secret Santa or wish profiles)
+    const showRecipients = Boolean((listId || (!santaId && !personId)) && recipients);
+    const recipientNames = showRecipients ? joinNames(recipients.split(", ")) : null;
     const KickerIcon = listId ? ScrollText : santaId ? HatGlasses : personId ? null : Table2;
 
     // The buttons for adding a gift: in the section's head - on phones up in the "Mina gåvor" bar
@@ -279,7 +283,9 @@ export function EventRow({ event, archived = false, onChanged }) {
             {/* Above the card: the kind of event as a tab on its top-left corner */}
             <div className="event-tab-row">
                 <p className="event-kicker">
-                    {KickerIcon && <KickerIcon size={14} aria-hidden="true" />} {kicker}
+                    {KickerIcon && <KickerIcon size={14} aria-hidden="true" />}{" "}
+                    {/* One piece of text, so the tab's flex gap doesn't come between the kind and the name */}
+                    <span>{recipientNames ? `${kicker} till ${recipientNames}` : kicker}</span>
                 </p>
             </div>
             <article className={`event${variant}`}>
@@ -287,7 +293,8 @@ export function EventRow({ event, archived = false, onChanged }) {
                     <div className="event-head">
                         {endDate && <DateBadge iso={endDate} />}
                         <div className="event-title">
-                            <h3>
+                            {/* A long title gets a smaller font */}
+                            <h3 className={titleSizeClass(title ?? `Till ${recipients}`)}>
                                 {/* A list's title opens the list too - it looks the same as before */}
                                 {listId && canOpen ? (
                                     <Link to={`/lists/${listId}`} className="event-title-link">
@@ -297,10 +304,16 @@ export function EventRow({ event, archived = false, onChanged }) {
                                     (title ?? `Till ${recipients}`)
                                 )}
                             </h3>
-                            {/* Who it's for, under the title - a list's recipients, or the person linked to an own event */}
-                            {(listId || (!santaId && !personId)) && recipients && (
-                                <p className="event-to">
-                                    Till: <span className="event-for">{recipients}</span>
+                            {/* EXPERIMENT: who it's for - a list's recipients, or the person linked to an own event -
+                                one badge per name in the panel's top-right corner ("Till:" only for screen readers) */}
+                            {false && showRecipients && ( /* EXPERIMENT: off while the name is in the tab */
+                                <p className="recipient-badges">
+                                    <span className="visually-hidden">Till: </span>
+                                    {recipients.split(", ").map((name) => (
+                                        <span key={name} className="recipient-badge">
+                                            {name}
+                                        </span>
+                                    ))}
                                 </p>
                             )}
                             {endDate && <EventDate iso={endDate} />}

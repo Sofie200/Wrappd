@@ -210,7 +210,7 @@ function WishProfileForm({ data, reload }) {
                 {wishes.length > 0 && (
                     <div className="wishes">
                         {wishes.map((wish) => (
-                            <WishCard key={wish.id} wish={wish} me={me} onChanged={reload} />
+                            <WishCard key={wish.id} wish={wish} me={me} person={person} onChanged={reload} />
                         ))}
                     </div>
                 )}

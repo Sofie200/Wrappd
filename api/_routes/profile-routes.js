@@ -78,9 +78,9 @@ router.get("/", async (req, res) => {
                     wo.id AS "personId",
                     ss.id AS "santaId", ss.title AS "santaTitle",
                     sp.receiver_id AS "santaReceiverId", -- who I give to: "Från önskeprofilen" under the Secret Santa
-                    COALESCE(l.end_date, g.gift_date, ss.event_date, ge.event_date) AS "endDate",
-                    -- A gift from a wish profile has no date, so it stays current until it's removed
-                    COALESCE(COALESCE(l.end_date, g.gift_date, ss.event_date, ge.event_date) < ${TODAY}, false) AS archived,
+                    COALESCE(l.end_date, ss.event_date, ge.event_date) AS "endDate",
+                    -- (A reservation from a wish profile is on an event of my own, or a Secret Santa - migration 021)
+                    COALESCE(COALESCE(l.end_date, ss.event_date, ge.event_date) < ${TODAY}, false) AS archived,
                     -- Who it's for: the list's recipients, the linked person, the wish profile's owner or my Santa match
                     -- (a logged gift: the event's person, its name in free text, or "Okänd mottagare")
                     COALESCE(${RECIPIENTS}, ru.name, ge.recipient_text, wo.name, sr.name,

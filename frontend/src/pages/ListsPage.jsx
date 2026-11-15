@@ -56,7 +56,7 @@ export default function ListsPage() {
                     ) : (
                         <div className="cards list-cards">
                             {archivedLists.map((list) => (
-                                <ListPanelCard key={list.id} list={list} />
+                                <ListPanelCard key={list.id} list={list} onChanged={reload} />
                             ))}
                         </div>
                     )}
@@ -78,7 +78,7 @@ export default function ListsPage() {
                             <h2>Publicerade</h2>
                             <div className="cards list-cards">
                                 {publishedLists.map((list) => (
-                                    <ListPanelCard key={list.id} list={list} />
+                                    <ListPanelCard key={list.id} list={list} onChanged={reload} />
                                 ))}
                             </div>
                         </section>
@@ -89,7 +89,7 @@ export default function ListsPage() {
                             <h2>Privata</h2>
                             <div className="cards list-cards">
                                 {privateLists.map((list) => (
-                                    <ListPanelCard key={list.id} list={list} />
+                                    <ListPanelCard key={list.id} list={list} onChanged={reload} />
                                 ))}
                             </div>
                         </section>

@@ -169,19 +169,19 @@ CREATE TABLE gifts (
     comment     TEXT,
     split       TEXT NOT NULL DEFAULT 'equal' CHECK (split IN ('equal', 'custom')),
     event_id    INT REFERENCES gift_events(id), -- a logged gift: the event of my own it belongs to
-    gift_date   DATE, -- only a gift from a wish profile: when it's to be given (the profile has no date)
     description TEXT,
     url         TEXT,
     image_url   TEXT,
     created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
-    -- Exactly one link: a wish, a list, a Secret Santa or an event of my own
-    -- A reservation may also belong to a Secret Santa (a wish on the receiver's wish profile) – then no own date
+    -- Exactly one link: a wish, a list, a Secret Santa or an event of my own.
+    -- A reservation on a wish profile also belongs to a Secret Santa (a wish on the receiver's profile)
+    -- or to an event of my own ("Loggade gåvor" – it has the date and who it's for) – migration 021
     CONSTRAINT gifts_one_link CHECK (
-        (wish_id IS NOT NULL AND list_id IS NULL AND event_id IS NULL
+        (wish_id IS NOT NULL AND list_id IS NULL
             AND description IS NULL AND url IS NULL AND image_url IS NULL
-            AND (santa_id IS NULL OR gift_date IS NULL))
-        OR (wish_id IS NULL AND gift_date IS NULL AND num_nonnulls(list_id, santa_id, event_id) = 1)
+            AND num_nonnulls(santa_id, event_id) <= 1)
+        OR (wish_id IS NULL AND num_nonnulls(list_id, santa_id, event_id) = 1)
     )
 );
 CREATE INDEX gifts_wish_idx ON gifts (wish_id);
@@ -225,7 +225,7 @@ ALTER TABLE gifts ADD CONSTRAINT gifts_santa_fk FOREIGN KEY (santa_id) REFERENCE
 CREATE INDEX gifts_santa_idx ON gifts (santa_id);
 
 
--- ---------- Gåvor överlever att det de hör till raderas (migrationerna 018 och 019) ----------
+-- ---------- Gåvor överlever att det de hör till raderas (migrationerna 018–021) ----------
 -- Innan en lista, önskning eller Secret Santa raderas flyttas dess gåvor till en ny händelse (gift_events) –
 -- en per köpare, med namn, datum och mottagare; önskningens beskrivning, länk och bild följer med.
 -- Raderas en mottagare: "Okänd mottagare". En händelse utan gåvor raderas.
@@ -260,7 +260,7 @@ BEGIN
 
         -- Reservationer: önskningens beskrivning, länk och bild följer med
         UPDATE gifts g
-        SET wish_id = NULL, event_id = ev, gift_date = NULL,
+        SET wish_id = NULL, event_id = ev,
             description = w.description, url = w.url, image_url = w.image_url, updated_at = now()
         FROM wishes w
         WHERE g.wish_id = w.id AND w.list_id = OLD.id AND g.created_by = buyer;
@@ -273,7 +273,11 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- En önskning raderas: en händelse per köpare (listans namn och datum, eller "Önskeprofil" och gåvans datum)
+-- En önskning raderas:
+--   - reservation till en Secret Santa  → överraskningsgåva till lottningen
+--   - reservation på en egen händelse (från en önskeprofil) → loggad gåva på samma händelse
+--   - reservation på en lista            → en händelse per köpare, med listans namn, datum och mottagare
+-- (Önskningens beskrivning, länk och bild följer med i alla fallen.)
 CREATE OR REPLACE FUNCTION wrappd_keep_gifts_of_wish() RETURNS trigger AS $$
 DECLARE
     buyer INT;
@@ -285,9 +289,9 @@ DECLARE
     unknown BOOLEAN := false;
 BEGIN
     UPDATE gifts
-    SET wish_id = NULL, gift_date = NULL,
+    SET wish_id = NULL,
         description = OLD.description, url = OLD.url, image_url = OLD.image_url, updated_at = now()
-    WHERE wish_id = OLD.id AND santa_id IS NOT NULL;
+    WHERE wish_id = OLD.id AND (santa_id IS NOT NULL OR event_id IS NOT NULL);
 
     IF NOT EXISTS (SELECT 1 FROM gifts WHERE wish_id = OLD.id) THEN
         RETURN OLD;
@@ -305,16 +309,11 @@ BEGIN
 
     FOR buyer IN SELECT DISTINCT created_by FROM gifts WHERE wish_id = OLD.id LOOP
         INSERT INTO gift_events (name, event_date, recipient_id, recipient_text, recipient_unknown, created_by)
-        VALUES (
-            COALESCE(list_title, 'Önskeprofil'),
-            COALESCE(list_date,
-                     (SELECT max(gift_date) FROM gifts WHERE wish_id = OLD.id AND created_by = buyer),
-                     CURRENT_DATE),
-            rid, rtext, unknown, buyer
-        ) RETURNING id INTO ev;
+        VALUES (COALESCE(list_title, 'Önskeprofil'), COALESCE(list_date, CURRENT_DATE), rid, rtext, unknown, buyer)
+        RETURNING id INTO ev;
 
         UPDATE gifts
-        SET wish_id = NULL, event_id = ev, gift_date = NULL,
+        SET wish_id = NULL, event_id = ev,
             description = OLD.description, url = OLD.url, image_url = OLD.image_url, updated_at = now()
         WHERE wish_id = OLD.id AND created_by = buyer;
     END LOOP;
@@ -322,15 +321,13 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- En Secret Santa raderas: varje givares gåvor blir en händelse till den hen lottades till
+-- En Secret Santa raderas: varje givares gåvor blir en händelse till den hen lottades till.
+-- Reservationer från mottagarens önskeprofil blir kvar som reservationer – på den händelsen.
 CREATE OR REPLACE FUNCTION wrappd_keep_gifts_of_santa() RETURNS trigger AS $$
 DECLARE
     buyer INT;
     ev INT;
 BEGIN
-    UPDATE gifts SET santa_id = NULL, gift_date = OLD.event_date, updated_at = now()
-    WHERE santa_id = OLD.id AND wish_id IS NOT NULL;
-
     FOR buyer IN SELECT DISTINCT created_by FROM gifts WHERE santa_id = OLD.id LOOP
         INSERT INTO gift_events (name, event_date, recipient_id, created_by)
         VALUES (OLD.title, OLD.event_date,
@@ -345,31 +342,30 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- En användare raderas: reservationer på hens önskeprofil blir händelser med "Okänd mottagare",
--- och händelser till hen får "Okänd mottagare" (recipient_id blir NULL via ON DELETE SET NULL)
+-- En användare raderas: reservationer på hens önskeprofil blir gåvor utan önskning –
+-- till en Secret Santa: överraskningsgåvor till lottningen; på en egen händelse: loggade gåvor på den.
+-- Händelser till hen får "Okänd mottagare" (recipient_id blir NULL via ON DELETE SET NULL).
 CREATE OR REPLACE FUNCTION wrappd_mark_unknown_recipient() RETURNS trigger AS $$
 DECLARE
     buyer INT;
     ev INT;
 BEGIN
     UPDATE gifts g
-    SET wish_id = NULL, gift_date = NULL,
+    SET wish_id = NULL,
         description = w.description, url = w.url, image_url = w.image_url, updated_at = now()
     FROM wishes w
-    WHERE g.wish_id = w.id AND w.user_id = OLD.id AND g.santa_id IS NOT NULL;
+    WHERE g.wish_id = w.id AND w.user_id = OLD.id AND (g.santa_id IS NOT NULL OR g.event_id IS NOT NULL);
 
+    -- (Reservationer på önskeprofilen utan händelse ska inte finnas – men blir i så fall en egen händelse)
     FOR buyer IN
         SELECT DISTINCT g.created_by FROM gifts g JOIN wishes w ON w.id = g.wish_id WHERE w.user_id = OLD.id
     LOOP
         INSERT INTO gift_events (name, event_date, recipient_unknown, created_by)
-        VALUES ('Önskeprofil',
-                COALESCE((SELECT max(g.gift_date) FROM gifts g JOIN wishes w ON w.id = g.wish_id
-                          WHERE w.user_id = OLD.id AND g.created_by = buyer), CURRENT_DATE),
-                true, buyer)
+        VALUES ('Önskeprofil', CURRENT_DATE, true, buyer)
         RETURNING id INTO ev;
 
         UPDATE gifts g
-        SET wish_id = NULL, event_id = ev, gift_date = NULL,
+        SET wish_id = NULL, event_id = ev,
             description = w.description, url = w.url, image_url = w.image_url, updated_at = now()
         FROM wishes w
         WHERE g.wish_id = w.id AND w.user_id = OLD.id AND g.created_by = buyer;

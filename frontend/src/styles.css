@@ -536,6 +536,18 @@ a:focus-visible {
     font-size: 0.875rem;
 }
 
+/* Extra small: for a quick action that shouldn't take over a card (e.g. "Publicera" on a private list card) */
+.btn-xs {
+    gap: 0.3rem;
+    padding: 0.25rem 0.65rem;
+    font-size: 0.78rem;
+}
+
+.btn-xs svg {
+    width: 14px;
+    height: 14px;
+}
+
 .btn-block {
     width: 100%;
 }
@@ -2524,6 +2536,16 @@ select {
     margin-top: 0.6rem;
 }
 
+/* Wide screens: the counts from the panel's left edge, under the date badge.
+   Phones put them in the title's column. */
+@media (min-width: 721px) {
+    .list-cards .event-info:has(.date-badge) > .event-stats {
+        margin-top: 0.2rem; /* closer under the title block (with the panel's gap: 0.7rem, was 1.1rem) */
+        font-size: 0.85rem; /* a little smaller than on the big cards, so both counts fit on one line more often */
+    }
+}
+
+
 .list-cards {
     /* Same width as the panels above, and the same gap as between the events */
     grid-template-columns: repeat(3, var(--event-panel-width));
@@ -4097,6 +4119,9 @@ button.event-edit {
     --event-line: #cfe0f2;
     --event-line-strong: #a9c6e6;
     --event-surface: #e6f0fa;
+    /* The date badge's month band in blue - like own events on the overview */
+    --tab-bg: var(--sky);
+    --tab-ink: var(--ink);
 }
 
 .gift-event.event-santa {
@@ -4152,6 +4177,11 @@ button.event-edit {
 }
 
 /* ---------- Mina gåvor: "Vem har jag köpt till?" - a horizontal bar chart ---------- */
+/* "Vem har jag köpt till?": a little further down from the gifts above than an ordinary section (2.5rem) */
+.section.spending {
+    margin-top: 4rem;
+}
+
 .spending-head {
     display: flex;
     flex-wrap: wrap;
@@ -5754,3 +5784,187 @@ button.event-edit {
         align-self: stretch;
     }
 }
+
+/* The compact list cards: the whole card opens the list (no "Se lista" button). The title's link is
+   stretched over the panel with ::after, so it's still one real link for keyboards and screen readers.
+   The edit icon on private lists sits above it. */
+.event-solo .event-title-link::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+}
+
+.event-solo .event-edit {
+    z-index: 1;
+}
+
+.event-solo:has(.event-title-link) {
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.event-solo:has(.event-title-link):hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(91, 36, 24, 0.12);
+}
+
+/* Focus: the ring around the whole card instead of just the title */
+.event-solo .event-title-link:focus-visible {
+    outline: none;
+}
+
+.event-solo:has(.event-title-link:focus-visible) {
+    outline: 2px solid var(--ink);
+    outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .event-solo:has(.event-title-link):hover {
+        transform: none;
+    }
+}
+
+/* The compact list cards: who the list is for, one small badge per name, under the title -
+   lighter than the panel (white over its colour); private lists' white panel gets their light rose */
+/* (.event-info p sets margin: 0 - this needs to be more specific to win) */
+.event-info .recipient-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    margin: 0.375rem 0 0;
+}
+
+.recipient-badge {
+    padding: 0.1rem 0.5rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.6);
+    color: var(--ink);
+    font-size: 0.72rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.event-light .recipient-badge {
+    background: var(--tab-bg);
+}
+
+/* Phones: the title block is a wrapping row there - the badges get a line of their own under the title */
+@media (max-width: 720px) {
+    .event .event-info .event-title > .recipient-badges {
+        flex-basis: 100%;
+        margin: 0.025rem 0 0; /* with the row's gap: 0.375rem, like on wide screens */
+    }
+}
+
+/* The compact list cards: the recipient badges up in the panel's top-right corner (where the edit
+   icon used to be), and room for them beside the title */
+.event-solo .event-info .event-title > .recipient-badges {
+    position: absolute;
+    top: 0.9rem;
+    right: 0.9rem;
+    max-width: 45%;
+    justify-content: flex-end;
+    margin: 0;
+}
+
+.event-solo .event-info:has(.recipient-badges) .event-title {
+    padding-right: 5.5rem;
+}
+
+/* Long titles get a smaller font on every card - the compact list cards and the dashboard's events,
+   Secret Santa included (format.js: titleSizeClass) */
+.event .event-info h3.title-long {
+    font-size: 1.2rem;
+}
+
+.event .event-info h3.title-very-long {
+    font-size: 1.05rem;
+}
+
+@media (max-width: 720px) {
+    .event .event-info h3.title-long {
+        font-size: 1.05rem;
+    }
+
+    .event .event-info h3.title-very-long {
+        font-size: 0.95rem;
+    }
+}
+
+/* ===== EXPERIMENT: Namnetiketter på dashboardens händelser (start) ===== */
+/* The dashboard's event cards (not Secret Santa): the recipient badges up in the panel's top-right
+   corner, like on the compact list cards */
+.events .event:not(.event-santa) .event-info .event-title > .recipient-badges {
+    position: absolute;
+    top: 0.9rem;
+    right: 0.9rem;
+    max-width: 45%;
+    justify-content: flex-end;
+    margin: 0;
+}
+
+@media (max-width: 720px) {
+    /* Room for the badges beside the title */
+    .events .event:not(.event-santa) .event-info:has(.recipient-badges) .event-title {
+        padding-right: 5.5rem;
+    }
+
+    /* "Se lista" down in the bottom-right corner, so it doesn't sit under the badges */
+    .events .event:not(.event-santa) .event-info:has(.recipient-badges) > .event-foot {
+        align-self: end;
+    }
+}
+/* Wide screens: "Se lista" down in the bottom-right corner, with room above it for the badges
+   (they sit about 1rem into the content box's top; this leaves ~0.6rem between them and the button) */
+@media (min-width: 721px) {
+    /* The badges as far in from the right edge as the button (the panel's side padding) */
+    .events .event:not(.event-santa) .event-info .event-title > .recipient-badges {
+        right: 1.25rem;
+    }
+
+    .events .event:not(.event-santa) .event-info:has(.recipient-badges) > .event-foot {
+        align-self: flex-end;
+        margin-top: 1.6rem;
+    }
+}
+/* ===== EXPERIMENT: Namnetiketter på dashboardens händelser (end) ===== */
+
+/* Reserving from a wish profile: which event of mine it goes on - one I have, or a new one (name + date) */
+.wish-actions .select {
+    flex-basis: 100%;
+}
+
+.wish-actions .wish-gift-event-name {
+    flex: 1 1 10rem;
+    width: auto;
+}
+
+/* ===== EXPERIMENT: Publicera-knapp på privata kort (start) ===== */
+/* "Publicera" on the same row as the counts, pushed to the right, sharing their baseline -
+   and above the link that covers the card, so it can be clicked */
+.event-solo .event-stats:has(> .list-publish-btn) {
+    align-self: stretch; /* the whole width, so the button can go to the right */
+    align-items: baseline;
+}
+
+.event-stats > .list-publish-btn {
+    position: relative;
+    z-index: 1;
+    /* Negative margins above and below: the button is taller than the counts' line, but mustn't make the row
+       taller - so the space under "önskningar" is the same as on the cards without the button (it reaches
+       a few px into the panel's padding instead) */
+    margin: -0.3rem 0 -0.3rem auto;
+}
+
+/* For the baselines to be the TEXT's: inside the counts and the button the text sits on the baseline and
+   the icons are just centred - otherwise an icon (first in each) would lend them its bottom edge instead */
+.event-solo .event-stats:has(> .list-publish-btn) > span,
+.event-stats > .list-publish-btn {
+    align-items: baseline;
+}
+
+.event-solo .event-stats:has(> .list-publish-btn) > span > svg,
+.event-stats > .list-publish-btn > svg {
+    align-self: center;
+}
+/* ===== EXPERIMENT: Publicera-knapp på privata kort (end) =====

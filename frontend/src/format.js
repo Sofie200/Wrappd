@@ -65,3 +65,10 @@ export function amountText(value) {
     if (value === null || value === undefined) return "";
     return Number.isInteger(Number(value)) ? String(Number(value)) : Number(value).toFixed(2).replace(".", ",");
 }
+
+// A class for a card's title by its length - long titles step down in size (styles.css: h3.title-long …):
+// over 22 characters a bit smaller, over 36 smaller still
+export function titleSizeClass(title = "") {
+    const length = (title ?? "").length;
+    return length > 36 ? "title-very-long" : length > 22 ? "title-long" : undefined;
+}

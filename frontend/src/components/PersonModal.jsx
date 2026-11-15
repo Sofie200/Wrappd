@@ -95,6 +95,7 @@ export default function PersonModal({ personId, onClose, santa = null, onReserve
                                     wish={wish}
                                     me={me}
                                     santa={santa}
+                                    person={person}
                                     onChanged={() => {
                                         reload();
                                         onReserved?.();

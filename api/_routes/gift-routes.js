@@ -35,14 +35,14 @@ const router = Router();
 async function loadGift(db, giftId, userId, { lock = false } = {}) {
     const { rows: [gift] } = await db.query(
         `SELECT g.id, g.wish_id, g.quantity, g.title, g.price, g.comment, g.split,
-                g.list_id AS own_list_id, g.santa_id, g.event_id, g.gift_date, g.description, g.url, g.image_url,
+                g.list_id AS own_list_id, g.santa_id, g.event_id, g.description, g.url, g.image_url,
                 ge.name AS recipient, ge.event_date, ge.recipient_id, ge.recipient_text, ge.recipient_unknown,
                 (SELECT name FROM users WHERE id = ge.recipient_id) AS recipient_name,
                 g.wish_id IS NULL AS is_free,
                 COALESCE(w.list_id, g.list_id) AS list_id,
                 w.user_id AS wish_owner_id,
                 w.quantity AS wish_quantity,
-                COALESCE(l.end_date, g.gift_date, ss.event_date, ge.event_date) < ${TODAY} AS archived
+                COALESCE(l.end_date, ss.event_date, ge.event_date) < ${TODAY} AS archived
          FROM gifts g
          LEFT JOIN wishes w ON w.id = g.wish_id
          LEFT JOIN lists l ON l.id = COALESCE(w.list_id, g.list_id)
@@ -225,6 +225,15 @@ router.put("/events/:id", async (req, res) => {
     await requireMyEvent(pool, eventId, req.user.id);
 
     const { rows: [current] } = await pool.query("SELECT recipient_id FROM gift_events WHERE id = $1", [eventId]);
+    // Reservations from someone's wish profile are on it: then it stays theirs
+    const { rows: [profile] } = await pool.query(
+        `SELECT u.id, u.name FROM gifts g JOIN wishes w ON w.id = g.wish_id JOIN users u ON u.id = w.user_id
+         WHERE g.event_id = $1 LIMIT 1`,
+        [eventId]
+    );
+    if (profile && body.recipientId !== profile.id) {
+        throw new HttpError(400, `Händelsen har reservationer från ${profile.name}s önskeprofil, så den måste vara till ${profile.name}`);
+    }
     if (body.recipientId && body.recipientId !== current?.recipient_id) {
         await requireLinkablePerson(pool, body.recipientId, req.user.id);
     }
@@ -249,13 +258,18 @@ router.delete("/events/:id", async (req, res) => {
 
     const { imageUrls, count } = await withTransaction(async (db) => {
         const { rows: gifts } = await db.query(
-            `SELECT g.id, g.image_url,
-                    EXISTS (SELECT 1 FROM gift_members WHERE gift_id = g.id AND user_id = $2) AS mine
+            `SELECT g.id, g.image_url, g.wish_id IS NOT NULL AS reserved,
+                    EXISTS (SELECT 1 FROM gift_members WHERE gift_id = g.id AND user_id = $2) AS mine,
+                    (SELECT event_date < ${TODAY} FROM gift_events WHERE id = $1) AS archived
              FROM gifts g WHERE g.event_id = $1 FOR UPDATE OF g`,
             [eventId, req.user.id]
         );
         if (gifts.some((g) => !g.mine)) {
             throw new HttpError(403, "Händelsen har gåvor som du inte är med i, så du kan inte ta bort den.");
+        }
+        // Reservations (from a wish profile) can't be undone after the date - like on a list
+        if (gifts.some((g) => g.reserved && g.archived)) {
+            throw new HttpError(403, "Händelsen har reservationer som inte kan ångras efter datumet, så den kan inte tas bort.");
         }
         await db.query("DELETE FROM gifts WHERE event_id = $1", [eventId]);
         return { imageUrls: gifts.map((g) => g.image_url), count: gifts.length };
@@ -341,8 +355,8 @@ router.get("/:id", async (req, res) => {
             // A name in free text, and "the recipient's account was deleted" (then shown as "Okänd mottagare")
             recipientText: gift.recipient_text,
             recipientUnknown: gift.recipient_unknown,
-            // The event's date - or, for a gift from a wish profile, its own
-            giftDate: gift.event_id ? gift.event_date : gift.gift_date,
+            // The event's date (a logged gift, or a reservation from a wish profile - it's on an event too)
+            giftDate: gift.event_id ? gift.event_date : null,
         },
         wish: wish.rows[0],
         list: list.rows[0],
@@ -537,15 +551,13 @@ router.put("/:id", receiveImage, async (req, res) => {
                     ]
                 );
             } else {
-                // A gift from a wish profile has its own date, and must keep one - unless it's for a Secret Santa
-                // (the draw's date). On a list it's the list's date.
-                const ownDate = gift.wish_owner_id !== null && !gift.santa_id;
-                if (ownDate && !body.giftDate) throw new HttpError(400, "Ange när gåvan ska ges");
+                // The date is the list's, the Secret Santa's or - from a wish profile - the event's
+                // (changed with PUT /api/gifts/events/:id)
                 if (gift.santa_id && userIds.length > 1) throw new HttpError(400, "En gåva till en Secret Santa kan inte delas.");
                 await db.query(
-                    `UPDATE gifts SET quantity = $1, price = $2, comment = $3, split = $4, gift_date = $5, updated_at = now()
-                     WHERE id = $6`,
-                    [body.quantity, body.price, body.comment, body.split, ownDate ? body.giftDate : null, giftId]
+                    `UPDATE gifts SET quantity = $1, price = $2, comment = $3, split = $4, updated_at = now()
+                     WHERE id = $5`,
+                    [body.quantity, body.price, body.comment, body.split, giftId]
                 );
             }
             await replaceMembers(db, giftId, body, userIds);

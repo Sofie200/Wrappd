@@ -473,11 +473,12 @@ export default function ListFormPage() {
                 if (isEdit) {
                     return (
                         <form onSubmit={handleSubmit} className="form">
-                            {/* Same headings as the steps of a new list - but all on one page */}
-                            {STEPS.map((st, i) => (
-                                <section key={st.key} className="edit-section">
-                                    <h2 className="step-title">{st.title}</h2>
-                                    {[who, what, when][i]}
+                            {/* Same headings as the steps of a new list - but all on one page, in the order
+                                what, when, who (a new list asks who first) */}
+                            {EDIT_ORDER.map((key) => (
+                                <section key={key} className="edit-section">
+                                    <h2 className="step-title">{STEPS.find((st) => st.key === key).title}</h2>
+                                    {{ who, what, when }[key]}
                                 </section>
                             ))}
                             <ErrorMessage message={error} />
@@ -587,6 +588,9 @@ const STEPS = [
     { key: "what", label: "Vad", title: "Vad är det vi firar?" },
     { key: "when", label: "När", title: "När är firandet?" },
 ];
+
+// Editing a list: all the parts on one page - what, when, who
+const EDIT_ORDER = ["what", "when", "who"];
 
 // "Anna", "Anna och Bo", "Anna, Bo och Cia"
 function joinNames(names) {

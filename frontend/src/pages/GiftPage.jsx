@@ -212,10 +212,8 @@ function GiftForm({ data, lists, santas, presetListId, presetSantaId, presetEven
                 formData.append("giftDate", form.giftDate);
             }
             image.appendTo(formData);
-        } else if (data?.person && !data.santa) {
-            // A gift from a wish profile: its own date (a list's wish uses the list's date)
-            formData.append("giftDate", form.giftDate);
         }
+        // (A reservation from a wish profile has its event's date - the event is changed on its own)
 
         setBusy(true);
         try {
@@ -274,7 +272,10 @@ function GiftForm({ data, lists, santas, presetListId, presetSantaId, presetEven
                         : santa
                           ? `Secret Santa: ${santa.title} · ${formatDate(santa.date)}`
                           : person
-                            ? `Gåva till ${person.name} · från önskeprofilen`
+                            ? gift.eventId
+                                ? // On an event of my own ("Loggade gåvor"): its name, who and when
+                                  `${gift.recipient} · till ${person.name} · ${formatDate(gift.giftDate)} · från önskeprofilen`
+                                : `Gåva till ${person.name} · från önskeprofilen`
                             : `${gift.recipient}${
                                   gift.recipientName
                                       ? ` · till ${gift.recipientName}`
@@ -431,14 +432,6 @@ function GiftForm({ data, lists, santas, presetListId, presetSantaId, presetEven
                             </>
                         )}
                     </>
-                )}
-
-                {/* A gift from a wish profile: when it's to be given - there's no list with a date */}
-                {!isFree && data?.person && !data.santa && (
-                    <label className="field">
-                        <span>När ska gåvan ges?</span>
-                        <input type="date" value={form.giftDate} onChange={set("giftDate")} required disabled={busy} />
-                    </label>
                 )}
 
                 <div className="field-row">
