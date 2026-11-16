@@ -85,6 +85,8 @@ CREATE TABLE lists (
     end_date     DATE NOT NULL,
     is_public    BOOLEAN NOT NULL DEFAULT false,
     published_at TIMESTAMPTZ,
+    -- A secret link that shows the list to anyone who has it (wrappd.se/s/<token>) – NULL = not shared (migration 022)
+    share_token  TEXT UNIQUE,
     created_by   INT NOT NULL REFERENCES users(id),
     created_at   TIMESTAMPTZ NOT NULL DEFAULT now()
 );

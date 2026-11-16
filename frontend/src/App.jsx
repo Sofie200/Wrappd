@@ -21,6 +21,7 @@ import WishProfilePage from "./pages/WishProfilePage.jsx";
 import ListsPage from "./pages/ListsPage.jsx";
 import GiftsPage from "./pages/GiftsPage.jsx";
 import ProfilePage from "./pages/ProfilePage.jsx";
+import SharedListPage from "./pages/SharedListPage.jsx";
 
 export default function App() {
     return (
@@ -32,6 +33,8 @@ export default function App() {
                 {/* Activation and reset links - open without being logged in */}
                 <Route path="/link/:token" element={<LinkPage />} />
                 <Route path="/integritet" element={<PrivacyPage />} />
+                {/* A list shared with a link - open to everyone; reserving needs logging in */}
+                <Route path="/s/:token" element={<SharedListPage />} />
 
                 {/* Everything else requires login */}
                 <Route

@@ -2,8 +2,9 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../api.js";
 import { titleSizeClass } from "../format.js";
-import { Gift, GlobeCheck, Lock, ScrollText, Sparkles } from "lucide-react";
+import { Gift, GlobeCheck, Lock, ScrollText, Share2, Sparkles } from "lucide-react";
 import DateBadge, { EventDate } from "./DateBadge.jsx";
+import ShareListModal from "./ShareListModal.jsx";
 
 // A list as a card in the overview's event style - only the coloured panel, no gifts column.
 // Used on Mina listor and on a group's page.
@@ -22,6 +23,9 @@ export default function ListPanelCard({ list, onChanged = null }) {
     // EXPERIMENT: "Publicera" straight on a private card of mine - the same as the button on the list's page
     const canPublish = isPrivate && !list.archived && Boolean(onChanged);
     const [publishing, setPublishing] = useState(false);
+    // "Dela" right after the title: a published list of mine, before the date (where the page can reload)
+    const canShare = !isPrivate && !list.archived && Boolean(onChanged);
+    const [sharing, setSharing] = useState(false);
     async function publish() {
         const empty = list.wishCount === 0 ? "\n\nListan har inga önskningar än." : "";
         if (!window.confirm(`Publicera "${list.title}" för listans grupper?${empty}\n\nEn publik lista kan inte göras privat igen.`)) return;
@@ -86,6 +90,18 @@ export default function ListPanelCard({ list, onChanged = null }) {
                                 ) : (
                                     list.title
                                 )}
+                                {canShare && (
+                                    <button
+                                        type="button"
+                                        className="btn btn-icon event-share"
+                                        onClick={() => setSharing(true)}
+                                        aria-label={list.shareToken ? "Listan delas - visa länken" : "Dela listan"}
+                                        title={list.shareToken ? "Delas med länk" : "Dela listan"}
+                                        aria-haspopup="dialog"
+                                    >
+                                        <Share2 size={16} aria-hidden="true" />
+                                    </button>
+                                )}
                             </h3>
                             {/* Who it's for: one badge per recipient, in the panel's top-right corner ("Till:" only for screen readers) */}
                             {list.recipients && (
@@ -106,6 +122,9 @@ export default function ListPanelCard({ list, onChanged = null }) {
                     {stats}
                 </div>
             </article>
+            {sharing && (
+                <ShareListModal listId={list.id} shareToken={list.shareToken} onChanged={onChanged} onClose={() => setSharing(false)} />
+            )}
         </div>
     );
 }

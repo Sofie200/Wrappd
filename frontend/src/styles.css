@@ -5968,3 +5968,105 @@ button.event-edit {
     align-self: center;
 }
 /* ===== EXPERIMENT: Publicera-knapp på privata kort (end) ===== */
+
+/* ---------- A list shared with a link (/s/:token) and the "Dela" modal ---------- */
+/* Its own page, distinct from the app: the login page's card on the backdrop, logo centred - a bit wider,
+   for the wish rows. Inside, the list page's parts: "Till", title, date, "Önskningar", price groups, wish rows. */
+.auth-card.shared-list {
+    /* A fixed width from the window, not from the content - in .auth's centring grid a percentage
+       width can end up as wide as the content, so short wishes made the whole card narrow */
+    width: min(680px, calc(100vw - 2rem));
+    max-width: none;
+    background: var(--sheet); /* the app's faintly warm "paper" */
+}
+
+/* The logo as a little header across the card's top - white, with the app header's rose shadow
+   falling onto the paper (and the rose intro panel) below it */
+.shared-list > .auth-logo {
+    position: relative;
+    z-index: 1;
+    margin: -2.25rem -2rem 0;
+    padding: 1.5rem 2rem 1.25rem;
+    background: var(--surface);
+    box-shadow: 0 12px 16px -12px rgba(236, 91, 120, 0.25);
+}
+
+/* The list's head on the app's rose intro panel - out to the card's edges, with the same zigzag at the bottom */
+.shared-head {
+    --intro-bg: #fbd6df; /* the same rose as .page-intro */
+    --zigzag: 22px;
+    margin: 0 -2rem;
+    padding: 1.5rem 2rem calc(3.25rem + var(--zigzag) / 2);
+    background: var(--intro-bg);
+    -webkit-mask: conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) 50% / var(--zigzag) 100%;
+    mask: conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) 50% / var(--zigzag) 100%;
+}
+
+.shared-head h1 {
+    margin-bottom: 0.25rem;
+}
+
+.shared-head .list-description {
+    margin-bottom: 0;
+}
+
+.shared-action {
+    margin-top: 1.5rem;
+}
+
+.shared-list .section {
+    margin-top: 2rem;
+}
+
+/* A wish without anything to open: no pointer (one with a link goes to the shop, in a new tab) */
+.wish.wish-static {
+    text-decoration: none;
+}
+
+div.wish.wish-static {
+    cursor: default;
+}
+
+/* Fully reserved wishes: toned down more than in the app (0.75) - here they're only to look at */
+.shared-list .wish-full {
+    opacity: 0.5;
+}
+
+.shared-wish-link-icon {
+    margin-left: 0.25rem;
+    vertical-align: -0.1em;
+    color: var(--muted);
+}
+
+/* The "Dela" modal: the link and "Kopiera" on one row */
+.share-link-row {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+.share-link-input {
+    flex: 1;
+    min-width: 0;
+}
+
+.share-link-actions {
+    margin-top: 0.75rem;
+}
+
+/* "Dela" on a list's card on the overview: just the icon, right after the title, on its line */
+.event-info h3 .btn.event-share {
+    display: inline-flex;
+    margin-left: 0.3rem;
+    padding: 0.3rem;
+    vertical-align: middle;
+    position: relative;
+    z-index: 1; /* above the link that covers the compact list cards */
+    top: -2px; /* nudged up - "middle" sat it a little low next to the title */
+    color: var(--ink);
+    background: none;
+}
+
+.event-info h3 .btn.event-share:hover {
+    background: rgba(255, 255, 255, 0.5);
+}

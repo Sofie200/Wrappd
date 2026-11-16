@@ -3,7 +3,7 @@ import { pathToFileURL } from "node:url";
 import express from "express";
 import cors from "cors";
 import { HttpError } from "./_lib/http.js";
-import { requireAuth } from "./_middleware/auth.js";
+import { optionalAuth, requireAuth } from "./_middleware/auth.js";
 import authRoutes from "./_routes/auth-routes.js";
 import userRoutes from "./_routes/user-routes.js";
 import groupRoutes from "./_routes/group-routes.js";
@@ -15,6 +15,7 @@ import profileRoutes from "./_routes/profile-routes.js";
 import childrenRoutes from "./_routes/children-routes.js";
 import santaRoutes from "./_routes/santa-routes.js";
 import peopleRoutes from "./_routes/people-routes.js";
+import shareRoutes from "./_routes/share-routes.js";
 
 const app = express();
 
@@ -38,6 +39,8 @@ app.use("/api/profile", requireAuth, profileRoutes);
 app.use("/api/children", requireAuth, childrenRoutes);
 app.use("/api/santas", requireAuth, santaRoutes);
 app.use("/api/people", requireAuth, peopleRoutes);
+// A shared list - open to everyone; logged in or not decides only whether it can be opened in the app
+app.use("/api/share", optionalAuth, shareRoutes);
 
 app.use((req, res) => {
     res.status(404).json({ error: "Adressen finns inte" });

@@ -17,6 +17,9 @@ router.get("/", async (req, res) => {
             `SELECT l.id, l.title, l.end_date AS "endDate",
                     EXISTS (SELECT 1 FROM list_admins WHERE list_id = l.id AND user_id = $1) AS "isAdmin",
                     EXISTS (SELECT 1 FROM list_recipients WHERE list_id = l.id AND user_id = $1) AS "isRecipient",
+                    -- The secret share link - only to admins ("Dela" on the card; null = not shared)
+                    CASE WHEN EXISTS (SELECT 1 FROM list_admins WHERE list_id = l.id AND user_id = $1)
+                         THEN l.share_token END AS "shareToken",
                     ${RECIPIENTS} AS recipients,
                     (SELECT count(*)::int FROM wishes WHERE list_id = l.id) AS "wishCount",
                     -- Fully reserved wishes - never for lists to me (that's a surprise)
@@ -108,6 +111,7 @@ router.get("/", async (req, res) => {
         pool.query(
             `SELECT l.id, l.title, l.end_date AS "endDate", l.is_public AS "isPublic",
                     l.end_date < ${TODAY} AS archived,
+                    l.share_token AS "shareToken", -- the share link (I'm an admin of all of these)
                     (SELECT count(*)::int FROM wishes WHERE list_id = l.id) AS "wishCount",
                     -- Fully reserved wishes - not on lists to me (that's a surprise, also for admins)
                     CASE WHEN EXISTS (SELECT 1 FROM list_recipients WHERE list_id = l.id AND user_id = $1) THEN NULL

@@ -1,3 +1,4 @@
+import { randomBytes } from "node:crypto";
 import { Router } from "express";
 import { z } from "zod";
 import { pool, withTransaction } from "../_db/pool.js";
@@ -164,6 +165,8 @@ router.get("/:id", async (req, res) => {
             isPublic: list.is_public,
             publishedAt: list.published_at,
             archived: list.archived,
+            // The secret share link's token - only to admins (null = not shared)
+            shareToken: access.isAdmin ? list.share_token : null,
         },
         me: {
             isAdmin: access.isAdmin,
@@ -216,6 +219,29 @@ router.put("/:id", async (req, res) => {
     });
 
     res.json({ id: listId });
+});
+
+/* --- POST /api/lists/:id/share → { shareToken } - share a published list with a secret link (admin) --- */
+// Anyone with the link sees the wishes and whether they're free or reserved (see share-routes.js).
+// Called again: a NEW link - the old one stops working.
+router.post("/:id/share", async (req, res) => {
+    const listId = parseId(req.params.id);
+    const access = await getListAccess(pool, listId, req.user.id);
+    requireEditor(access);
+    if (!access.list.is_public) throw new HttpError(400, "Publicera listan innan du delar den");
+
+    const shareToken = randomBytes(12).toString("base64url"); // 16 characters, impossible to guess
+    await pool.query("UPDATE lists SET share_token = $1 WHERE id = $2", [shareToken, listId]);
+    res.json({ shareToken });
+});
+
+/* --- DELETE /api/lists/:id/share - stop sharing: the link stops working (admin) --- */
+router.delete("/:id/share", async (req, res) => {
+    const listId = parseId(req.params.id);
+    const access = await getListAccess(pool, listId, req.user.id);
+    if (!access.isAdmin) throw new HttpError(403, "Bara listans admins kan ändra delningen");
+    await pool.query("UPDATE lists SET share_token = NULL WHERE id = $1", [listId]);
+    res.json({ shareToken: null });
 });
 
 /* --- POST /api/lists/:id/publish - make the list public for its groups (admin). Can't be undone. --- */

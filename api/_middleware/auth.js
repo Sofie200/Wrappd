@@ -76,3 +76,19 @@ export function requireAuth(req, res, next) {
         next(err);
     }
 }
+
+// For pages anyone may see (a shared list): sets req.user when there's a valid login, otherwise
+// req.user = null - never a 401, and an invalid cookie is just ignored.
+export function optionalAuth(req, res, next) {
+    const { token } = readToken(req);
+    req.user = null;
+    if (token) {
+        try {
+            const payload = jwt.verify(token, secret());
+            req.user = { id: Number(payload.sub), username: payload.username, name: payload.name };
+        } catch {
+            // Not logged in, as far as this page is concerned
+        }
+    }
+    next();
+}

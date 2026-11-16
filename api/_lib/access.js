@@ -15,7 +15,7 @@ import { HttpError } from "./http.js";
  */
 export async function getListAccess(db, listId, userId) {
     const { rows: [list] } = await db.query(
-        `SELECT l.id, l.title, l.description, l.end_date, l.is_public, l.published_at,
+        `SELECT l.id, l.title, l.description, l.end_date, l.is_public, l.published_at, l.share_token,
                 l.end_date < ${TODAY} AS archived,
                 EXISTS (SELECT 1 FROM list_admins WHERE list_id = l.id AND user_id = $2) AS is_admin,
                 EXISTS (SELECT 1 FROM list_recipients WHERE list_id = l.id AND user_id = $2) AS is_recipient,

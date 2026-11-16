@@ -2,7 +2,7 @@
 // without a list) with its details on the left in a contrasting colour, and my gifts for it on the right.
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, ChevronDown, CircleMinus, Ellipsis, Gift, HatGlasses, Pencil, ScrollText, Sparkles, Table2, Trash2 } from "lucide-react";
+import { ArrowRight, ChevronDown, CircleMinus, Ellipsis, Gift, HatGlasses, Pencil, ScrollText, Share2, Sparkles, Table2, Trash2 } from "lucide-react";
 import { api } from "../api.js";
 import { ErrorMessage } from "./Feedback.jsx";
 import Modal from "./Modal.jsx";
@@ -13,6 +13,7 @@ import { formatPrice, joinNames, titleSizeClass } from "../format.js";
 import Avatar from "./Avatar.jsx";
 import DateBadge, { EventDate } from "./DateBadge.jsx";
 import AddGiftButton from "./AddGiftButton.jsx";
+import ShareListModal from "./ShareListModal.jsx";
 import GiftPlusIcon from "./GiftPlusIcon.jsx";
 
 export const sumShares = (rows) => rows.reduce((sum, g) => sum + Math.round((g.myShare ?? 0) * 100), 0) / 100;
@@ -41,6 +42,7 @@ export function buildEvents(lists, gifts, { newestFirst = false } = {}) {
             wishCount: list.wishCount,
             reservedCount: list.reservedCount, // null on lists to me
             reservers: list.reservers ?? [], // who has reserved something - never on lists to me
+            shareToken: list.shareToken ?? null, // the share link - only for admins
             // Lists TO me can only be opened by their admins
             canOpen: !list.isRecipient || list.isAdmin,
             gifts: [],
@@ -263,6 +265,7 @@ export function EventAddButtons({ event, archived = false, onChanged, className 
 
 // One event: the list's details on the left (in a contrasting colour), my gifts for it on the right
 export function EventRow({ event, archived = false, onChanged }) {
+    const [sharing, setSharing] = useState(false); // "Dela": the share link's modal (list admins)
     const { listId, santaId, personId, title, endDate, recipients, isRecipient, canOpen, gifts, wishCount, reservedCount } =
         event;
     // The kind of event decides the colour; past events keep it, toned down (event-archived)
@@ -302,6 +305,19 @@ export function EventRow({ event, archived = false, onChanged }) {
                                     </Link>
                                 ) : (
                                     (title ?? `Till ${recipients}`)
+                                )}
+                                {/* Quick access to sharing the list - admins, before the date: just the icon, right after the title */}
+                                {listId && event.isAdmin && !archived && (
+                                    <button
+                                        type="button"
+                                        className="btn btn-icon event-share"
+                                        onClick={() => setSharing(true)}
+                                        aria-label={event.shareToken ? "Listan delas - visa länken" : "Dela listan"}
+                                        title={event.shareToken ? "Delas med länk" : "Dela listan"}
+                                        aria-haspopup="dialog"
+                                    >
+                                        <Share2 size={16} aria-hidden="true" />
+                                    </button>
                                 )}
                             </h3>
                             {/* EXPERIMENT: who it's for - a list's recipients, or the person linked to an own event -
@@ -395,6 +411,9 @@ export function EventRow({ event, archived = false, onChanged }) {
                 </div>
                 </GiftsCollapse>
             </article>
+            {sharing && (
+                <ShareListModal listId={listId} shareToken={event.shareToken} onChanged={onChanged} onClose={() => setSharing(false)} />
+            )}
         </div>
     );
 }

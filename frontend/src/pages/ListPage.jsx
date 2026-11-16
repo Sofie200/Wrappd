@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { Ellipsis, GlobeCheck, Pencil, Settings, Sparkles, Trash2 } from "lucide-react";
+import { Ellipsis, GlobeCheck, Pencil, Settings, Share2, Sparkles, Trash2 } from "lucide-react";
 import { api } from "../api.js";
 import { useFetch } from "../hooks/useFetch.js";
 import { Empty, ErrorMessage, Loading, Notice } from "../components/Feedback.jsx";
@@ -12,28 +12,13 @@ import GiftPlusIcon from "../components/GiftPlusIcon.jsx";
 import SettingsMenu from "../components/SettingsMenu.jsx";
 import Avatar from "../components/Avatar.jsx";
 import { GiftEditor } from "./GiftPage.jsx";
+import ShareListModal from "../components/ShareListModal.jsx";
+import { groupByPrice } from "../wishGroups.js";
 import { formatDate, formatPrice, joinNames, relativeDays } from "../format.js";
 import { MAX_WISHES_PER_LIST } from "../config.js";
 
 const names = (people) => people.map((p) => p.name).join(", ");
 
-// Wishes in sections by price per item. Cheapest first within each section; no price last.
-const PRICE_GROUPS = [
-    { key: "low", title: "Upp till 250 kr", test: (p) => p <= 250 },
-    { key: "mid", title: "250-500 kr", test: (p) => p > 250 && p <= 500 },
-    { key: "high", title: "Över 500 kr", test: (p) => p > 500 },
-    { key: "none", title: "Utan pris", test: (p) => p === null },
-];
-
-function groupByPrice(wishes) {
-    const price = (w) => (w.price === null ? null : Number(w.price));
-    return PRICE_GROUPS.map((group) => ({
-        ...group,
-        wishes: wishes
-            .filter((w) => group.test(price(w)))
-            .sort((a, b) => (price(a) ?? 0) - (price(b) ?? 0) || a.title.localeCompare(b.title, "sv")),
-    })).filter((group) => group.wishes.length > 0);
-}
 
 export default function ListPage() {
     const { id } = useParams();
@@ -42,6 +27,7 @@ export default function ListPage() {
     const [adding, setAdding] = useState(false);
     const [actionError, setActionError] = useState(null);
     const [busy, setBusy] = useState(false);
+    const [sharing, setSharing] = useState(false); // "Dela": the share link's modal
 
     if (!data && loading) return <Loading />;
     if (!data) return <ErrorMessage message={error} onRetry={reload} />;
@@ -131,6 +117,15 @@ export default function ListPage() {
                     <div className="actions">
                         <button type="button" className="btn btn-primary" onClick={publish} disabled={busy}>
                             <GlobeCheck size={16} aria-hidden="true" /> Publicera
+                        </button>
+                    </div>
+                )}
+                {/* A published list: "Dela" up in the top-right corner (where "Publicera" was) - a link that
+                    shows the list also to people outside the app */}
+                {me.canEdit && list.isPublic && (
+                    <div className="actions">
+                        <button type="button" className="btn btn-primary" onClick={() => setSharing(true)}>
+                            <Share2 size={16} aria-hidden="true" /> {list.shareToken ? "Delas" : "Dela"}
                         </button>
                     </div>
                 )}
@@ -250,6 +245,10 @@ export default function ListPage() {
                         ))}
                     </div>
                 </section>
+            )}
+
+            {sharing && (
+                <ShareListModal listId={list.id} shareToken={list.shareToken} onChanged={reload} onClose={() => setSharing(false)} />
             )}
         </div>
     );
