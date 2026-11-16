@@ -3875,14 +3875,15 @@ button.event-edit {
 }
 
 /* Who it's for ("Sam") - a lavender tag right after the event's title */
+/* Who it's for: a small white tag right after the title */
 .gift-event-to {
     display: inline-block;
-    padding: 0.2rem 0.65rem;
+    /* Like the name tags on the list cards: no border, small and bold */
+    padding: 0.1rem 0.5rem;
     border-radius: 999px;
-    background: var(--blue-soft);
-    border: 1px solid #e3d2f3;
-    color: var(--blue);
-    font-size: 0.78rem;
+    background: var(--surface); /* white - stands out on the event's (light) gradient */
+    color: var(--ink); /* dark, like the other name tags */
+    font-size: 0.72rem;
     font-weight: 600;
     white-space: nowrap;
 }
@@ -6070,3 +6071,22 @@ div.wish.wish-static {
 .event-info h3 .btn.event-share:hover {
     background: rgba(255, 255, 255, 0.5);
 }
+
+/* ===== EXPERIMENT: Gåvor-sidans kort med dashboardens gradienter (start) ===== */
+/* Each event on the gifts page on the same gradient as its kind's panel on the overview - lightened
+   (half-way to white), so the gift cards on top stand out:
+   wish lists peach into pink, logged gifts (and older wish-profile gifts) pale green into soft blue,
+   Secret Santa pale yellow into soft orange. (--event-surface still colours the frames inside.) */
+.gift-event {
+    background: linear-gradient(135deg, #fdece1 0%, #f9dce4 100%);
+}
+
+.gift-event.event-logged,
+.gift-event.event-no-list {
+    background: linear-gradient(135deg, #e7f4ec 0%, #deebf5 100%);
+}
+
+.gift-event.event-santa {
+    background: linear-gradient(135deg, #fef5df 0%, #fbe6cb 100%);
+}
+/* ===== EXPERIMENT: Gåvor-sidans kort med dashboardens gradienter (end) ===== */
