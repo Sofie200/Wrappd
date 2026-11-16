@@ -264,7 +264,7 @@ img {
     bottom: 0.1rem;
     height: 3px;
     border-radius: 3px;
-    background: var(--accent);
+    background: currentColor; /* the same colour as the link's text */
     transform: scaleX(0);
     transition: transform 0.2s ease;
 }
