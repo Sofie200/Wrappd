@@ -1,0 +1,337 @@
+
+/* ---------- Start page for visitors who aren't logged in (LandingPage.jsx) ---------- */
+/* The app's own frame (header, backdrop, sheet, rose intro band) - with a few parts of its own */
+.landing-nav {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-left: auto;
+}
+
+/* The hero: text on the left, a peek at a list on the right - stacked on narrow screens */
+.landing-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+    align-items: center;
+    gap: 2.5rem;
+}
+
+.landing-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin: 0 0 0.75rem;
+    color: var(--accent-text);
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.landing-hero h1 {
+    margin: 0 0 1rem;
+    font-size: clamp(2rem, 4.5vw, 3.1rem);
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+}
+
+.landing-lede {
+    max-width: 34rem;
+    margin: 0;
+    font-size: 1.1rem;
+    line-height: 1.6;
+}
+
+.landing-cta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 1.75rem;
+}
+
+/* The made-up list: a coloured panel like the overview's, and wish rows like the list page's */
+.landing-preview {
+    background: var(--surface);
+    border-radius: var(--radius);
+    box-shadow: 0 2px 6px rgba(91, 36, 24, 0.08), 0 24px 56px rgba(236, 91, 120, 0.22);
+    overflow: hidden;
+    transform: rotate(1.5deg);
+}
+
+.landing-preview-panel {
+    padding: 1.1rem 1.25rem;
+    background: linear-gradient(135deg, #fbd9c4 0%, #f3b9c8 100%);
+}
+
+.landing-preview-panel p {
+    margin: 0;
+}
+
+.landing-preview-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.25rem 0.6rem;
+    border-radius: 6px;
+    background: var(--accent-strong);
+    color: var(--accent-ink);
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.landing-preview-title {
+    margin-top: 0.6rem !important;
+    font-size: 1.35rem;
+    font-weight: 600;
+}
+
+.landing-preview-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    margin-top: 0.25rem !important;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.landing-preview-wishes {
+    list-style: none;
+    margin: 0;
+    padding: 0.9rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+.landing-preview-wish {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 0.75rem 0.5rem 0.5rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-small);
+}
+
+.landing-preview-wish.is-reserved {
+    opacity: 0.6;
+}
+
+.landing-preview-image {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    background: var(--accent-soft);
+    color: var(--accent-text);
+}
+
+.landing-preview-text {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.landing-preview-wish-title {
+    font-weight: 600;
+    font-size: 0.9rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.landing-preview-price {
+    color: var(--muted);
+    font-size: 0.8rem;
+}
+
+.landing-preview-reserve {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.3rem 0.7rem;
+    border-radius: 999px;
+    background: var(--accent-strong);
+    color: var(--accent-ink);
+    font-size: 0.75rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.landing-preview-share {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin: 0;
+    padding: 0 1rem 1rem;
+    color: var(--muted);
+    font-size: 0.8rem;
+}
+
+/* Features: cards in a grid */
+.landing-section h2 {
+    margin-bottom: 1.25rem;
+}
+
+.landing-features {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.25rem;
+}
+
+.landing-feature {
+    padding: 1.4rem 1.4rem 1.5rem;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+}
+
+.landing-feature h3 {
+    margin: 0.85rem 0 0.4rem;
+    font-size: 1.1rem;
+}
+
+.landing-feature p {
+    margin: 0;
+    color: var(--muted);
+    line-height: 1.55;
+}
+
+.landing-feature-icon {
+    display: inline-grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: var(--accent-soft);
+    color: var(--accent-text);
+}
+
+/* Each feature its own colour from the app's palette: rose, lavender, sky, yellow, green, orange */
+.landing-feature:nth-child(2) .landing-feature-icon {
+    background: var(--blue-soft);
+    color: var(--blue);
+}
+
+.landing-feature:nth-child(3) .landing-feature-icon {
+    background: #e1eefa;
+    color: #2b5d8f;
+}
+
+.landing-feature:nth-child(4) .landing-feature-icon {
+    background: var(--yellow-soft);
+    color: var(--yellow-ink);
+}
+
+.landing-feature:nth-child(5) .landing-feature-icon {
+    background: var(--green-soft);
+    color: var(--green);
+}
+
+.landing-feature:nth-child(6) .landing-feature-icon {
+    background: #fde9d2;
+    color: #a2560a;
+}
+
+/* How it works: three numbered steps */
+.landing-steps {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.25rem;
+}
+
+.landing-step h3 {
+    margin: 0.75rem 0 0.35rem;
+    font-size: 1.1rem;
+}
+
+.landing-step p {
+    margin: 0;
+    color: var(--muted);
+    line-height: 1.55;
+}
+
+.landing-step-number {
+    display: inline-grid;
+    place-items: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 50%;
+    background: var(--accent-strong);
+    color: var(--accent-ink);
+    font-weight: 700;
+}
+
+/* The last nudge: a rose card with the stripes along the top, like a list */
+.landing-final {
+    position: relative;
+    overflow: hidden;
+    margin-top: 3.5rem;
+    padding: 2.75rem 1.5rem 2.5rem;
+    border-radius: var(--radius);
+    background: #fbd6df;
+    text-align: center;
+}
+
+.landing-final::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto;
+    height: 10px;
+    background: var(--stripes);
+}
+
+.landing-final h2 {
+    margin: 0.5rem 0 0.5rem;
+}
+
+.landing-final p {
+    margin: 0;
+}
+
+.landing-final-icon {
+    color: var(--accent-text);
+}
+
+.landing-final .landing-cta {
+    justify-content: center;
+}
+
+@media (max-width: 900px) {
+    .landing-hero {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .landing-preview {
+        max-width: 26rem;
+        transform: none;
+    }
+
+    .landing-features,
+    .landing-steps {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 600px) {
+    .landing-features,
+    .landing-steps {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    /* The header: just the logo and the two buttons, on one row */
+    .landing .header-inner {
+        flex-wrap: nowrap;
+    }
+}

@@ -1,8 +1,10 @@
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 import { ErrorMessage, Loading } from "./Feedback.jsx";
+import LandingPage from "../pages/LandingPage.jsx";
 
-// The whole app requires login. Not logged in → /login, and back here afterwards.
+// The whole app requires login. Not logged in → /login, and back here afterwards -
+// except the start page (/): visitors who aren't logged in see the landing page there instead.
 export default function RequireAuth({ children }) {
     const { user, checking, error, retry } = useAuth();
     const location = useLocation();
@@ -24,6 +26,7 @@ export default function RequireAuth({ children }) {
         );
     }
 
+    if (!user && location.pathname === "/") return <LandingPage />;
     if (!user) return <Navigate to="/login" replace state={{ from: location }} />;
 
     return children;
