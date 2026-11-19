@@ -6141,127 +6141,55 @@ div.wish.wish-static {
     margin-top: 1.75rem;
 }
 
-/* The made-up list: a coloured panel like the overview's, and wish rows like the list page's */
+/* The made-up list: the list page's own parts (list-meta, list-date, subhead, wish rows) on a little
+   "sheet" - the rose band with the zigzag at the top, like the list page's header */
 .landing-preview {
-    background: var(--surface);
+    background: var(--sheet);
     border-radius: var(--radius);
     box-shadow: 0 2px 6px rgba(91, 36, 24, 0.08), 0 24px 56px rgba(236, 91, 120, 0.22);
     overflow: hidden;
     transform: rotate(1.5deg);
+    pointer-events: none; /* just a picture */
 }
 
-.landing-preview-panel {
-    padding: 1.1rem 1.25rem;
-    background: linear-gradient(135deg, #fbd9c4 0%, #f3b9c8 100%);
+.landing-preview-head {
+    --zigzag: 18px;
+    padding: 1.25rem 1.25rem calc(1.5rem + var(--zigzag) / 2);
+    background: #f7c4d0; /* a step darker than the hero's rose, so the card stands out on it */
+    -webkit-mask: conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) 50% / var(--zigzag) 100%;
+    mask: conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) 50% / var(--zigzag) 100%;
 }
 
-.landing-preview-panel p {
-    margin: 0;
-}
-
-.landing-preview-kicker {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-    padding: 0.25rem 0.6rem;
-    border-radius: 6px;
-    background: var(--accent-strong);
-    color: var(--accent-ink);
-    font-size: 0.65rem;
-    font-weight: 600;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
+.landing-preview-head .list-meta {
+    margin-bottom: 0.4rem;
 }
 
 .landing-preview-title {
-    margin-top: 0.6rem !important;
-    font-size: 1.35rem;
+    margin: 0 0 0.2rem;
+    font-family: var(--font-display);
+    font-size: 1.6rem;
+    font-weight: 600;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+}
+
+.landing-preview-body {
+    padding: 0.25rem 1rem 1.1rem;
+}
+
+.landing-preview-body .subhead {
+    margin: 0.5rem 0 0.75rem;
     font-weight: 600;
 }
 
-.landing-preview-meta {
-    display: flex;
-    align-items: center;
-    gap: 0.3rem;
-    margin-top: 0.25rem !important;
-    font-size: 0.85rem;
-    font-weight: 500;
+/* The wish rows, a little smaller than on the list page */
+.landing-preview .wish-image {
+    width: 64px;
+    height: 64px;
 }
 
-.landing-preview-wishes {
-    list-style: none;
-    margin: 0;
-    padding: 0.9rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.6rem;
-}
-
-.landing-preview-wish {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.5rem 0.75rem 0.5rem 0.5rem;
-    border: 1px solid var(--line);
-    border-radius: var(--radius-small);
-}
-
-.landing-preview-wish.is-reserved {
-    opacity: 0.6;
-}
-
-.landing-preview-image {
-    flex: none;
-    display: grid;
-    place-items: center;
-    width: 44px;
-    height: 44px;
-    border-radius: 10px;
-    background: var(--accent-soft);
-    color: var(--accent-text);
-}
-
-.landing-preview-text {
-    flex: 1;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-}
-
-.landing-preview-wish-title {
-    font-weight: 600;
-    font-size: 0.9rem;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.landing-preview-price {
-    color: var(--muted);
-    font-size: 0.8rem;
-}
-
-.landing-preview-reserve {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.3rem;
-    padding: 0.3rem 0.7rem;
-    border-radius: 999px;
-    background: var(--accent-strong);
-    color: var(--accent-ink);
-    font-size: 0.75rem;
-    font-weight: 600;
-    white-space: nowrap;
-}
-
-.landing-preview-share {
-    display: flex;
-    align-items: center;
-    gap: 0.35rem;
-    margin: 0;
-    padding: 0 1rem 1rem;
-    color: var(--muted);
-    font-size: 0.8rem;
+.landing-preview .wish-row.has-quick .wish {
+    padding-right: 7rem;
 }
 
 /* Features: cards in a grid */

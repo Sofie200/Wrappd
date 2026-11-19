@@ -4,18 +4,16 @@ import {
     ArrowRight,
     Baby,
     ChartColumn,
-    Check,
     CirclePlus,
     EyeOff,
     Gift,
     HatGlasses,
-    Heart,
-    Link2,
     ScrollText,
     Sparkles,
     Users,
 } from "lucide-react";
 import Footer from "../components/Footer.jsx";
+import Avatar from "../components/Avatar.jsx";
 import { APP_NAME } from "../config.js";
 
 // The start page for visitors who aren't logged in (shown on / by RequireAuth): what Wrappd is, why it's
@@ -162,47 +160,73 @@ export default function LandingPage() {
     );
 }
 
-// A made-up list in the app's own look: a coloured panel and a few wish rows, some reserved
+// A made-up list, built from the list page's own parts (the same classes as there): "Till", the title and
+// the date on the rose intro band, then a price group with wish rows - reserved ones toned down with the
+// "Reserverad" badge and avatars, a free one with "Reservera". Not interactive - just a picture.
 function ListPreview() {
     const wishes = [
-        { title: "Lego Creator Trädkoja", price: "599 kr", reserved: true },
-        { title: "Bok: Pippi Långstrump", price: "189 kr", reserved: false },
-        { title: "Regnställ, storlek 110", price: "349 kr", reserved: true },
+        { title: "Lego Creator Trädkoja", price: "199 kr", reservedBy: [{ icon: "squirrel", color: "orange" }] },
+        { title: "Bok: Pippi Långstrump", price: "189 kr" },
+        {
+            title: "Regnställ, storlek 110",
+            price: "249 kr",
+            reservedBy: [
+                { icon: "bird", color: "blue" },
+                { icon: "sun", color: "green" },
+            ],
+        },
     ];
     return (
         <div className="landing-preview" aria-hidden="true">
-            <div className="landing-preview-panel">
-                <p className="landing-preview-kicker">
-                    <ScrollText size={14} /> Önskelista
-                </p>
+            <div className="landing-preview-head">
+                <dl className="list-meta">
+                    <div>
+                        <dt>Till</dt>
+                        <dd>Sigrid</dd>
+                    </div>
+                </dl>
                 <p className="landing-preview-title">Sigrid fyller 5</p>
-                <p className="landing-preview-meta">
-                    <Heart size={14} /> 3 önskningar · <Check size={14} /> 2 reserverade
+                <p className="list-date">
+                    24 maj 2027 <span className="muted">· om 6 månader</span>
                 </p>
             </div>
-            <ul className="landing-preview-wishes">
-                {wishes.map((wish) => (
-                    <li key={wish.title} className={`landing-preview-wish${wish.reserved ? " is-reserved" : ""}`}>
-                        <span className="landing-preview-image">
-                            <Gift size={20} />
-                        </span>
-                        <span className="landing-preview-text">
-                            <span className="landing-preview-wish-title">{wish.title}</span>
-                            <span className="landing-preview-price">{wish.price}</span>
-                        </span>
-                        {wish.reserved ? (
-                            <span className="badge badge-gift">Reserverad</span>
-                        ) : (
-                            <span className="landing-preview-reserve">
-                                <CirclePlus size={14} /> Reservera
-                            </span>
-                        )}
-                    </li>
-                ))}
-            </ul>
-            <p className="landing-preview-share">
-                <Link2 size={14} /> Dela listan med en länk
-            </p>
+            <div className="landing-preview-body">
+                <p className="subhead">
+                    Upp till 250 kr <span className="muted small">(3)</span>
+                </p>
+                <div className="wishes">
+                    {wishes.map((wish) => (
+                        <div key={wish.title} className={`wish-row${wish.reservedBy ? "" : " has-quick"}`}>
+                            <div className={`wish wish-static${wish.reservedBy ? " wish-full" : ""}`}>
+                                <img className="wish-image wish-image-empty" src="/gift-placeholder.png" alt="" />
+                                <span className="wish-summary">
+                                    <span className="wish-title">{wish.title}</span>
+                                    <span className="wish-meta">
+                                        <span className="price">{wish.price}</span>
+                                    </span>
+                                </span>
+                                {wish.reservedBy && (
+                                    <span className="wish-reserved">
+                                        <span className="reserved-by">
+                                            <span className="badge badge-gift">Reserverad</span>
+                                            <span className="avatar-stack">
+                                                {wish.reservedBy.map((p, i) => (
+                                                    <Avatar key={i} icon={p.icon} color={p.color} size={22} />
+                                                ))}
+                                            </span>
+                                        </span>
+                                    </span>
+                                )}
+                            </div>
+                            {!wish.reservedBy && (
+                                <span className="btn btn-small btn-primary wish-quick-reserve">
+                                    <CirclePlus size={16} /> Reservera
+                                </span>
+                            )}
+                        </div>
+                    ))}
+                </div>
+            </div>
         </div>
     );
 }
