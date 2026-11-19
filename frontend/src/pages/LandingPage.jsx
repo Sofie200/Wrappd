@@ -6,8 +6,10 @@ import {
     ChartColumn,
     CirclePlus,
     EyeOff,
-    Gift,
     HatGlasses,
+    KeyRound,
+    PartyPopper,
+    Rocket,
     ScrollText,
     Sparkles,
     Users,
@@ -40,7 +42,7 @@ const FEATURES = [
     {
         icon: HatGlasses,
         title: "Secret Santa på några sekunder",
-        text: "Lotta vem som ger till vem. Bara du ser vem du fick - och du kan reservera direkt från hens önskeprofil.",
+        text: "Lotta vem som ger till vem. Bara du ser vem du fick och du kan reservera en önskning direkt från hens profil.",
     },
     {
         icon: Baby,
@@ -55,9 +57,9 @@ const FEATURES = [
 ];
 
 const STEPS = [
-    { title: "Skapa ett konto", text: "Med e-post eller Google. Det tar under en minut." },
-    { title: "Samla din grupp", text: "Bjud in familjen eller vännerna - eller lägg till barnen själv." },
-    { title: "Önska och reservera", text: "Gör en lista, dela den, och se önskningarna bli reserverade. I hemlighet." },
+    { title: "Skapa ett konto", text: "Med Google eller e-post, det tar under en minut!" },
+    { title: "Samla din grupp", text: "Bjud in familjen eller vännerna." },
+    { title: "Önska och dela", text: "Gör en lista, dela den och låt nära och kära sköta resten." },
 ];
 
 export default function LandingPage() {
@@ -74,11 +76,8 @@ export default function LandingPage() {
                         <img src="/logo.png" alt={APP_NAME} id="logo" />
                     </Link>
                     <nav className="landing-nav" aria-label="Konto">
-                        <Link to="/login" className="btn btn-small btn-ghost">
-                            Logga in
-                        </Link>
-                        <Link to="/register" className="btn btn-small btn-primary">
-                            Skapa konto
+                        <Link to="/login" className="btn btn-small btn-ghost landing-login">
+                            <KeyRound size={16} aria-hidden="true" /> Logga in
                         </Link>
                     </nav>
                 </div>
@@ -92,18 +91,15 @@ export default function LandingPage() {
                             <p className="landing-kicker">
                                 <Sparkles size={16} aria-hidden="true" /> Önskelistor och gåvor - tillsammans
                             </p>
-                            <h1 id="landing-title">Önska, reservera och överraska - utan att avslöja något.</h1>
+                            <h1 id="landing-title">Önska, reservera och överraska - utan att avslöja något</h1>
                             <p className="landing-lede">
-                                {APP_NAME} samlar familjens och vännernas önskelistor på ett ställe. Alla ser vad som
-                                redan är fixat, så ingen köper samma sak två gånger. Och den som listan är till ser
-                                ingenting förrän paketet öppnas.
+                                {APP_NAME} samlar familjens och vännernas önskelistor på ett ställe. Alla kan se vad som
+                                redan är taget, så det blir inga dubbletter - och den som ska få gåvorna ser ingenting
+                                förrän paketen öppnas.
                             </p>
                             <div className="landing-cta">
                                 <Link to="/register" className="btn btn-primary">
                                     Skapa konto <ArrowRight size={16} aria-hidden="true" />
-                                </Link>
-                                <Link to="/login" className="btn btn-ghost">
-                                    Jag har redan ett konto
                                 </Link>
                             </div>
                         </div>
@@ -126,7 +122,7 @@ export default function LandingPage() {
                         </ul>
                     </section>
 
-                    <section className="section landing-section" aria-labelledby="landing-how">
+                    <section className="section landing-section landing-how" aria-labelledby="landing-how">
                         <h2 id="landing-how">Så funkar det</h2>
                         <ol className="landing-steps">
                             {STEPS.map((step, i) => (
@@ -143,12 +139,12 @@ export default function LandingPage() {
 
                     {/* Last: one more nudge, on the rose */}
                     <section className="landing-final" aria-labelledby="landing-final-title">
-                        <Gift size={32} aria-hidden="true" className="landing-final-icon" />
-                        <h2 id="landing-final-title">Nästa present börjar med en önskelista</h2>
+                        <PartyPopper size={32} aria-hidden="true" className="landing-final-icon" />
+                        <h2 id="landing-final-title">Förbered nästa firande med en önskelista</h2>
                         <p>Inga annonser, och vi säljer aldrig dina uppgifter.</p>
                         <div className="landing-cta">
                             <Link to="/register" className="btn btn-primary">
-                                Kom igång <ArrowRight size={16} aria-hidden="true" />
+                                Kom igång <Rocket size={16} aria-hidden="true" />
                             </Link>
                         </div>
                     </section>
@@ -160,8 +156,8 @@ export default function LandingPage() {
     );
 }
 
-// A made-up list, built from the list page's own parts (the same classes as there): "Till", the title and
-// the date on the rose intro band, then a price group with wish rows - reserved ones toned down with the
+// A made-up list, built from the list page's own parts (the same classes as there): the title and
+// the date on the intro band (in the wish-list cards' peach-to-pink gradient), then a price group with wish rows - reserved ones toned down with the
 // "Reserverad" badge and avatars, a free one with "Reservera". Not interactive - just a picture.
 function ListPreview() {
     const wishes = [
@@ -179,12 +175,6 @@ function ListPreview() {
     return (
         <div className="landing-preview" aria-hidden="true">
             <div className="landing-preview-head">
-                <dl className="list-meta">
-                    <div>
-                        <dt>Till</dt>
-                        <dd>Sigrid</dd>
-                    </div>
-                </dl>
                 <p className="landing-preview-title">Sigrid fyller 5</p>
                 <p className="list-date">
                     24 maj 2027 <span className="muted">· om 6 månader</span>

@@ -1620,13 +1620,15 @@ select {
 .wish-image {
     flex: none;
     width: 88px;
-    height: 88px;
+    min-height: 88px;
+    align-self: stretch; /* from the row's top edge to its bottom edge, however tall the row gets */
     object-fit: cover;
     background: var(--surface-soft);
     display: block;
 }
 
-/* No picture: the presents illustration, whole and with some air around it */
+/* No picture: the presents illustration, whole and with some air around it - the background colour
+   fills the rest of the column, top to bottom */
 .wish-image.wish-image-empty {
     object-fit: contain;
     padding: 0.6rem;
@@ -1638,7 +1640,7 @@ select {
     padding: 0.75rem 1rem 0.75rem 0;
     display: flex;
     flex-direction: column;
-    gap: 0.35rem;
+    gap: 0.2rem;
 }
 
 .wish-reserved {
@@ -2151,7 +2153,7 @@ select {
 
     .wish-image {
         width: 72px;
-        height: 72px;
+        min-height: 72px;
     }
 
     .wish {
@@ -6098,6 +6100,53 @@ div.wish.wish-static {
     align-items: center;
     gap: 0.5rem;
     margin-left: auto;
+    margin-right: 1rem;
+}
+
+/* "Logga in": on hover the key turns in the lock and the button lifts a little, with a rose edge */
+.landing-login {
+    transition:
+        transform 0.2s ease,
+        border-color 0.2s ease,
+        color 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.landing-login svg {
+    transform-origin: 30% 70%;
+}
+
+.landing-login:hover,
+.landing-login:focus-visible {
+    transform: translateY(-1px);
+    border-color: var(--accent);
+    color: var(--accent-text);
+    box-shadow: var(--shadow);
+}
+
+.landing-login:hover svg,
+.landing-login:focus-visible svg {
+    animation: landing-key-turn 0.6s ease-in-out;
+}
+
+@keyframes landing-key-turn {
+    0% { transform: rotate(0); }
+    40% { transform: rotate(-35deg); }
+    70% { transform: rotate(10deg); }
+    100% { transform: rotate(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .landing-login,
+    .landing-login:hover,
+    .landing-login:focus-visible {
+        transform: none;
+    }
+
+    .landing-login:hover svg,
+    .landing-login:focus-visible svg {
+        animation: none;
+    }
 }
 
 /* The hero: text on the left, a peek at a list on the right - stacked on narrow screens */
@@ -6112,7 +6161,7 @@ div.wish.wish-static {
     display: inline-flex;
     align-items: center;
     gap: 0.4rem;
-    margin: 0 0 0.75rem;
+    margin: 0 0 1.5rem;
     color: var(--accent-text);
     font-size: 0.8rem;
     font-weight: 600;
@@ -6121,7 +6170,7 @@ div.wish.wish-static {
 }
 
 .landing-hero h1 {
-    margin: 0 0 1rem;
+    margin: 0 0 1.75rem;
     font-size: clamp(2rem, 4.5vw, 3.1rem);
     line-height: 1.1;
     letter-spacing: -0.02em;
@@ -6155,13 +6204,9 @@ div.wish.wish-static {
 .landing-preview-head {
     --zigzag: 18px;
     padding: 1.25rem 1.25rem calc(1.5rem + var(--zigzag) / 2);
-    background: #f7c4d0; /* a step darker than the hero's rose, so the card stands out on it */
+    background: linear-gradient(135deg, #fbd9c4 0%, #f3b9c8 100%); /* the wish-list cards' gradient (.event-info) */
     -webkit-mask: conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) 50% / var(--zigzag) 100%;
     mask: conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) 50% / var(--zigzag) 100%;
-}
-
-.landing-preview-head .list-meta {
-    margin-bottom: 0.4rem;
 }
 
 .landing-preview-title {
@@ -6185,7 +6230,7 @@ div.wish.wish-static {
 /* The wish rows, a little smaller than on the list page */
 .landing-preview .wish-image {
     width: 64px;
-    height: 64px;
+    min-height: 64px;
 }
 
 .landing-preview .wish-row.has-quick .wish {
@@ -6262,6 +6307,21 @@ div.wish.wish-static {
 }
 
 /* How it works: three numbered steps */
+/* "Så funkar det": heading, numbers and texts centred - on every screen size */
+.landing-how {
+    text-align: center;
+    margin-top: 4rem; /* more air above than between the other sections (2.5rem) */
+}
+
+/* More air under the heading, and under the steps before the final box */
+.landing-how h2 {
+    margin-bottom: 2rem;
+}
+
+.landing-how .landing-steps {
+    margin-bottom: 5rem;
+}
+
 .landing-steps {
     list-style: none;
     margin: 0;
@@ -6282,38 +6342,110 @@ div.wish.wish-static {
     line-height: 1.55;
 }
 
+.landing-step {
+    position: relative;
+}
+
+/* The numbers: big round stickers in the ribbon's colours, each stuck on at its own little angle,
+   with a white edge - and a dashed "path" from one to the next on wide screens */
 .landing-step-number {
+    --step-bg: var(--accent-strong);
+    --step-ink: var(--accent-ink);
+    --step-tilt: -6deg;
+    position: relative;
+    z-index: 1;
     display: inline-grid;
     place-items: center;
-    width: 2.25rem;
-    height: 2.25rem;
+    width: 3.5rem;
+    height: 3.5rem;
     border-radius: 50%;
-    background: var(--accent-strong);
-    color: var(--accent-ink);
+    border: 3px solid #fff;
+    background: var(--step-bg);
+    color: var(--step-ink);
+    font-family: var(--font-display);
+    font-size: 1.6rem;
     font-weight: 700;
+    line-height: 1;
+    box-shadow: var(--shadow-lift);
+    transform: rotate(var(--step-tilt));
+    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.landing-step:nth-child(2) .landing-step-number {
+    --step-bg: var(--orange);
+    --step-tilt: 5deg;
+}
+
+.landing-step:nth-child(3) .landing-step-number {
+    --step-bg: var(--lavender);
+    --step-tilt: -3deg;
+}
+
+/* Hover: the sticker hops up and straightens, a little bigger */
+.landing-step:hover .landing-step-number {
+    transform: translateY(-4px) rotate(0) scale(1.08);
+}
+
+/* The path: a dashed line from this number to the next one (three in a row only) */
+@media (min-width: 901px) {
+    .landing-step:not(:last-child)::after {
+        content: "";
+        position: absolute;
+        top: 1.75rem; /* the middle of the number */
+        left: calc(50% + 2.5rem);
+        width: calc(100% + 1.25rem - 5rem); /* to the next column's number, gap included */
+        border-top: 3px dashed #f5b3c1;
+    }
+
+    /* ...ending in an arrowhead just before the next number (the line ends at 150% - 1.25rem) */
+    .landing-step:not(:last-child)::before {
+        content: "";
+        position: absolute;
+        top: calc(1.75rem + 1.5px - 6px); /* centred on the 3px line */
+        left: calc(150% - 1.25rem - 13px);
+        width: 12px;
+        height: 12px;
+        border-top: 3px solid #f5b3c1;
+        border-right: 3px solid #f5b3c1;
+        transform: rotate(45deg);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .landing-step-number {
+        transition: none;
+    }
+
+    .landing-step:hover .landing-step-number {
+        transform: rotate(var(--step-tilt));
+    }
 }
 
 /* The last nudge: a rose card with the stripes along the top, like a list */
 .landing-final {
-    position: relative;
-    overflow: hidden;
     margin-top: 3.5rem;
-    padding: 2.75rem 1.5rem 2.5rem;
-    border-radius: var(--radius);
-    background: #fbd6df;
+    padding: 2.5rem 1.5rem 3rem;
+    border-radius: 0 0 var(--radius) var(--radius); /* square on top, under the band; rounded below */
     text-align: center;
-}
-
-.landing-final::before {
-    content: "";
-    position: absolute;
-    inset: 0 0 auto;
-    height: 10px;
-    background: var(--stripes);
+    /* Pale rose, with a band of the page's own backdrop (warm gradient + see-through white stripes)
+       along the top: the backdrop sits behind, in the top border, the rose in front of it */
+    border-top: 10px solid transparent;
+    background:
+        linear-gradient(#fbd6df, #fbd6df) padding-box,
+        repeating-linear-gradient(-45deg, rgba(255, 255, 255, 0.14) 0 12px, transparent 12px 30px) border-box,
+        linear-gradient(
+                135deg,
+                var(--yellow) 0%,
+                var(--orange) 22%,
+                var(--coral) 42%,
+                var(--rose) 62%,
+                var(--lavender) 100%
+            )
+            border-box;
 }
 
 .landing-final h2 {
-    margin: 0.5rem 0 0.5rem;
+    margin: 1rem 0 0.5rem;
 }
 
 .landing-final p {
@@ -6326,6 +6458,7 @@ div.wish.wish-static {
 
 .landing-final .landing-cta {
     justify-content: center;
+    margin-top: 1.5rem;
 }
 
 @media (max-width: 900px) {
