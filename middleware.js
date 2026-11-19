@@ -51,7 +51,7 @@ export default async function middleware(request) {
         if (!shared.ok || !page.ok) return;
 
         const { list, recipients } = await shared.json();
-        const title = `${list.title} - ${APP_NAME}`;
+        const title = `Önskelista: ${list.title} | ${APP_NAME}`;
         const description =
             `Önskelista${recipients.length > 0 ? ` till ${recipients.join(", ")}` : ""} · ${longDate(list.endDate)}` +
             (list.description ? ` · ${list.description}` : "");
@@ -59,10 +59,10 @@ export default async function middleware(request) {
         let html = await page.text();
         html = html.replace(/<title>[\s\S]*?<\/title>/i, `<title>${escape(title)}</title>`);
         html = setMeta(html, "name", "description", description);
-        html = setMeta(html, "property", "og:title", list.title);
+        html = setMeta(html, "property", "og:title", title);
         html = setMeta(html, "property", "og:description", description);
         html = setMeta(html, "property", "og:url", url.href);
-        html = setMeta(html, "name", "twitter:title", list.title);
+        html = setMeta(html, "name", "twitter:title", title);
         html = setMeta(html, "name", "twitter:description", description);
 
         return new Response(html, {
