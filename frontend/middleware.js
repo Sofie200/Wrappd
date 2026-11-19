@@ -68,6 +68,8 @@ export default async function middleware(request) {
         return new Response(html, {
             headers: {
                 "content-type": "text/html; charset=utf-8",
+                // Shared lists are private: never in search results
+                "x-robots-tag": "noindex, nofollow",
                 // Short: a new link or a renamed list should show up in previews soon
                 "cache-control": "public, max-age=0, s-maxage=300",
             },

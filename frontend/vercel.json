@@ -1,3 +1,8 @@
 {
+  "headers": [
+    { "source": "/s/(.*)", "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }] },
+    { "source": "/link/(.*)", "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }] },
+    { "source": "/register/google", "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }] }
+  ],
   "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
 }

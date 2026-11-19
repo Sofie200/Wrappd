@@ -12,7 +12,7 @@
             rel="stylesheet"
         />
         <!-- The title is set from VITE_APP_NAME in src/config.js -->
-        <title>Wrappd</title>
+        <title>Wrappd - önskelistor och gåvor</title>
         <meta
             name="description"
             content="Önskelistor och gåvor för familjen, vännerna eller jobbet. Reservera önskningar - utan att mottagaren ser vad som är på väg."
@@ -35,6 +35,21 @@
         <meta property="og:image:alt" content="Wrappds logga: ordet Wrappd med en rosa rosett" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="theme-color" content="#ec5b78" />
+
+        <!-- For Google: what the site is (structured data, schema.org) -->
+        <script type="application/ld+json">
+            {
+                "@context": "https://schema.org",
+                "@type": "WebApplication",
+                "name": "Wrappd",
+                "url": "https://wrappd.se/",
+                "description": "Önskelistor och gåvor för familjen, vännerna eller jobbet. Reservera önskningar - utan att mottagaren ser vad som är på väg.",
+                "applicationCategory": "LifestyleApplication",
+                "operatingSystem": "Web",
+                "inLanguage": "sv",
+                "offers": { "@type": "Offer", "price": "0", "priceCurrency": "SEK" }
+            }
+        </script>
     </head>
     <body>
         <div id="root"></div>

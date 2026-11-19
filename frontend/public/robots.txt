@@ -1,0 +1,6 @@
+# Everything may be crawled. Shared lists (/s/…) and invite links (/link/…) are kept out of search
+# results with a noindex header instead - a Disallow here would stop Google from ever seeing it.
+User-agent: *
+Allow: /
+
+Sitemap: https://wrappd.se/sitemap.xml
