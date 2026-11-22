@@ -48,7 +48,7 @@ export default function WishCard({ wish, me, listId, santa = null, person = null
         api("/gifts/events")
             .then(({ data }) => {
                 if (cancelled) return;
-                const forPerson = data.filter((e) => !e.archived && person && e.recipientId === person.id);
+                const forPerson = data.filter((e) => !e.archived && e.complete && person && e.recipientId === person.id);
                 setMyEvents(forPerson);
                 setEventChoice(forPerson.length > 0 ? String(forPerson[0].id) : "new"); // the soonest one
             })

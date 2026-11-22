@@ -140,9 +140,12 @@ router.post("/:id/gifts", async (req, res) => {
             );
             if (rowCount === 0) throw new HttpError(403, "Du ger inte till den här personen i den Secret Santan");
         } else if (onProfile && chosenEventId) {
-            // An event that exists: mine, still coming, and for this person
+            // An event that exists: mine, still coming, and for this person - and I'm in every gift on it
+            // (nobody adds to an event they only see part of)
             const { rows: [event] } = await db.query(
-                `SELECT e.recipient_id, e.event_date < ${TODAY} AS archived
+                `SELECT e.recipient_id, e.event_date < ${TODAY} AS archived,
+                        NOT EXISTS (SELECT 1 FROM gifts g WHERE g.event_id = e.id
+                                    AND NOT EXISTS (SELECT 1 FROM gift_members gm WHERE gm.gift_id = g.id AND gm.user_id = $2)) AS complete
                  FROM gift_events e
                  WHERE e.id = $1
                    AND EXISTS (SELECT 1 FROM gifts g JOIN gift_members gm ON gm.gift_id = g.id
@@ -152,6 +155,7 @@ router.post("/:id/gifts", async (req, res) => {
             if (!event) throw new HttpError(404, "Händelsen finns inte");
             if (event.recipient_id !== wish.user_id) throw new HttpError(400, "Händelsen är till någon annan");
             if (event.archived) throw new HttpError(400, "Händelsen har redan varit - välj en annan eller skapa en ny");
+            if (!event.complete) throw new HttpError(403, "Händelsen har gåvor som du inte är med i - välj en annan eller skapa en ny");
         } else if (onProfile) {
             if (!eventName) throw new HttpError(400, "Ange vad händelsen heter");
             if (!date) throw new HttpError(400, "Ange när gåvan ska ges");

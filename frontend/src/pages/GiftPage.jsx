@@ -18,7 +18,7 @@ import { ArrowUpRight, Check, CircleMinus, Save, Trash2 } from "lucide-react";
 //  - A gift on a wish: quantity, price, comment, who shares and how. After the event: price, comment and split.
 //  - A gift outside the wish list: also title, description, link, image, and a list OR a Secret Santa I give in
 //    OR an event (a name, a date and optionally a linked person). Everything can always be changed. Never shown on the list.
-//    Can only be shared when it has a list.
+//    Can be shared when it has a list or an event - not a Secret Santa gift.
 export default function GiftPage() {
     const { id } = useParams();
     const [searchParams] = useSearchParams();
@@ -127,14 +127,26 @@ function GiftForm({ data, lists, santas, presetListId, presetSantaId, presetEven
         if (product.imageUrl) image.takeShopImage(product.imageUrl);
     }
 
-    // Sharing: on a gift on a wish, or a gift outside the list that is saved with a list.
+    // Sharing: on a gift on a wish, a gift outside the list that is saved with a list, or a gift on an event of my own.
     // Who can share depends on the list - so after changing the list, it must be saved first.
     const listChanged = isFree && !isNew && form.listId !== savedListId;
     // (Not a Secret Santa gift - only the giver knows who it's for)
-    // A new surprise gift on a list can be shared right away: who can share depends on the chosen list
-    const sharingNew = isNew && isFree && !forEvent && form.listId !== "";
-    const newCandidates = useFetch(sharingNew ? `/gifts/candidates?listId=${form.listId}` : null);
-    const canShare = sharingNew || (!isNew && !gift?.santaId && (!isFree || (form.listId !== "" && !listChanged)));
+    // A new gift can be shared right away: who can share depends on the chosen list - or, on an event,
+    // on who it's for (adults in my groups, never the recipient)
+    const sharingNew = isNew && isFree && form.santaId === "";
+    const candidatesQuery =
+        form.listId !== ""
+            ? `listId=${form.listId}`
+            : forEvent && presetEvent.eventId
+              ? `eventId=${presetEvent.eventId}`
+              : form.recipientId
+                ? `recipientId=${form.recipientId}`
+                : "";
+    const newCandidates = useFetch(sharingNew ? `/gifts/candidates?${candidatesQuery}` : null);
+    // On an event (not a list): those who share also see the event's name, date and recipient
+    const sharedEvent = isFree && form.listId === "" && form.santaId === "";
+    const canShare =
+        sharingNew || (!isNew && !gift?.santaId && (!isFree || Boolean(gift?.eventId) || (form.listId !== "" && !listChanged)));
     const people = data
         ? [...data.members, ...data.candidates.filter((c) => !data.members.some((m) => m.id === c.id))]
         : sharingNew
@@ -166,10 +178,8 @@ function GiftForm({ data, lists, santas, presetListId, presetSantaId, presetEven
 
     // What is sent as members. Without a list, only I remain. After a list change, the same people (checked by the server).
     function membersToSend() {
-        // Without a list only I can be in it - except a saved logged gift, which keeps everyone already in it
-        // (e.g. a shared gift whose list was deleted). Nobody new can join it.
-        const keepsMembers = !isNew && Boolean(gift?.eventId);
-        if (isFree && form.listId === "" && !keepsMembers) return [{ userId: user.id, amount: null }];
+        // When it can't be shared (a Secret Santa gift) only I am in it
+        if (isFree && form.listId === "" && !canShare) return [{ userId: user.id, amount: null }];
         const ids = canShare ? selectedIds : Object.keys(form.members).map(Number);
         const custom = form.split === "custom";
         return ids.map((pid) => ({ userId: pid, amount: custom ? form.members[pid] : null }));
@@ -188,7 +198,7 @@ function GiftForm({ data, lists, santas, presetListId, presetSantaId, presetEven
         }
         const others = leaving.filter((m) => m.id !== user.id);
         const freeText = form.listId === "" && form.santaId === ""; // recipient and date only without a list or a Secret Santa
-        if (isFree && form.listId === "" && others.length > 0 &&
+        if (isFree && form.listId === "" && !canShare && others.length > 0 &&
             !window.confirm(`En gåva utan lista kan inte delas. ${others.map((m) => m.name).join(", ")} tas bort från gåvan. Fortsätta?`)) {
             return;
         }
@@ -470,7 +480,7 @@ function GiftForm({ data, lists, santas, presetListId, presetSantaId, presetEven
                         Kommentar
                         {/* Who sees the comment - said for gifts that can be shared: on a list, or a reservation
                             (not for a Secret Santa gift or a logged one, which are only mine) */}
-                        {form.santaId === "" && !gift?.santaId && (form.listId !== "" || !isFree) && (
+                        {form.santaId === "" && !gift?.santaId && (form.listId !== "" || !isFree || canShare) && (
                             <>
                                 {" "}
                                 <InfoTip label="Vem ser kommentaren?">Syns bara för den/de som köpt gåvan.</InfoTip>
@@ -500,6 +510,7 @@ function GiftForm({ data, lists, santas, presetListId, presetSantaId, presetEven
                                 <div className="sharers">
                                     <p className="small muted sharers-hint">
                                         Alla valda användare kan se gåvan bland sina inköp och ändra den.
+                                        {sharedEvent && " De ser också händelsens namn, datum och vem den är till."}
                                     </p>
                                     <PeoplePicker
                                         bare

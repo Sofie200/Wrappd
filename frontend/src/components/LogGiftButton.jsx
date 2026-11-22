@@ -50,7 +50,8 @@ function LogGiftModal({ onClose, onAdded }) {
     const [draft, setDraft] = useState({ name: "", date: "", recipientId: "", recipientText: "" });
     const [error, setError] = useState(null);
 
-    const list = events.data?.data ?? [];
+    // Only events where I'm in every gift - nobody adds to an event they only see part of
+    const list = (events.data?.data ?? []).filter((ev) => ev.complete);
     const wishLists = (linkable.data?.data ?? []).filter((l) => !l.archived);
     const santas = (linkable.data?.santas ?? []).filter((x) => !x.archived);
     const hasChoices = list.length + wishLists.length + santas.length > 0;

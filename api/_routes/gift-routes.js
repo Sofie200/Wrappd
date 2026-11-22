@@ -12,7 +12,11 @@
 //    (a gift on a wish only shows as "Reserverad av …" on the list).
 //  - A gift can be shared with adults in its list's groups - never the list's recipients, never children.
 //    A gift on a wish profile (a wish without a list) can be shared with adults in the person's groups.
-//    A gift without a list or a wish can't be shared (also not a Secret Santa gift - only the giver knows who it's for).
+//    A gift on an event of my own can be shared with adults in my groups - never the event's recipient.
+//    A Secret Santa gift can't be shared - only the giver knows who it's for.
+//  - An event of my own is shared by everyone in a gift on it: they all see its name, date and recipient.
+//    Changing it, or logging another gift on it, takes being in EVERY gift on it - nobody changes what they
+//    can't see. The recipient can never be in a gift on it.
 //  - Gifts on wishes: quantity and undo are locked after the event; price, comment and split are not.
 //    One person can be in at most one gift per wish.
 //  - Gifts outside the list: everything can always be changed - except what it is linked to (a list, a Secret
@@ -94,6 +98,23 @@ async function shareCandidates(db, { listId, wishId = null, giftId = null, owner
     return rows;
 }
 
+// Who may share a gift on an event of my own: adults in my groups - never the event's recipient
+// (recipientId; NULL for a name in free text or "Okänd mottagare")
+async function eventCandidates(db, { userId, recipientId = null }, onlyIds = null) {
+    const { rows } = await db.query(
+        `SELECT DISTINCT u.id, u.name, u.username, u.avatar_icon AS "avatarIcon", u.avatar_color AS "avatarColor"
+         FROM users u
+         JOIN group_members gm ON gm.user_id = u.id
+         JOIN group_members mine ON mine.group_id = gm.group_id AND mine.user_id = $1
+         WHERE NOT u.is_child
+           AND u.id IS DISTINCT FROM $2::int
+           AND ($3::int[] IS NULL OR u.id = ANY($3::int[]))
+         ORDER BY u.name`,
+        [userId, recipientId, onlyIds]
+    );
+    return rows;
+}
+
 // A gift outside the list may be linked to a published list I can see and am not a recipient of -
 // also archived ones. Not to a private list: nobody can buy for it before it's published.
 async function requireLinkableList(db, listId, userId) {
@@ -115,14 +136,24 @@ async function requireLinkablePerson(db, personId, userId) {
     if (rowCount === 0) throw new HttpError(404, "Personen finns inte i dina grupper");
 }
 
-// ...or to an event of my own that I'm in - through a gift on it. 404 otherwise.
-async function requireMyEvent(db, eventId, userId) {
-    const { rowCount } = await db.query(
-        `SELECT 1 FROM gifts g JOIN gift_members gm ON gm.gift_id = g.id
-         WHERE g.event_id = $1 AND gm.user_id = $2 LIMIT 1`,
+// ...or to an event of my own that I'm in - through a gift on it. 404 otherwise. → { recipient_id, complete }
+// complete: I must be in EVERY gift on it - to change it or log more on it (nobody changes what they can't see)
+async function requireMyEvent(db, eventId, userId, { complete = false } = {}) {
+    const { rows: [event] } = await db.query(
+        `SELECT e.recipient_id, bool_and(gm.user_id IS NOT NULL) AS complete
+         FROM gift_events e
+         JOIN gifts g ON g.event_id = e.id
+         LEFT JOIN gift_members gm ON gm.gift_id = g.id AND gm.user_id = $2
+         WHERE e.id = $1
+         GROUP BY e.id
+         HAVING bool_or(gm.user_id IS NOT NULL)`,
         [eventId, userId]
     );
-    if (rowCount === 0) throw new HttpError(404, "Händelsen finns inte");
+    if (!event) throw new HttpError(404, "Händelsen finns inte");
+    if (complete && !event.complete) {
+        throw new HttpError(403, "Händelsen har gåvor som du inte är med i, så du kan inte ändra den eller logga fler gåvor på den.");
+    }
+    return event;
 }
 
 // ...or to a Secret Santa where I'm a giver. 404 otherwise - others don't learn it exists.
@@ -168,20 +199,37 @@ router.get("/lists", async (req, res) => {
     res.json({ data: rows, santas });
 });
 
-/* --- GET /api/gifts/candidates?listId=5 → { data } - who a new surprise gift on the list can be shared with --- */
-// Adults in the list's groups who aren't its recipients - the same rule as for a saved gift
+/* --- GET /api/gifts/candidates?listId=5 | ?eventId=7 | ?recipientId=3 → { data } - who a new gift can be shared with --- */
+// The same rules as for a saved gift:
+//   listId:      adults in the list's groups who aren't its recipients
+//   eventId:     an event of my own that exists - adults in my groups, not its recipient
+//   recipientId: a new event (recipientId left out: a name in free text) - adults in my groups, not that person
 router.get("/candidates", async (req, res) => {
-    const listId = parseId(req.query.listId);
-    await requireLinkableList(pool, listId, req.user.id);
-    const people = await shareCandidates(pool, { listId });
+    let people;
+    if (req.query.listId) {
+        const listId = parseId(req.query.listId);
+        await requireLinkableList(pool, listId, req.user.id);
+        people = await shareCandidates(pool, { listId });
+    } else {
+        let recipientId = null;
+        if (req.query.eventId) {
+            ({ recipient_id: recipientId } = await requireMyEvent(pool, parseId(req.query.eventId), req.user.id, { complete: true }));
+        } else if (req.query.recipientId) {
+            recipientId = parseId(req.query.recipientId);
+        }
+        people = await eventCandidates(pool, { userId: req.user.id, recipientId });
+    }
     res.json({ data: people.filter((p) => p.id !== req.user.id) });
 });
 
 /* --- GET /api/gifts/events → { data } - my events of my own ("Loggade gåvor"), to log another gift on --- */
 // Mine = an event with a gift I'm in. Coming ones first (soonest first), then past ones (latest first).
+// complete: I'm in every gift on it - only then can I change it or log more gifts on it
 router.get("/events", async (req, res) => {
     const { rows } = await pool.query(
         `SELECT e.id, e.name, e.event_date AS "date", e.recipient_id AS "recipientId",
+                NOT EXISTS (SELECT 1 FROM gifts g WHERE g.event_id = e.id
+                            AND NOT EXISTS (SELECT 1 FROM gift_members gm WHERE gm.gift_id = g.id AND gm.user_id = $1)) AS complete,
                 e.recipient_text AS "recipientText", e.recipient_unknown AS "recipientUnknown",
                 COALESCE(u.name, e.recipient_text, CASE WHEN e.recipient_unknown THEN 'Okänd mottagare' END) AS "recipientName",
                 e.event_date < ${TODAY} AS archived
@@ -214,7 +262,8 @@ router.get("/recipient-names", async (req, res) => {
 });
 
 /* --- PUT /api/gifts/events/:id  { name, giftDate, recipientId?, recipientText? } - change an event of my own --- */
-// Anyone in one of its gifts may. It changes for all the event's gifts.
+// Only someone who is in EVERY gift on it may. It changes for all the event's gifts.
+// The recipient can't be someone who shares a gift on it - then they'd see their own present.
 const EventBody = GiftBody.pick({ recipient: true, giftDate: true, recipientId: true, recipientText: true });
 
 router.put("/events/:id", async (req, res) => {
@@ -222,9 +271,17 @@ router.put("/events/:id", async (req, res) => {
     const body = parse(EventBody, req.body ?? {});
     if (!body.recipient) throw new HttpError(400, "Ange händelsens namn");
     if (!body.giftDate) throw new HttpError(400, "Ange ett datum");
-    await requireMyEvent(pool, eventId, req.user.id);
+    await requireMyEvent(pool, eventId, req.user.id, { complete: true });
 
     const { rows: [current] } = await pool.query("SELECT recipient_id FROM gift_events WHERE id = $1", [eventId]);
+    if (body.recipientId) {
+        const { rowCount } = await pool.query(
+            `SELECT 1 FROM gift_members gm JOIN gifts g ON g.id = gm.gift_id
+             WHERE g.event_id = $1 AND gm.user_id = $2 LIMIT 1`,
+            [eventId, body.recipientId]
+        );
+        if (rowCount > 0) throw new HttpError(400, "Den personen delar på en gåva i händelsen och kan inte vara mottagare");
+    }
     // Reservations from someone's wish profile are on it: then it stays theirs
     const { rows: [profile] } = await pool.query(
         `SELECT u.id, u.name FROM gifts g JOIN wishes w ON w.id = g.wish_id JOIN users u ON u.id = w.user_id
@@ -317,7 +374,10 @@ router.get("/:id", async (req, res) => {
                   [gift.wish_id, giftId]
               )
             : { rows: [{ taken: 0 }] },
-        shareCandidates(pool, { listId: gift.list_id, wishId: gift.wish_id, giftId, ownerId: gift.wish_owner_id }),
+        // A logged gift on an event of my own: adults in my groups, not the event's recipient
+        gift.is_free && gift.event_id
+            ? eventCandidates(pool, { userId: req.user.id, recipientId: gift.recipient_id })
+            : shareCandidates(pool, { listId: gift.list_id, wishId: gift.wish_id, giftId, ownerId: gift.wish_owner_id }),
         // The Secret Santa it belongs to, with who I give to - only if I'm still the giver
         gift.santa_id
             ? pool.query(
@@ -404,10 +464,10 @@ async function replaceMembers(db, giftId, body, userIds) {
 
 /* --- POST /api/gifts  (multipart) → { id } - a gift outside the wish list. Only me to begin with. --- */
 router.post("/", receiveImage, async (req, res) => {
-    // A surprise gift on a list can be shared right away (members + split, like when changing a gift).
-    // Anything else starts with only me.
+    // A surprise gift on a list, or a gift on an event of my own, can be shared right away (members + split,
+    // like when changing a gift). A Secret Santa gift - or one without members - starts with only me.
     let body = parse(GiftBody, req.body ?? {});
-    if (!body.listId || !body.members?.length) {
+    if (body.santaId || !body.members?.length) {
         body = { ...body, members: [{ userId: req.user.id, amount: null }], split: "equal" };
     }
     checkFreeGift(body);
@@ -425,10 +485,22 @@ router.post("/", receiveImage, async (req, res) => {
     }
     if (body.santaId) await requireMySanta(pool, body.santaId, req.user.id);
     if (body.listId || body.santaId) body.eventId = null;
-    if (body.eventId) await requireMyEvent(pool, body.eventId, req.user.id);
+    // Logging on an event that exists takes being in every gift on it
+    const existingEvent = body.eventId ? await requireMyEvent(pool, body.eventId, req.user.id, { complete: true }) : null;
     // A new event of my own: its name, date and person - only without a list, a Secret Santa or an existing event
     const newEvent = !body.listId && !body.santaId && !body.eventId;
     if (newEvent && body.recipientId) await requireLinkablePerson(pool, body.recipientId, req.user.id);
+    // Shared on an event: adults in my groups, never the event's recipient
+    if (!body.listId && !body.santaId) {
+        const others = userIds.filter((id) => id !== req.user.id);
+        if (others.length > 0) {
+            const recipientId = existingEvent ? existingEvent.recipient_id : body.recipientId;
+            const allowed = (await eventCandidates(pool, { userId: req.user.id, recipientId }, others)).map((u) => u.id);
+            if (others.some((id) => !allowed.includes(id))) {
+                throw new HttpError(400, "Du kan bara dela med vuxna i dina grupper - inte med den som får gåvan");
+            }
+        }
+    }
 
     const imageUrl = await uploadNewGiftImage(req.file, body.imageFromUrl);
     try {
@@ -482,15 +554,10 @@ router.put("/:id", receiveImage, async (req, res) => {
         body.eventId = before.event_id;
         checkFreeGift(body);
         if (body.santaId && userIds.length > 1) throw new HttpError(400, "En gåva till en Secret Santa kan inte delas.");
-        // Without a list nobody new can join - but those already in it may stay (a gift whose list or
-        // Secret Santa was deleted keeps everyone who shared it)
-        if (!body.listId && !body.santaId) {
-            const { rows: current } = await pool.query("SELECT user_id FROM gift_members WHERE gift_id = $1", [giftId]);
-            const currentIds = current.map((r) => r.user_id);
-            if (userIds.some((id) => !currentIds.includes(id))) {
-                throw new HttpError(400, "En gåva utan lista kan inte delas med fler. Välj en lista, eller ta bort de nya.");
-            }
-        }
+    }
+    // A gift on an event (logged, or a reservation from a wish profile): never shared with its recipient
+    if (before.recipient_id && userIds.includes(before.recipient_id)) {
+        throw new HttpError(400, "Den som får gåvan kan inte vara med och dela på den");
     }
 
     const newImageUrl = before.is_free ? await uploadNewGiftImage(req.file, body.imageFromUrl) : null;
@@ -523,11 +590,17 @@ router.put("/:id", receiveImage, async (req, res) => {
             const toCheck = listChanged && listId ? userIds : userIds.filter((id) => !currentIds.includes(id));
             if (toCheck.length > 0) {
                 const ownerId = gift.is_free ? null : gift.wish_owner_id;
-                const allowed = (await shareCandidates(db, { listId, wishId: gift.wish_id, giftId, ownerId }, toCheck)).map((u) => u.id);
+                const onEvent = gift.is_free && gift.event_id;
+                const candidates = onEvent
+                    ? await eventCandidates(db, { userId: req.user.id, recipientId: gift.recipient_id }, toCheck)
+                    : await shareCandidates(db, { listId, wishId: gift.wish_id, giftId, ownerId }, toCheck);
+                const allowed = candidates.map((u) => u.id);
                 if (toCheck.some((id) => !allowed.includes(id))) {
                     throw new HttpError(
                         400,
-                        listId
+                        onEvent
+                            ? "Du kan bara dela med vuxna i dina grupper - inte med den som får gåvan"
+                            : listId
                             ? "Du kan bara dela med vuxna i listans grupper som inte är mottagare" +
                                   (gift.wish_id ? " och inte redan är med i en annan gåva för samma önskning" : "")
                             : ownerId
