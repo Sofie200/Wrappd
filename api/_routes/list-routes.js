@@ -1,7 +1,7 @@
 import { randomBytes } from "node:crypto";
 import { Router } from "express";
 import { z } from "zod";
-import { pool, withTransaction } from "../_db/pool.js";
+import { pool, TODAY, withTransaction } from "../_db/pool.js";
 import { HttpError, parse, parseId, todayInSweden } from "../_lib/http.js";
 import { checkListPeople, getListAccess, requireEditor } from "../_lib/access.js";
 import { WishBody, MAX_WISHES_PER_LIST, TOO_MANY_WISHES } from "../_lib/wishSchema.js";
@@ -322,6 +322,91 @@ router.post("/:id/wishes", receiveImage, async (req, res) => {
         if (imageUrl) await removeWishImages([imageUrl]).catch(() => {});
         throw err;
     }
+});
+
+/* --- GET /api/lists/:id/copy-targets → { data } - the lists this list's wishes can be copied to (admin) --- */
+// Lists I'm admin of that aren't archived - not this one
+router.get("/:id/copy-targets", async (req, res) => {
+    const listId = parseId(req.params.id);
+    const access = await getListAccess(pool, listId, req.user.id);
+    if (!access.isAdmin) throw new HttpError(403, "Bara listans admins kan kopiera önskningar");
+
+    const { rows } = await pool.query(
+        `SELECT l.id, l.title, l.end_date AS "endDate", l.is_public AS "isPublic",
+                (SELECT count(*)::int FROM wishes WHERE list_id = l.id) AS "wishCount",
+                (SELECT string_agg(u.name, ', ' ORDER BY u.name) FROM list_recipients lr
+                 JOIN users u ON u.id = lr.user_id WHERE lr.list_id = l.id) AS recipients
+         FROM lists l
+         JOIN list_admins la ON la.list_id = l.id AND la.user_id = $1
+         WHERE l.id <> $2 AND l.end_date >= ${TODAY}
+         ORDER BY l.end_date, l.title`,
+        [req.user.id, listId]
+    );
+    res.json({ data: rows });
+});
+
+/* --- POST /api/lists/:id/copy  { targetListId, onlyUnreserved } → { copied } - copy wishes to another list --- */
+// Admin of both lists; the source may be archived (e.g. last year's list), the target may not.
+// The copies are new wishes: no reservations follow. The images are shared with the originals -
+// an image is only deleted when no wish or gift uses it (removeUnusedImages).
+// onlyUnreserved: only what's left to reserve - a wish with 3, of which 1 is reserved, is copied with 2.
+// That takes seeing reservations, so a recipient (who never does) can only copy everything.
+const CopyBody = z.object({
+    targetListId: z.coerce.number({ error: "Välj en lista" }).int().positive("Välj en lista"),
+    onlyUnreserved: z.boolean().default(false),
+});
+
+router.post("/:id/copy", async (req, res) => {
+    const listId = parseId(req.params.id);
+    const { targetListId, onlyUnreserved } = parse(CopyBody, req.body ?? {});
+    if (targetListId === listId) throw new HttpError(400, "Välj en annan lista än den du kopierar från");
+
+    const copied = await withTransaction(async (db) => {
+        const source = await getListAccess(db, listId, req.user.id);
+        if (!source.isAdmin) throw new HttpError(403, "Bara listans admins kan kopiera önskningar");
+        if (onlyUnreserved && !source.seesReservations) {
+            throw new HttpError(403, "Listan är till dig, så du kan inte se vad som är reserverat - kopiera alla önskningar i stället");
+        }
+        // Lock the target while counting, like when adding a wish
+        await db.query("SELECT id FROM lists WHERE id = $1 FOR UPDATE", [targetListId]);
+        requireEditor(await getListAccess(db, targetListId, req.user.id));
+
+        // What's left of each wish: its quantity minus what gifts have reserved
+        const { rows: wishes } = await db.query(
+            `SELECT w.title, w.description, w.price, w.url, w.image_url,
+                    CASE WHEN $2 THEN w.quantity - COALESCE((SELECT SUM(quantity) FROM gifts WHERE wish_id = w.id), 0)
+                         ELSE w.quantity END::int AS quantity
+             FROM wishes w WHERE w.list_id = $1
+             ORDER BY w.created_at, w.id`,
+            [listId, onlyUnreserved]
+        );
+        const toCopy = wishes.filter((w) => w.quantity > 0);
+        if (toCopy.length === 0) {
+            throw new HttpError(400, onlyUnreserved ? "Alla önskningar är reserverade - det finns inget att kopiera" : "Listan har inga önskningar");
+        }
+
+        const room = MAX_WISHES_PER_LIST - (await countWishes(db, targetListId));
+        if (toCopy.length > room) {
+            throw new HttpError(
+                409,
+                room <= 0
+                    ? `Listan har redan ${MAX_WISHES_PER_LIST} önskningar, vilket är max`
+                    : `Det får bara plats ${room} till på listan (max ${MAX_WISHES_PER_LIST}), men du försöker kopiera ${toCopy.length}`
+            );
+        }
+
+        // One at a time, so the copies keep the original order (created_at is the same for all in the transaction)
+        for (const w of toCopy) {
+            await db.query(
+                `INSERT INTO wishes (list_id, title, description, price, url, image_url, quantity)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+                [targetListId, w.title, w.description, w.price, w.url, w.image_url, w.quantity]
+            );
+        }
+        return toCopy.length;
+    });
+
+    res.status(201).json({ copied, targetListId });
 });
 
 async function countWishes(db, listId) {

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { Ellipsis, GlobeCheck, Pencil, Settings, Share2, Sparkles, Trash2 } from "lucide-react";
+import { Copy, Ellipsis, GlobeCheck, Pencil, Settings, Share2, Sparkles, Trash2 } from "lucide-react";
 import { api } from "../api.js";
 import { useFetch } from "../hooks/useFetch.js";
 import { Empty, ErrorMessage, Loading, Notice } from "../components/Feedback.jsx";
@@ -13,6 +13,7 @@ import SettingsMenu from "../components/SettingsMenu.jsx";
 import Avatar from "../components/Avatar.jsx";
 import { GiftEditor } from "./GiftPage.jsx";
 import ShareListModal from "../components/ShareListModal.jsx";
+import CopyWishesModal from "../components/CopyWishesModal.jsx";
 import { groupByPrice } from "../wishGroups.js";
 import { formatDate, formatPrice, joinNames, relativeDays } from "../format.js";
 import { MAX_WISHES_PER_LIST } from "../config.js";
@@ -28,6 +29,7 @@ export default function ListPage() {
     const [actionError, setActionError] = useState(null);
     const [busy, setBusy] = useState(false);
     const [sharing, setSharing] = useState(false); // "Dela": the share link's modal
+    const [copying, setCopying] = useState(false); // "Kopiera": copy the wishes to another list
 
     if (!data && loading) return <Loading />;
     if (!data) return <ErrorMessage message={error} onRetry={reload} />;
@@ -105,6 +107,17 @@ export default function ListPage() {
                                 <Link to={`/lists/${id}/edit`} className="btn btn-small btn-ghost">
                                     <Settings size={16} aria-hidden="true" /> Inställningar
                                 </Link>
+                            )}
+                            {/* Copy the wishes to another list - also from an archived list (e.g. last year's) */}
+                            {wishes.length > 0 && (
+                                <button
+                                    type="button"
+                                    className="btn btn-small btn-ghost"
+                                    onClick={() => setCopying(true)}
+                                    aria-haspopup="dialog"
+                                >
+                                    <Copy size={16} aria-hidden="true" /> Kopiera
+                                </button>
                             )}
                             <button type="button" className="btn btn-small btn-danger-ghost" onClick={remove} disabled={busy}>
                                 <Trash2 size={16} aria-hidden="true" /> Ta bort
@@ -247,6 +260,9 @@ export default function ListPage() {
                 </section>
             )}
 
+            {copying && (
+                <CopyWishesModal listId={list.id} seesReservations={me.seesReservations} onClose={() => setCopying(false)} />
+            )}
             {sharing && (
                 <ShareListModal listId={list.id} shareToken={list.shareToken} onChanged={reload} onClose={() => setSharing(false)} />
             )}

@@ -699,6 +699,11 @@ select {
     margin-top: 0.5rem;
 }
 
+/* Choices under each other, one per row (e.g. "Kopiera önskningar") */
+.checks.checks-stacked {
+    grid-template-columns: 1fr;
+}
+
 /* A few short choices side by side ("Bara mig / Vi ska dela", "Lika / Egna belopp"): each only as wide
    as its text, instead of the 200px columns of .checks */
 .checks.checks-inline {
