@@ -2,7 +2,8 @@ import { Router } from "express";
 import { z } from "zod";
 import { pool, TODAY, withTransaction } from "../_db/pool.js";
 import { HttpError, parse, parseId } from "../_lib/http.js";
-import { name, username } from "../_lib/userSchema.js";
+import { name } from "../_lib/userSchema.js";
+import { freeUsername } from "../_lib/freeUsername.js";
 import { createUserLink } from "../_lib/userLinks.js";
 import { syncChildGroups } from "../_lib/childGroups.js";
 import { removeUnusedImages } from "../_lib/imageCleanup.js";
@@ -220,9 +221,10 @@ router.post("/:id/members", async (req, res) => {
     res.status(201).json({ added: userId });
 });
 
-/* --- POST /api/groups/:id/users  { name, username } → { user, link } - create an account (admin) --- */
+/* --- POST /api/groups/:id/users  { name } → { user, link } - create an account (admin) --- */
 // The new user is added to the group directly. They choose their own password via the link.
-const NewUser = z.object({ name, username });
+// The username is made from the name ("Åsa Berg" → "asaberg") - the person can pick another one on the link page.
+const NewUser = z.object({ name });
 
 router.post("/:id/users", async (req, res) => {
     const groupId = parseId(req.params.id);
@@ -231,16 +233,21 @@ router.post("/:id/users", async (req, res) => {
     const result = await withTransaction(async (db) => {
         await requireGroupAdmin(db, groupId, req.user.id);
 
+        // (A savepoint per try: if someone takes the same username in between, try a new one)
         let user;
-        try {
-            ({ rows: [user] } = await db.query(
-                `INSERT INTO users (name, username, created_by) VALUES ($1, $2, $3)
-                 RETURNING id, name, username`,
-                [body.name, body.username, req.user.id]
-            ));
-        } catch (err) {
-            if (err.code === "23505") throw new HttpError(409, "Användarnamnet är redan upptaget");
-            throw err;
+        for (let attempt = 0; !user; attempt++) {
+            const username = await freeUsername(db, body.name);
+            await db.query("SAVEPOINT new_user");
+            try {
+                ({ rows: [user] } = await db.query(
+                    `INSERT INTO users (name, username, created_by) VALUES ($1, $2, $3)
+                     RETURNING id, name, username`,
+                    [body.name, username, req.user.id]
+                ));
+            } catch (err) {
+                await db.query("ROLLBACK TO SAVEPOINT new_user");
+                if (err.code !== "23505" || attempt >= 2) throw err;
+            }
         }
 
         await db.query("INSERT INTO group_members (group_id, user_id) VALUES ($1, $2)", [groupId, user.id]);

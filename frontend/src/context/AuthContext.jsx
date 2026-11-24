@@ -87,8 +87,9 @@ export function AuthProvider({ children }) {
     }
 
     // Choose a password via an activation or reset link - logs in directly afterwards
-    async function choosePassword(linkToken, password) {
-        const data = await api(`/auth/link/${linkToken}`, { method: "POST", body: { password } });
+    // username: only on an activation link - a username of the person's own choosing (optional)
+    async function choosePassword(linkToken, password, username) {
+        const data = await api(`/auth/link/${linkToken}`, { method: "POST", body: { password, ...(username && { username }) } });
         setUser(data.user);
     }
 

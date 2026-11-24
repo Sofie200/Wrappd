@@ -113,13 +113,13 @@ export default function MissingPersonModal({ groups, onAdded, onClose }) {
                             <ErrorMessage message={error} />
 
                             <h3 className="subhead subhead-divided">
-                                Eller skapa en ny användare{" "}
-                                <InfoTip label="Vad händer när jag skapar en användare?">{CREATE_USER_INTRO}</InfoTip>
+                                Eller bjud in en ny användare{" "}
+                                <InfoTip label="Vad händer när jag bjuder in en användare?">{CREATE_USER_INTRO}</InfoTip>
                             </h3>
                             <CreateUserForm
                                 hideIntro
                                 groupId={groupId}
-                                // The group is picked last - once name and username are filled in
+                                // The group is picked last - once the name is filled in
                                 groupPicker={
                                     adminGroups.length > 1 && (
                                         <div className="field">

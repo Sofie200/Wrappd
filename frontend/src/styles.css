@@ -1247,6 +1247,17 @@ select {
     margin: 0.75rem 0 0;
 }
 
+/* The link page: the help text a little closer to the heading, and more room before the form */
+.auth-card h1 + .link-intro {
+    margin-top: -0.75rem;
+    margin-bottom: 1.5rem;
+}
+
+/* (Password reset: the username comes right after the help text) */
+.auth-card h1 + .link-intro:has(+ .link-username) {
+    margin-bottom: 0.5rem;
+}
+
 .link-username {
     font-weight: 600;
     font-size: 1.1rem;
@@ -1277,6 +1288,7 @@ select {
     justify-content: space-between;
     align-items: center;
     gap: 1rem;
+    margin-bottom: 0.85rem; /* room between the heading and the link */
 }
 
 .link-box-row {
@@ -6047,6 +6059,22 @@ div.wish.wish-static {
 }
 
 /* The "Dela" modal: the link and "Kopiera" on one row */
+/* "Bjud in": the name field, with the button right of it - level with the input */
+.invite-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 0.5rem;
+}
+
+.invite-row .field {
+    flex: 1;
+    min-width: 0;
+}
+
+.invite-row .btn {
+    flex: none;
+}
+
 .share-link-row {
     display: flex;
     gap: 0.5rem;

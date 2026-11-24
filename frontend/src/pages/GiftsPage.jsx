@@ -95,7 +95,10 @@ export default function GiftsPage() {
 
             {/* At the bottom, whichever view: how much I've spent on whom in a chosen period */}
             {/* "Eget" (the coming events) with the current gifts, "12 mån" in the archive */}
-            <SpendingChart gifts={[...gifts.current, ...gifts.history]} defaultPeriod={showArchive ? "12m" : "custom"} />
+            {/* Only once there's something to show: at least one gift, current or archived */}
+            {gifts.current.length + gifts.history.length > 0 && (
+                <SpendingChart gifts={[...gifts.current, ...gifts.history]} defaultPeriod={showArchive ? "12m" : "custom"} />
+            )}
         </div>
     );
 }

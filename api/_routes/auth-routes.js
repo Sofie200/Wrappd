@@ -6,6 +6,7 @@ import { clearAuthCookie, requireAuth, setAuthCookie } from "../_middleware/auth
 import { HttpError, parse } from "../_lib/http.js";
 import { avatarColor, avatarIcon, email, name, password, username } from "../_lib/userSchema.js";
 import { hashToken, isTokenFormat } from "../_lib/userLinks.js";
+import { freeUsername } from "../_lib/freeUsername.js";
 import { verifyGoogleIdToken } from "../_lib/googleAuth.js";
 import { deleteAccount, planAccountDeletion } from "../_lib/deleteAccount.js";
 import { syncChildGroups } from "../_lib/childGroups.js";
@@ -212,24 +213,6 @@ router.delete("/google", requireAuth, async (req, res) => {
     res.json({ user });
 });
 
-// "Anna" → "anna", or "anna4821" if that one is taken
-async function freeUsername(db, wanted) {
-    // "Åsa" → "asa": strip accents first, then everything a username can't contain
-    let base = String(wanted)
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .toLowerCase()
-        .replace(/[^a-z0-9._-]/g, "")
-        .slice(0, 25);
-    if (base.length < 3) base = `${base}user`.slice(0, 25);
-    for (let attempt = 0; attempt < 20; attempt++) {
-        const candidate = attempt === 0 ? base : `${base}${Math.floor(1000 + Math.random() * 9000)}`;
-        const { rowCount } = await db.query("SELECT 1 FROM users WHERE username = $1", [candidate]);
-        if (rowCount === 0) return candidate;
-    }
-    throw new HttpError(500, "Kunde inte hitta ett ledigt användarnamn. Försök igen.");
-}
-
 /* --- POST /api/auth/logout → 204 - removes the login cookie (JavaScript can't, it's httpOnly) --- */
 router.post("/logout", (req, res) => {
     clearAuthCookie(res);
@@ -348,8 +331,10 @@ router.get("/link/:token", async (req, res) => {
     res.json(link);
 });
 
-/* --- POST /api/auth/link/:token  { password } → { user } (+ the login cookie) - choose a password, and log in --- */
-const ChoosePassword = z.object({ password });
+/* --- POST /api/auth/link/:token  { password, username? } → { user } (+ the login cookie) - choose a password, and log in --- */
+// An activation link (a new account a group admin created) may also change the username - it was made
+// from the name, and the person may want another. A password-reset link never changes it.
+const ChoosePassword = z.object({ password, username: username.optional() });
 
 router.post("/link/:token", async (req, res) => {
     const { token } = req.params;
@@ -360,7 +345,7 @@ router.post("/link/:token", async (req, res) => {
     const user = await withTransaction(async (db) => {
         // Lock the link, so it can't be used twice at the same time
         const { rows: [link] } = await db.query(
-            `SELECT ul.id, ul.user_id
+            `SELECT ul.id, ul.user_id, ul.purpose
              FROM user_links ul
              WHERE ul.token_hash = $1 AND ul.used_at IS NULL AND ul.expires_at > now()
              FOR UPDATE`,
@@ -368,10 +353,19 @@ router.post("/link/:token", async (req, res) => {
         );
         if (!link) throw new HttpError(404, LINK_INVALID);
 
-        const { rows: [updated] } = await db.query(
-            `UPDATE users SET password_hash = $1 WHERE id = $2 RETURNING ${USER_FIELDS}`,
-            [passwordHash, link.user_id]
-        );
+        const newUsername = link.purpose === "activate" ? (body.username ?? null) : null;
+        let updated;
+        try {
+            ({ rows: [updated] } = await db.query(
+                `UPDATE users SET password_hash = $1, username = COALESCE($3, username) WHERE id = $2 RETURNING ${USER_FIELDS}`,
+                [passwordHash, link.user_id, newUsername]
+            ));
+        } catch (err) {
+            if (err.code === "23505" && err.constraint === "users_username_key") {
+                throw new HttpError(409, "Användarnamnet är redan upptaget - välj ett annat");
+            }
+            throw err;
+        }
         // This link - and any other open link for the same user - is now used up
         await db.query("UPDATE user_links SET used_at = now() WHERE user_id = $1 AND used_at IS NULL", [link.user_id]);
         return updated;

@@ -21,19 +21,12 @@ async function loadWish(db, wishId, userId) {
     return { wish, access };
 }
 
-async function giftCount(db, wishId) {
-    const { rows: [{ count }] } = await db.query("SELECT count(*)::int AS count FROM gifts WHERE wish_id = $1", [wishId]);
-    return count;
-}
-
-// A wish can't be changed or deleted once someone has reserved it.
-// Recipients must not learn what is reserved - so a vaguer message for them.
-function lockedByGifts(access, what) {
-    return new HttpError(
-        409,
-        access.isRecipient ? `Önskningen kan inte ${what} just nu.` : `Önskningen är reserverad och kan inte ${what}`
-    );
-}
+// A wish can be changed and deleted also when someone has reserved it - on a list and on a wish profile.
+// Refusing would give the reservation away to a recipient, and the gifts survive:
+//  - deleted: a reservation becomes a logged gift on an event (the trigger wrappd_keep_gifts_of_wish,
+//    migration 021) - on a list with its name, date and recipients
+//  - changed: the gift keeps its own title and price
+// Those who see reservations (admins who aren't recipients, a child's parents) are warned in the app first.
 
 /* --- PATCH /api/wishes/:id  (multipart, same fields as create + removeImage) - edit (list admin / profile owner) --- */
 router.patch("/:id", receiveImage, async (req, res) => {
@@ -41,9 +34,6 @@ router.patch("/:id", receiveImage, async (req, res) => {
     const { wish, access } = await loadWish(pool, wishId, req.user.id);
     requireEditor(access);
     const body = parse(WishBody, req.body ?? {});
-
-    // Check before uploading a new image - no point uploading it if the save will be refused
-    if ((await giftCount(pool, wishId)) > 0) throw lockedByGifts(access, "ändras");
 
     // 1. A new image (uploaded file, or a copy of the shop's image) is saved first.
     //    The old one is only deleted once the wish is saved.
@@ -56,9 +46,6 @@ router.patch("/:id", receiveImage, async (req, res) => {
     try {
         await withTransaction(async (db) => {
             await db.query("SELECT id FROM wishes WHERE id = $1 FOR UPDATE", [wishId]);
-            // Again, inside the lock - someone may have reserved it meanwhile
-            if ((await giftCount(db, wishId)) > 0) throw lockedByGifts(access, "ändras");
-
             await db.query(
                 `UPDATE wishes
                  SET title = $1, description = $2, price = $3, url = $4, quantity = $5, image_url = $6, updated_at = now()
@@ -79,7 +66,7 @@ router.patch("/:id", receiveImage, async (req, res) => {
     res.json({ id: wishId, imageUrl });
 });
 
-/* --- DELETE /api/wishes/:id - only if nobody has reserved it (list admin) --- */
+/* --- DELETE /api/wishes/:id - delete (list admin / profile owner), also when reserved - the gifts are kept --- */
 router.delete("/:id", async (req, res) => {
     const wishId = parseId(req.params.id);
     const { wish, access } = await loadWish(pool, wishId, req.user.id);
@@ -87,7 +74,6 @@ router.delete("/:id", async (req, res) => {
 
     await withTransaction(async (db) => {
         await db.query("SELECT id FROM wishes WHERE id = $1 FOR UPDATE", [wishId]);
-        if ((await giftCount(db, wishId)) > 0) throw lockedByGifts(access, "raderas");
         await db.query("DELETE FROM wishes WHERE id = $1", [wishId]);
     });
 

@@ -56,11 +56,10 @@ export default function EmailPrompt() {
     return (
         <Modal title="Lägg till din e-post" onClose={dismiss}>
             <p className="muted">
-                Ditt konto saknar e-postadress. Lägg till en
-                {GOOGLE_CLIENT_ID ? " eller koppla ditt Google-konto" : ""}, så blir det lättare att hålla koll på
-                ditt konto.
+                Lägg till en e-postadress
+                {GOOGLE_CLIENT_ID ? " eller koppla ditt Google-konto" : ""}, så att kontot går att återställa om
+                lösenordet tappas bort.
             </p>
-            <p className="muted small">Din e-postadress kommer inte att användas i marknadsföringssyfte.</p>
 
             <ErrorMessage message={error} />
 
@@ -77,6 +76,7 @@ export default function EmailPrompt() {
                         required
                         disabled={busy}
                     />
+                    <small>Din e-postadress kommer inte att användas i marknadsföringssyfte.</small>
                 </label>
                 <div className="form-actions">
                     <button type="submit" className="btn btn-primary" disabled={busy}>

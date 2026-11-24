@@ -15,7 +15,8 @@ import Select from "./Select.jsx";
 // What the modal shows depends on `me` from the server:
 //  - seesReservations: who has reserved it, per gift (never for recipients)
 //  - canReserve: reserve (creates a gift), or go to my gift
-//  - canEdit: edit and delete (list admins, not archived) - not once someone has reserved it
+//  - canEdit: edit and delete (list admins, not archived) - also when reserved (the buyers keep their gifts).
+//    Those who see the reservations are warned first; recipients never learn there is one.
 // santa: { id } - on a wish profile opened from a Secret Santa: the reservation counts for it (no date to choose)
 // person: { id, name } - whose wish profile it is (a reservation there goes on an event of mine for them)
 export default function WishCard({ wish, me, listId, santa = null, person = null, onChanged }) {
@@ -113,7 +114,9 @@ export default function WishCard({ wish, me, listId, santa = null, person = null
     }
 
     function remove() {
-        if (!window.confirm(`Ta bort "${wish.title}"?`)) return;
+        // (Only someone who sees reservations - a parent on their child's profile - is told; the person never is)
+        const note = me.seesReservations && reserved > 0 ? "\n\nÖnskningen är reserverad. Den som reserverat behåller sin gåva." : "";
+        if (!window.confirm(`Ta bort "${wish.title}"?${note}`)) return;
         run(() => api(`/wishes/${wish.id}`, { method: "DELETE" }));
     }
 
@@ -128,8 +131,16 @@ export default function WishCard({ wish, me, listId, santa = null, person = null
     const available = wish.quantity - reserved;
     const full = me.seesReservations && available <= 0;
     const options = Array.from({ length: Math.max(available, 0) }, (_, i) => i + 1);
-    // Recipients don't know if it's reserved - the server answers them if they try
-    const locked = me.seesReservations && reserved > 0;
+    // Reserved - and I may know it (not a recipient): then editing and deleting warn first
+    const warnReserved = me.seesReservations && reserved > 0;
+    function edit() {
+        if (
+            warnReserved &&
+            !window.confirm(`"${wish.title}" är reserverad. Ändrar du önskningen behåller den som reserverat sin gåva, men ser dina ändringar.\n\nVill du redigera ändå?`)
+        )
+            return;
+        setEditing(true);
+    }
 
     const image = (className) =>
         wish.imageUrl ? (
@@ -378,18 +389,13 @@ export default function WishCard({ wish, me, listId, santa = null, person = null
                             )}
 
                             {me.canEdit && (
-                                <div
-                                    className={`wish-admin${locked ? " is-locked" : ""}`}
-                                    title={locked ? "Önskningen är reserverad och kan inte ändras" : undefined}
-                                >
-                                    {/* Greyed out as a whole when it can't be changed (someone has reserved it) */}
+                                <div className="wish-admin">
                                     <span className="wish-admin-label">Hantera önskning:</span>
                                     <button
                                         type="button"
                                         className="btn btn-small btn-ghost"
-                                        onClick={() => setEditing(true)}
-                                        disabled={busy || locked}
-                                        title={locked ? "Önskningen är reserverad och kan inte ändras" : undefined}
+                                        onClick={edit}
+                                        disabled={busy}
                                     >
                                         <Pencil size={16} aria-hidden="true" /> Redigera
                                     </button>
@@ -397,8 +403,7 @@ export default function WishCard({ wish, me, listId, santa = null, person = null
                                         type="button"
                                         className="btn btn-small btn-danger-ghost"
                                         onClick={remove}
-                                        disabled={busy || locked}
-                                        title={locked ? "Önskningen är reserverad och kan inte tas bort" : undefined}
+                                        disabled={busy}
                                     >
                                         <Trash2 size={16} aria-hidden="true" /> Ta bort
                                     </button>

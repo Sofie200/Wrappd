@@ -421,8 +421,8 @@ export default function GroupPage() {
                             />
 
                             <h3 className="subhead subhead-divided">
-                                Eller skapa en ny användare{" "}
-                                <InfoTip label="Vad händer när jag skapar en användare?">{CREATE_USER_INTRO}</InfoTip>
+                                Eller bjud in en ny användare{" "}
+                                <InfoTip label="Vad händer när jag bjuder in en användare?">{CREATE_USER_INTRO}</InfoTip>
                             </h3>
                             <CreateUserForm
                                 hideIntro

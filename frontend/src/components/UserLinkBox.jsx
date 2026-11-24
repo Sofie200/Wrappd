@@ -33,10 +33,6 @@ export default function UserLinkBox({ user, link, onClose }) {
                 )}
             </div>
 
-            <p className="small">
-                Skicka länken till {user.name}. Där väljer hen ett lösenord och loggar in som <strong>{user.username}</strong>.
-            </p>
-
             <div className="link-box-row">
                 <input value={url} readOnly onFocus={(e) => e.target.select()} aria-label="Länk" />
                 <button type="button" className="btn btn-primary" onClick={copy}>
