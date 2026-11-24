@@ -115,7 +115,7 @@ export default function WishCard({ wish, me, listId, santa = null, person = null
 
     function remove() {
         // (Only someone who sees reservations - a parent on their child's profile - is told; the person never is)
-        const note = me.seesReservations && reserved > 0 ? "\n\nÖnskningen är reserverad. Den som reserverat behåller sin gåva." : "";
+        const note = me.seesReservations && reserved > 0 ? "\n\nÖnskningen är reserverad. Den som reserverat får en notifikation." : "";
         if (!window.confirm(`Ta bort "${wish.title}"?${note}`)) return;
         run(() => api(`/wishes/${wish.id}`, { method: "DELETE" }));
     }

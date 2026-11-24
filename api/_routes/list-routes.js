@@ -9,6 +9,7 @@ import { receiveImage } from "../_middleware/imageUpload.js";
 import { removeWishImages } from "../_integrations/storageAdapter.js";
 import { removeUnusedImages } from "../_lib/imageCleanup.js";
 import { uploadNewWishImage } from "../_lib/wishImage.js";
+import { listViewers, notify } from "../_lib/notify.js";
 
 const router = Router();
 
@@ -65,6 +66,8 @@ router.post("/", async (req, res) => {
         await replaceRows(db, "list_groups", list.id, "group_id", body.groupIds);
         await replaceRows(db, "list_admins", list.id, "user_id", adminIds);
         await replaceRows(db, "list_recipients", list.id, "user_id", body.recipientIds);
+        // Notification: the other admins (the list is private - only admins see it yet)
+        await notify(db, { userIds: adminIds, type: "list_admin", actorId: req.user.id, listId: list.id });
         return list.id;
     });
 
@@ -77,6 +80,13 @@ router.get("/:id", async (req, res) => {
     const listId = parseId(req.params.id);
     const access = await getListAccess(pool, listId, req.user.id);
     const { list } = access;
+
+    // I'm looking at the list now: "new wishes since I last looked" is read
+    await pool.query(
+        `UPDATE notifications SET read_at = now()
+         WHERE user_id = $1 AND list_id = $2 AND type = 'list_wishes' AND read_at IS NULL`,
+        [req.user.id, listId]
+    );
 
     const [groups, admins, recipients, wishes] = await Promise.all([
         pool.query(
@@ -207,6 +217,9 @@ router.put("/:id", async (req, res) => {
             "SELECT user_id FROM list_recipients WHERE list_id = $1",
             [listId]
         );
+        // Before the change - to notify only those who are new
+        const { rows: currentAdmins } = await db.query("SELECT user_id FROM list_admins WHERE list_id = $1", [listId]);
+        const viewersBefore = access.list.is_public ? await listViewers(db, listId) : [];
         await checkListPeople(db, req.user.id, body, currentGroupIds, currentRecipients.map((r) => r.user_id));
 
         await db.query(
@@ -216,6 +229,20 @@ router.put("/:id", async (req, res) => {
         await replaceRows(db, "list_groups", listId, "group_id", body.groupIds);
         await replaceRows(db, "list_admins", listId, "user_id", body.adminIds);
         await replaceRows(db, "list_recipients", listId, "user_id", body.recipientIds);
+
+        // Notifications. A published list that got new groups: "new list" to those who now see it.
+        if (access.list.is_public) {
+            const before = new Set(viewersBefore);
+            const newViewers = (await listViewers(db, listId)).filter((id) => !before.has(id));
+            await notify(db, { userIds: newViewers, type: "list_new", actorId: req.user.id, listId });
+        }
+        // New admins - grouped with an unread "new list" about the same list, if there is one
+        const wereAdmins = new Set(currentAdmins.map((r) => r.user_id));
+        await notify(
+            db,
+            { userIds: body.adminIds.filter((id) => !wereAdmins.has(id)), type: "list_admin", actorId: req.user.id, listId, data: { admin: true } },
+            { mergeInto: "list_new" }
+        );
     });
 
     res.json({ id: listId });
@@ -257,10 +284,19 @@ router.post("/:id/publish", async (req, res) => {
     );
     if (count === 0) throw new HttpError(400, "Välj minst en grupp för listan innan du publicerar den");
 
-    await pool.query(
-        "UPDATE lists SET is_public = true, published_at = COALESCE(published_at, now()) WHERE id = $1",
-        [listId]
-    );
+    await withTransaction(async (db) => {
+        const { rowCount: published } = await db.query(
+            "UPDATE lists SET is_public = true, published_at = COALESCE(published_at, now()) WHERE id = $1 AND NOT is_public",
+            [listId]
+        );
+        // Notification "new list" to those who see it now - not its admins, they already know about it
+        if (published) {
+            const { rows: admins } = await db.query("SELECT user_id FROM list_admins WHERE list_id = $1", [listId]);
+            const adminIds = new Set(admins.map((r) => r.user_id));
+            const viewers = (await listViewers(db, listId)).filter((id) => !adminIds.has(id));
+            await notify(db, { userIds: viewers, type: "list_new", actorId: req.user.id, listId });
+        }
+    });
     res.json({ id: listId, isPublic: true });
 });
 
@@ -315,6 +351,7 @@ router.post("/:id/wishes", receiveImage, async (req, res) => {
                  VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
                 [listId, body.title, body.description, body.price, body.url, imageUrl, body.quantity]
             );
+            await notifyNewWishes(db, access.list, req.user.id, 1);
             return created;
         });
         res.status(201).json({ id: wish.id });
@@ -403,11 +440,24 @@ router.post("/:id/copy", async (req, res) => {
                 [targetListId, w.title, w.description, w.price, w.url, w.image_url, w.quantity]
             );
         }
+        await notifyNewWishes(db, (await getListAccess(db, targetListId, req.user.id)).list, req.user.id, toCopy.length);
         return toCopy.length;
     });
 
     res.status(201).json({ copied, targetListId });
 });
+
+// "N new wishes on the list" - to everyone who sees a published, coming list (its admins too).
+// One notification per list that counts up until it's read - opening the list reads it (GET /:id).
+async function notifyNewWishes(db, list, actorId, count) {
+    if (!list.is_public || list.archived) return;
+    const { rows: admins } = await db.query("SELECT user_id FROM list_admins WHERE list_id = $1", [list.id]);
+    await notify(
+        db,
+        { userIds: [...(await listViewers(db, list.id)), ...admins.map((r) => r.user_id)], type: "list_wishes", actorId, listId: list.id },
+        { mergeInto: "list_wishes", addCount: count }
+    );
+}
 
 async function countWishes(db, listId) {
     const { rows: [{ count }] } = await db.query("SELECT count(*)::int AS count FROM wishes WHERE list_id = $1", [listId]);

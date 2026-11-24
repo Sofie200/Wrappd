@@ -32,6 +32,7 @@ import { uploadNewGiftImage } from "../_lib/wishImage.js";
 import { receiveImage } from "../_middleware/imageUpload.js";
 import { removeWishImages } from "../_integrations/storageAdapter.js";
 import { removeUnusedImages } from "../_lib/imageCleanup.js";
+import { notify } from "../_lib/notify.js";
 
 const router = Router();
 
@@ -525,6 +526,8 @@ router.post("/", receiveImage, async (req, res) => {
                 ]
             );
             await replaceMembers(db, gift.id, body, userIds);
+            // Those I share it with (not me) hear about it
+            await notify(db, { userIds, type: "gift_shared", actorId: req.user.id, giftId: gift.id });
             return gift.id;
         });
         res.status(201).json({ id });
@@ -634,6 +637,13 @@ router.put("/:id", receiveImage, async (req, res) => {
                 );
             }
             await replaceMembers(db, giftId, body, userIds);
+            // Those who are new in it (not me) hear about it
+            await notify(db, {
+                userIds: userIds.filter((id) => !currentIds.includes(id)),
+                type: "gift_shared",
+                actorId: req.user.id,
+                giftId,
+            });
         });
     } catch (err) {
         if (newImageUrl) await removeWishImages([newImageUrl]).catch(() => {});

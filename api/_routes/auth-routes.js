@@ -7,6 +7,7 @@ import { HttpError, parse } from "../_lib/http.js";
 import { avatarColor, avatarIcon, email, name, password, username } from "../_lib/userSchema.js";
 import { hashToken, isTokenFormat } from "../_lib/userLinks.js";
 import { freeUsername } from "../_lib/freeUsername.js";
+import { notify } from "../_lib/notify.js";
 import { verifyGoogleIdToken } from "../_lib/googleAuth.js";
 import { deleteAccount, planAccountDeletion } from "../_lib/deleteAccount.js";
 import { syncChildGroups } from "../_lib/childGroups.js";
@@ -365,6 +366,26 @@ router.post("/link/:token", async (req, res) => {
                 throw new HttpError(409, "Användarnamnet är redan upptaget - välj ett annat");
             }
             throw err;
+        }
+        // An invitation accepted: the one who invited them hears about it - with the group they share
+        if (link.purpose === "activate") {
+            const { rows: [invite] } = await db.query(
+                `SELECT u.created_by,
+                        (SELECT a.group_id FROM group_members a
+                         JOIN group_members b ON b.group_id = a.group_id AND b.user_id = u.created_by
+                         WHERE a.user_id = u.id ORDER BY a.group_id LIMIT 1) AS group_id
+                 FROM users u WHERE u.id = $1`,
+                [link.user_id]
+            );
+            if (invite?.created_by) {
+                await notify(db, {
+                    userIds: [invite.created_by],
+                    type: "invite_accepted",
+                    actorId: link.user_id,
+                    personId: link.user_id,
+                    groupId: invite.group_id,
+                });
+            }
         }
         // This link - and any other open link for the same user - is now used up
         await db.query("UPDATE user_links SET used_at = now() WHERE user_id = $1 AND used_at IS NULL", [link.user_id]);

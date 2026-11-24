@@ -8,6 +8,7 @@ import { pool, withTransaction } from "../_db/pool.js";
 import { HttpError, parse, parseId, todayInSweden } from "../_lib/http.js";
 import { money } from "../_lib/money.js";
 import { removeUnusedImages } from "../_lib/imageCleanup.js";
+import { notify } from "../_lib/notify.js";
 
 const router = Router();
 
@@ -71,6 +72,8 @@ router.post("/", async (req, res) => {
              SELECT $1, unnest($2::int[]), unnest($3::int[])`,
             [santa.id, pairs.map((p) => p.giverId), pairs.map((p) => p.receiverId)]
         );
+        // Everyone taking part (not the one who made it) - who they got shows on the overview
+        await notify(db, { userIds: body.memberIds, type: "santa_new", actorId: req.user.id, groupId: body.groupId, santaId: santa.id });
         return santa.id;
     });
 

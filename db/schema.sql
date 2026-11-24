@@ -222,6 +222,25 @@ CREATE TABLE secret_santa_pairs (
 );
 CREATE INDEX secret_santa_pairs_giver_idx ON secret_santa_pairs (giver_id);
 
+-- Notiser (migration 023): en rad per mottagare och händelse - se migrationen för typerna.
+CREATE TABLE notifications (
+    id         SERIAL PRIMARY KEY,
+    user_id    INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    type       TEXT NOT NULL,
+    actor_id   INT REFERENCES users(id) ON DELETE SET NULL,  -- vem som gjorde det (visas med namn)
+    group_id   INT REFERENCES groups(id) ON DELETE CASCADE,
+    list_id    INT REFERENCES lists(id) ON DELETE CASCADE,
+    santa_id   INT REFERENCES secret_santas(id) ON DELETE CASCADE,
+    gift_id    INT REFERENCES gifts(id) ON DELETE CASCADE,
+    person_id  INT REFERENCES users(id) ON DELETE CASCADE,   -- vems önskeprofil / vem som accepterade
+    data       JSONB NOT NULL DEFAULT '{}',
+    read_at    TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX notifications_user_idx ON notifications (user_id, created_at DESC);
+-- Olästa per mottagare - räknaren på klockan, och sammanslagningen av liknande notiser
+CREATE INDEX notifications_unread_idx ON notifications (user_id, type) WHERE read_at IS NULL;
+
 -- A gift can belong to a Secret Santa (see gifts above). Deleted together with the draw.
 ALTER TABLE gifts ADD CONSTRAINT gifts_santa_fk FOREIGN KEY (santa_id) REFERENCES secret_santas(id) ON DELETE CASCADE;
 CREATE INDEX gifts_santa_idx ON gifts (santa_id);

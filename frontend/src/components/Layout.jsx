@@ -7,6 +7,7 @@ import Avatar from "./Avatar.jsx";
 import Footer from "./Footer.jsx";
 import SettingsMenu from "./SettingsMenu.jsx";
 import EmailPrompt from "./EmailPrompt.jsx";
+import NotificationBell from "./NotificationBell.jsx";
 
 export default function Layout() {
     const { user, logout } = useAuth();
@@ -57,6 +58,8 @@ export default function Layout() {
                                 <Gift size={16} aria-hidden="true" /> Mina gåvor
                             </NavLink>
                         </SettingsMenu>
+                        {/* Right of the menu, before the profile icon */}
+                        <NotificationBell />
                         <SettingsMenu
                             label={`Meny för ${user.name}`}
                             title={`${user.name} (${user.username})`}

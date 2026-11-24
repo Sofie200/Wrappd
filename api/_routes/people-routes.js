@@ -2,7 +2,7 @@
 // don't like, and their own wishes - which others can reserve (they become gifts, like on a list).
 // Who may do what is in getPersonAccess (_lib/access.js). The person never sees what is reserved.
 import { Router } from "express";
-import { pool, withTransaction } from "../_db/pool.js";
+import { pool, TODAY, withTransaction } from "../_db/pool.js";
 import { HttpError, parse, parseId } from "../_lib/http.js";
 import { getPersonAccess, requireEditor } from "../_lib/access.js";
 import { ProfileBody } from "../_lib/profileSchema.js";
@@ -10,6 +10,7 @@ import { WishBody } from "../_lib/wishSchema.js";
 import { uploadNewProfileWishImage } from "../_lib/wishImage.js";
 import { receiveImage } from "../_middleware/imageUpload.js";
 import { removeWishImages } from "../_integrations/storageAdapter.js";
+import { notify } from "../_lib/notify.js";
 
 const router = Router();
 
@@ -125,6 +126,21 @@ router.post("/:id/wishes", receiveImage, async (req, res) => {
                  VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
                 [personId, body.title, body.description, body.price, body.url, imageUrl, body.quantity]
             );
+            // Those who drew this person in a coming Secret Santa: a new wish to choose from.
+            // One notification per draw, counting up until it's read.
+            const { rows: santas } = await db.query(
+                `SELECT p.santa_id, p.giver_id FROM secret_santa_pairs p
+                 JOIN secret_santas s ON s.id = p.santa_id
+                 WHERE p.receiver_id = $1 AND s.event_date >= ${TODAY}`,
+                [personId]
+            );
+            for (const { santa_id: santaId, giver_id: giverId } of santas) {
+                await notify(
+                    db,
+                    { userIds: [giverId], type: "santa_wish", actorId: req.user.id, santaId, personId, data: { wishTitle: body.title } },
+                    { mergeInto: "santa_wish", addCount: 1 }
+                );
+            }
             return wish.id;
         });
         res.status(201).json({ id });

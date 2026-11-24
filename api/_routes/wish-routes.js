@@ -9,6 +9,7 @@ import { receiveImage } from "../_middleware/imageUpload.js";
 import { removeWishImages } from "../_integrations/storageAdapter.js";
 import { removeUnusedImages } from "../_lib/imageCleanup.js";
 import { uploadNewProfileWishImage, uploadNewWishImage } from "../_lib/wishImage.js";
+import { notify } from "../_lib/notify.js";
 
 const router = Router();
 
@@ -28,6 +29,27 @@ async function loadWish(db, wishId, userId) {
 //  - changed: the gift keeps its own title and price
 // Those who see reservations (admins who aren't recipients, a child's parents) are warned in the app first.
 
+// Notification to those who have reserved the wish, that it was changed or deleted - per gift, and only
+// while its date (the list's, the Secret Santa's or the event's) hasn't passed. Run BEFORE a delete:
+// the gifts survive it (the trigger moves them to an event), so the notification can link to them.
+async function notifyReservers(db, wishId, actorId, type, wishTitle) {
+    const { rows } = await db.query(
+        `SELECT g.id AS gift_id, array_agg(gm.user_id) AS user_ids
+         FROM gifts g
+         JOIN gift_members gm ON gm.gift_id = g.id
+         JOIN wishes w ON w.id = g.wish_id
+         LEFT JOIN lists l ON l.id = w.list_id
+         LEFT JOIN secret_santas ss ON ss.id = g.santa_id
+         LEFT JOIN gift_events ge ON ge.id = g.event_id
+         WHERE g.wish_id = $1 AND COALESCE(l.end_date, ss.event_date, ge.event_date) >= ${TODAY}
+         GROUP BY g.id`,
+        [wishId]
+    );
+    for (const gift of rows) {
+        await notify(db, { userIds: gift.user_ids, type, actorId, giftId: gift.gift_id, data: { wishTitle } });
+    }
+}
+
 /* --- PATCH /api/wishes/:id  (multipart, same fields as create + removeImage) - edit (list admin / profile owner) --- */
 router.patch("/:id", receiveImage, async (req, res) => {
     const wishId = parseId(req.params.id);
@@ -45,7 +67,16 @@ router.patch("/:id", receiveImage, async (req, res) => {
 
     try {
         await withTransaction(async (db) => {
-            await db.query("SELECT id FROM wishes WHERE id = $1 FOR UPDATE", [wishId]);
+            const { rows: [old] } = await db.query(
+                "SELECT title, description, price, url, quantity, image_url FROM wishes WHERE id = $1 FOR UPDATE",
+                [wishId]
+            );
+            // Anything that changed? Then those who reserved it hear about it
+            const changed =
+                old.title !== body.title || (old.description ?? null) !== (body.description ?? null) ||
+                Number(old.price ?? -1) !== Number(body.price ?? -1) || (old.url ?? null) !== (body.url ?? null) ||
+                old.quantity !== body.quantity || (old.image_url ?? null) !== (imageUrl ?? null);
+            if (changed) await notifyReservers(db, wishId, req.user.id, "wish_changed", body.title);
             await db.query(
                 `UPDATE wishes
                  SET title = $1, description = $2, price = $3, url = $4, quantity = $5, image_url = $6, updated_at = now()
@@ -73,7 +104,8 @@ router.delete("/:id", async (req, res) => {
     requireEditor(access);
 
     await withTransaction(async (db) => {
-        await db.query("SELECT id FROM wishes WHERE id = $1 FOR UPDATE", [wishId]);
+        const { rows: [old] } = await db.query("SELECT title FROM wishes WHERE id = $1 FOR UPDATE", [wishId]);
+        await notifyReservers(db, wishId, req.user.id, "wish_deleted", old.title);
         await db.query("DELETE FROM wishes WHERE id = $1", [wishId]);
     });
 
@@ -106,7 +138,7 @@ const Reserve = z.object({
 router.post("/:id/gifts", async (req, res) => {
     const wishId = parseId(req.params.id);
     const { quantity, eventId: chosenEventId, eventName, giftDate: date, santaId } = parse(Reserve, req.body);
-    const { access } = await loadWish(pool, wishId, req.user.id);
+    const { wish: loaded, access } = await loadWish(pool, wishId, req.user.id);
     requireReserver(access);
 
     const giftId = await withTransaction(async (db) => {
@@ -186,6 +218,21 @@ router.post("/:id/gifts", async (req, res) => {
             [wishId, req.user.id, quantity, wish.title, wish.price, santaId, eventId]
         );
         await db.query("INSERT INTO gift_members (gift_id, user_id) VALUES ($1, $2)", [gift.id, req.user.id]);
+        // A wish on a list: its admins hear about it - not those who are its recipients (it's a surprise).
+        // One notification per list, counting up until it's read.
+        if (loaded.list_id) {
+            const { rows: admins } = await db.query(
+                `SELECT la.user_id FROM list_admins la
+                 WHERE la.list_id = $1
+                   AND NOT EXISTS (SELECT 1 FROM list_recipients WHERE list_id = $1 AND user_id = la.user_id)`,
+                [loaded.list_id]
+            );
+            await notify(
+                db,
+                { userIds: admins.map((r) => r.user_id), type: "list_reserved", actorId: req.user.id, listId: loaded.list_id, data: { wishTitle: wish.title } },
+                { mergeInto: "list_reserved", addCount: 1 }
+            );
+        }
         return gift.id;
     });
 

@@ -16,6 +16,8 @@ import childrenRoutes from "./_routes/children-routes.js";
 import santaRoutes from "./_routes/santa-routes.js";
 import peopleRoutes from "./_routes/people-routes.js";
 import shareRoutes from "./_routes/share-routes.js";
+import notificationRoutes from "./_routes/notification-routes.js";
+import cronRoutes from "./_routes/cron-routes.js";
 
 const app = express();
 
@@ -39,6 +41,9 @@ app.use("/api/profile", requireAuth, profileRoutes);
 app.use("/api/children", requireAuth, childrenRoutes);
 app.use("/api/santas", requireAuth, santaRoutes);
 app.use("/api/people", requireAuth, peopleRoutes);
+app.use("/api/notifications", requireAuth, notificationRoutes);
+// Vercel Cron - checked with CRON_SECRET, not a login
+app.use("/api/cron", cronRoutes);
 // A shared list - open to everyone; logged in or not decides only whether it can be opened in the app
 app.use("/api/share", optionalAuth, shareRoutes);
 

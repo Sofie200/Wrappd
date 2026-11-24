@@ -7,6 +7,7 @@ import { freeUsername } from "../_lib/freeUsername.js";
 import { createUserLink } from "../_lib/userLinks.js";
 import { syncChildGroups } from "../_lib/childGroups.js";
 import { removeUnusedImages } from "../_lib/imageCleanup.js";
+import { notify } from "../_lib/notify.js";
 
 const router = Router();
 
@@ -212,10 +213,11 @@ router.post("/:id/members", async (req, res) => {
         if (!user) throw new HttpError(404, "Användaren finns inte");
         if (user.is_child) throw new HttpError(403, "Barn kommer med automatiskt via sina föräldrar");
 
-        await db.query(
+        const { rowCount: added } = await db.query(
             "INSERT INTO group_members (group_id, user_id) VALUES ($1, $2) ON CONFLICT DO NOTHING",
             [groupId, userId]
         );
+        if (added) await notify(db, { userIds: [userId], type: "group_added", actorId: req.user.id, groupId });
         await syncChildGroups(db);
     });
     res.status(201).json({ added: userId });
@@ -251,6 +253,8 @@ router.post("/:id/users", async (req, res) => {
         }
 
         await db.query("INSERT INTO group_members (group_id, user_id) VALUES ($1, $2)", [groupId, user.id]);
+        // Waiting for them when they log in the first time
+        await notify(db, { userIds: [user.id], type: "group_added", actorId: req.user.id, groupId });
         const link = await createUserLink(db, { userId: user.id, purpose: "activate", createdBy: req.user.id });
         return { user, link };
     });
@@ -322,6 +326,14 @@ router.patch("/:id/members/:userId", async (req, res) => {
             "UPDATE group_members SET is_admin = $1 WHERE group_id = $2 AND user_id = $3",
             [isAdmin, groupId, userId]
         );
+        // Made admin: grouped with an unread "added to the group", if there is one
+        if (isAdmin && !target.is_admin) {
+            await notify(
+                db,
+                { userIds: [userId], type: "group_admin", actorId: req.user.id, groupId, data: { admin: true } },
+                { mergeInto: "group_added" }
+            );
+        }
     });
 
     res.json({ userId, isAdmin });

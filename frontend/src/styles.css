@@ -1477,12 +1477,15 @@ select {
 }
 
 /* The menu buttons (hamburger, cog, "…"): turn rose on hover and while the menu is open */
-.menu > .btn-icon {
+.menu > .btn-icon,
+.notif-bell {
     transition: background-color 0.15s, color 0.15s;
 }
 
+/* (The bell too - it opens a panel instead of a menu) */
 .menu > .btn-icon:hover,
-.menu > .btn-icon[aria-expanded="true"] {
+.menu > .btn-icon[aria-expanded="true"],
+.notif-bell:hover {
     background: var(--accent-soft);
     color: var(--accent-strong);
 }
@@ -4399,6 +4402,215 @@ button.event-edit {
         left: calc(0.85rem + var(--label) + var(--gap));
         right: 0.85rem;
     }
+}
+
+/* ---------- Notiser: the bell in the header, and the panel that slides in from the right ---------- */
+.notif-bell {
+    position: relative;
+}
+
+/* The number of unread, on the bell's top-right corner */
+.notif-badge {
+    position: absolute;
+    top: 0;
+    right: 0;
+    min-width: 0.95rem;
+    height: 0.95rem;
+    padding: 0 0.25rem;
+    border-radius: 999px;
+    background: var(--accent-strong);
+    color: var(--accent-ink);
+    font-size: 0.6rem;
+    font-weight: 700;
+    line-height: 0.95rem;
+    text-align: center;
+    transform: translate(calc(25% - 5px), calc(-15% + 4px));
+}
+
+/* The panel: a native <dialog> (focus trap, Esc and the backdrop for free), stuck to the right edge */
+.notif-panel {
+    margin: 0 0 0 auto;
+    padding: 0;
+    width: min(420px, 100vw);
+    height: 100dvh;
+    max-height: 100dvh;
+    max-width: 100vw;
+    border: none;
+    border-radius: 0;
+    background: var(--surface);
+    color: var(--ink);
+    box-shadow: var(--shadow-lift);
+    overflow-y: auto;
+    animation: notif-slide-in 0.25s ease-out;
+}
+
+.notif-panel::backdrop {
+    background: rgba(91, 36, 24, 0.35);
+    backdrop-filter: blur(3px);
+    animation: notif-fade-in 0.25s ease-out;
+}
+
+@keyframes notif-slide-in {
+    from {
+        transform: translateX(100%);
+    }
+}
+
+@keyframes notif-fade-in {
+    from {
+        opacity: 0;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .notif-panel,
+    .notif-panel::backdrop {
+        animation: none;
+    }
+}
+
+.notif-panel-inner {
+    padding: 1.25rem 1.25rem 2rem;
+}
+
+.notif-panel-head {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--line); /* a hairline between the heading row and the notifications */
+}
+
+.notif-panel-head h2 {
+    margin: 0;
+}
+
+/* "Markera alla som lästa": a small white button beside the heading */
+.notif-read-all {
+    background: var(--surface);
+    margin: 4px auto 0; /* nudged down, level with the heading's text - and centred between it and the × */
+    position: relative;
+    left: -12px; /* a little left of the exact middle (not transform - .btn uses it on press) */
+}
+
+/* (The × normally pushes itself right with margin-left: auto - here the button's auto margins do that) */
+.notif-panel-head:has(.notif-read-all) .modal-close {
+    margin-left: 0;
+}
+
+.notif-empty {
+    padding: 2rem 0.5rem;
+    text-align: center;
+}
+
+/* The rows reach out into the panel's padding, so their contents (icon, dot) line up with the
+   heading and the close button - only the hover background goes all the way to the edges */
+.notif-list {
+    list-style: none;
+    margin: 0 -0.75rem;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.notif-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    width: 100%;
+    padding: 0.75rem;
+    border: none;
+    border-radius: var(--radius-small);
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+}
+
+button.notif-row {
+    cursor: pointer;
+}
+
+button.notif-row:hover {
+    background: var(--surface-soft);
+}
+
+/* Read: a little greyed out - back to full strength on hover and keyboard focus */
+.notif-item:not(.is-unread) .notif-row {
+    opacity: 0.6;
+    transition: opacity 0.15s;
+}
+
+.notif-item:not(.is-unread) .notif-row:hover,
+.notif-item:not(.is-unread) .notif-row:focus-visible {
+    opacity: 1;
+}
+
+/* Unread: no background - just the dot, and the time in ink instead of grey */
+.notif-item.is-unread .notif-time {
+    color: var(--ink);
+    font-weight: 600;
+}
+
+.notif-icon {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border: 2px solid #fff;
+    border-radius: 50%;
+    color: var(--ink);
+}
+
+.notif-icon-rose {
+    background: var(--accent-soft);
+    color: var(--accent-text);
+}
+.notif-icon-lavender {
+    background: var(--blue-soft);
+    color: var(--blue);
+}
+.notif-icon-orange {
+    background: var(--yellow-soft);
+    color: var(--yellow-ink);
+}
+.notif-icon-yellow {
+    background: var(--yellow-soft);
+    color: var(--yellow-ink);
+}
+.notif-icon-green {
+    background: var(--green-soft);
+    color: var(--green);
+}
+
+.notif-body {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+}
+
+.notif-text {
+    font-size: 0.92rem;
+    line-height: 1.4;
+}
+
+.notif-time {
+    color: var(--muted);
+    font-size: 0.8rem;
+}
+
+.notif-dot {
+    flex: none;
+    width: 0.55rem;
+    height: 0.55rem;
+    margin-top: 0.4rem;
+    border-radius: 50%;
+    background: var(--accent-strong);
 }
 
 /* ---------- Wish profiles ---------- */
